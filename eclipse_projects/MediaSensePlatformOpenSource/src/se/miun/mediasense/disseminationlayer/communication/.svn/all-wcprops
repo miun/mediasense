@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/stefor/!svn/ver/384/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication
+END
+NotifyMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/NotifyMessage.java
+END
+MessageSerializer.java
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/MessageSerializer.java
+END
+Message.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/stefor/!svn/ver/387/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/Message.java
+END
+SetMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/SetMessage.java
+END
+CommunicationInterface.java
+K 25
+svn:wc:ra_dav:version-url
+V 137
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/CommunicationInterface.java
+END
+GetMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/communication/GetMessage.java
+END
