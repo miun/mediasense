@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/stefor/!svn/ver/376/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe
+END
+StartSubscribeMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe/StartSubscribeMessage.java
+END
+EndSubscribeMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 140
+/svn/stefor/!svn/ver/372/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe/EndSubscribeMessage.java
+END
+NotifySubscribersMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 145
+/svn/stefor/!svn/ver/374/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe/NotifySubscribersMessage.java
+END
+PublishSubscribeExtension.java
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/svn/stefor/!svn/ver/376/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe/PublishSubscribeExtension.java
+END
+SubscriptionEventListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/svn/stefor/!svn/ver/370/MediaSensePlatformOpenSource/src/se/miun/mediasense/addinlayer/extensions/publishsubscribe/SubscriptionEventListener.java
+END

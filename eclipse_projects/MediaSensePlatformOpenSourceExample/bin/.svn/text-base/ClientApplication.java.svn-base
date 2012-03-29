@@ -188,7 +188,7 @@ public class ClientApplication implements GetResponseListener, SetEventListener,
 			//But right now we send back a random number to simulate a sensor value
 			Random r = new Random(System.currentTimeMillis());
 			int randomInt = r.nextInt(100);
-			platform.getDisseminationCore().notify(source, uci, "" + randomInt);
+			platform.getDisseminationCore().notify(source, uci, "" + randomInt);			
 		}
 		@Override
 	    public void setEvent(String uci, String value) {
