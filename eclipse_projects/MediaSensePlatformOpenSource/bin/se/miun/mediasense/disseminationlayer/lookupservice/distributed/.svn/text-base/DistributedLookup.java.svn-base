@@ -7,7 +7,7 @@ import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
 
-public class DistributedLookup extends Thread implements LookupServiceInterface {
+public class DistributedLookup extends Thread implements LookupServiceInterface{
 
 	
 	String bootstrapIp = "127.0.0.1";
@@ -68,7 +68,7 @@ public class DistributedLookup extends Thread implements LookupServiceInterface 
 	public void register(String uci) {
 		
 		//Register it locally!		
-		hashTable.put(uci, communication.getLocalIp());
+		hashTable.put(uci, communication.getLocalIp());		
 		
 		//Send to all parents and childs!
 		RegisterMessage registerAtGrandGrandParent = new RegisterMessage(uci, node.grandGrandParent, communication.getLocalIp());
@@ -90,7 +90,7 @@ public class DistributedLookup extends Thread implements LookupServiceInterface 
 		
 		runLookUpService = false;
 		
-		//Perform graceful shutdown!
+		//Perform garceful shutdown!
 		//Send join_response to child and parent
 		
 		//Or not.. hope that it solves itself! :)
@@ -121,7 +121,7 @@ public class DistributedLookup extends Thread implements LookupServiceInterface 
 			
 			try {
 
-				//Send out the keep-alive to keep the system stable								
+				//Send out the keepalive to keep the system stable								
 				//Send to child, grandchild
 				KeepAliveMessage keepAliveMessageGrandGrandChild = new KeepAliveMessage(node.grandGrandChild, communication.getLocalIp());
 				communication.sendMessage(keepAliveMessageGrandGrandChild);
@@ -260,7 +260,7 @@ public class DistributedLookup extends Thread implements LookupServiceInterface 
 			//Look if exists in the list		
 	       	String resolvedIp = hashTable.get(resolveMessage.uci);
 	       
-	       	if(resolvedIp != null) {
+	       	if(resolvedIp != null){
 				//If it does, sent RESOLVE_ANSWER back
 	       		
 	       		ResolveResponseMessage resolveResponse = new ResolveResponseMessage(resolveMessage.uci, resolvedIp, resolveMessage.fromIp, communication.getLocalIp());
