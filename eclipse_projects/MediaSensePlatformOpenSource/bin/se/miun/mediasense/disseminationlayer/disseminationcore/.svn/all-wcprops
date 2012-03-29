@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/stefor/!svn/ver/384/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore
+END
+SetEventListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/stefor/!svn/ver/370/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore/SetEventListener.java
+END
+GetResponseListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 138
+/svn/stefor/!svn/ver/370/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore/GetResponseListener.java
+END
+GetEventListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/stefor/!svn/ver/370/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore/GetEventListener.java
+END
+DisseminationCore.java
+K 25
+svn:wc:ra_dav:version-url
+V 136
+/svn/stefor/!svn/ver/384/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore/DisseminationCore.java
+END
+ResolveResponseListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/svn/stefor/!svn/ver/370/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer/disseminationcore/ResolveResponseListener.java
+END
