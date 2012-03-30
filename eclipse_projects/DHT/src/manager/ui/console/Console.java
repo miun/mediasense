@@ -5,8 +5,10 @@ import java.io.InputStreamReader;
 
 import manager.Communication;
 import manager.Manager;
+import manager.Message;
+import manager.listener.NodeMessageListener;
 
-public class Console {
+public class Console implements NodeMessageListener {
 	private Manager manager;
 	private Communication com;
 	
@@ -49,7 +51,7 @@ public class Console {
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
 					
 				}
-				else if(cmd.cmd.toLowerCase().equals("exit")) {
+				/*else if(cmd.cmd.toLowerCase().equals("exit")) {
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("exit")) {
@@ -57,16 +59,22 @@ public class Console {
 				}
 				else if(cmd.cmd.toLowerCase().equals("exit")) {
 					
-				}
+				}*/
 			}
 		}
 	}
 	
 	private Command extractCmd(String str) {
 		return null;
+		//TODO extract cmd...
 	}
 	
 	public void notifyExit() {
 		//TODO try to exit the loop and exit application
+	}
+
+	@Override
+	public void OnNodeMessage(Message msg) {
+		System.out.println(msg.toString());
 	}
 }

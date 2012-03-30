@@ -33,11 +33,14 @@ public final class Manager {
 		
 		//Create communication object
 		communication = new Communication();
-		
+
 		//Create UI classes
 		console = new Console(this.getInstance());
 		gui = new GUI(this.getInstance());
 
+		//Add listener
+		communication.addNodeMessageListener(console);
+		
 		console.run();
 		System.out.println("Good bye!");
 	}

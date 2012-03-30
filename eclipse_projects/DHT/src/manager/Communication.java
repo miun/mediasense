@@ -2,6 +2,8 @@ package manager;
 
 import java.util.HashMap;
 
+import manager.listener.NodeMessageListener;
+
 public class Communication {
 	private HashMap<String,LookupServiceInterface> clients;
 	
@@ -30,5 +32,11 @@ public class Communication {
 		receiver = clients.get(m.toIp);
 		if(receiver!=null)
 			receiver.handleMessage(m);
+	}
+	
+	//Add listener for node messages
+	//TODO parameter for message filtering ?!?!!?!?
+	public void addNodeMessageListener(NodeMessageListener listener) {
+		
 	}
 }
