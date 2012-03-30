@@ -26,5 +26,9 @@ public abstract class Message {
 	public int type = Message.UNKNOWN;
 	public String fromIp = "";
 	public String toIp = "";
-
+	
+	public String toString() {
+		//Return message info
+		return "MSG: " + type + " - " + fromIp + " - " + toIp; 
+	}
 }
