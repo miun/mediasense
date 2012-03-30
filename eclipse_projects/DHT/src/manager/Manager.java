@@ -2,16 +2,15 @@ package manager;
 
 
 public class Manager {
+	Communication communication;
 	
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		new Manager();
 	}
 	
 	Manager() {
+		//Create communication object
+		communication = new Communication();
 		
 	}
 }
