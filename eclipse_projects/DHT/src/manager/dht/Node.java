@@ -1,5 +1,7 @@
 package manager.dht;
 
-public class Node {
+import manager.Communication;
 
+public class Node {
+	private Communication communication;
 }

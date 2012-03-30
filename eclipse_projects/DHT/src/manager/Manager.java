@@ -1,7 +1,8 @@
 package manager;
 
-public class Manager {
 
+public class Manager {
+	
 	/**
 	 * @param args
 	 */
