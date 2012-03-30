@@ -16,13 +16,14 @@ public class Console {
 		com = manager.getCommunication();
 		
 		//Start thread
-		consoleRunnable = new ConsoleRunnable();
+		consoleRunnable = new ConsoleRunnable(manager);
 		consoleThread = new Thread(consoleRunnable);
 		consoleThread.start();
 	}
 	
 	public void stop() {
 		try {
+			//Notify and wait for stop
 			consoleRunnable.notifyStop();
 			consoleThread.wait();
 		}
