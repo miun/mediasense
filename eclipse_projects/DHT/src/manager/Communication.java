@@ -13,7 +13,7 @@ public class Communication {
 		if(!clients.containsKey(address)) {
 			clients.put(address, client);
 			return true;
-		}else 
+		} else 
 			return false;
 	}
 	

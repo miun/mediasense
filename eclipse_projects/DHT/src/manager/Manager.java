@@ -1,9 +1,7 @@
 package manager;
 
-import manager.dht.DistributedLookup;
-import manager.dht.Node;
-import manager.ui.Console;
 import manager.ui.GUI;
+import manager.ui.console.Console;
 
 
 public final class Manager {
@@ -16,9 +14,6 @@ public final class Manager {
 	Console console;
 	GUI gui;
 	
-	//DHT instance
-	DistributedLookup dht;
-	
 	public static void main(String[] args) {
 		instance = new Manager();
 	}
@@ -27,8 +22,15 @@ public final class Manager {
 		return instance;
 	}
 	
+	public Communication getCommunication() {
+		return communication;
+	}
+	
 	//Singleton class
 	private Manager() {
+		//Set own instance
+		instance = this;
+		
 		//Create communication object
 		communication = new Communication();
 		
@@ -36,12 +38,14 @@ public final class Manager {
 		console = new Console(this.getInstance());
 		gui = new GUI(this.getInstance());
 		
-		//Create DHT instance
-		dht = new DistributedLookup();
+		try {
+			Thread.sleep(5000);
+		}
+		catch(Exception e) {
+			
+		}
 		
-	}
-	
-	public Node addNode() {
-		return null;
+		//Stop user interfaces
+		console.stop();
 	}
 }
