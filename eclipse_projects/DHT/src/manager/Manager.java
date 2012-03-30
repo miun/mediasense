@@ -21,6 +21,7 @@ public final class Manager {
 	
 	public static void main(String[] args) {
 		instance = new Manager();
+		new GUI(instance);
 	}
 	
 	public Manager getInstance() {
@@ -35,9 +36,17 @@ public final class Manager {
 		//Create UI classes
 		console = new Console(this.getInstance());
 		gui = new GUI(this.getInstance());
-		
+		while(true){
+			System.out.println("test");
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		//Create DHT instance
-		dht = new DistributedLookup();
+		//dht = new DistributedLookup();
 		
 	}
 	
