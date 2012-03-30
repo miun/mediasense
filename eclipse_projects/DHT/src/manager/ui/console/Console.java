@@ -26,6 +26,7 @@ public class Console implements NodeMessageListener {
 		while(true) {
 			//Read line
 			try {
+				System.out.print("# ");
 				in = reader.readLine();
 			}
 			catch (Exception e) {
@@ -33,17 +34,17 @@ public class Console implements NodeMessageListener {
 				break;
 			}
 			
+			//Get line
+			cmd = extractCmd(in);
+			
 			//Analyse input
-			if((cmd = extractCmd(in)) == null) {
-				System.out.println("Invalid command!");
-			}
-			else {
+			try {
 				if(cmd.cmd.toLowerCase().equals("exit")) {
 					//Exit
 					break;
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_add")) {
-					
+					System.out.println("node add");
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_del")) {
 					
@@ -51,22 +52,39 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
 					
 				}
-				/*else if(cmd.cmd.toLowerCase().equals("exit")) {
-					
+				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
+					//Add node to watcher
+					if(cmd.param.length != 1) throw new InvalidParamAmountException();
+					com.addNodeMessageListener(this);
 				}
 				else if(cmd.cmd.toLowerCase().equals("exit")) {
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("exit")) {
 					
-				}*/
+				}
+				else if(!cmd.cmd.equals("")) { 
+					System.out.println("Invalid command!");
+				}
+			} catch (InvalidParamAmountException e) {
+				//Show error msg
+				System.out.println("Invalid amount of parameters!");
 			}
 		}
 	}
 	
 	private Command extractCmd(String str) {
-		return null;
-		//TODO extract cmd...
+		//Split cmd from params
+		String[] line =  str.split(" ",2);
+		String cmd = line [0];
+		
+		if (line.length<2)
+			return new Command(cmd,null);
+
+		//Split the params
+		String[] param = line[1].split(",");
+		return new Command(cmd,param);
+		
 	}
 	
 	public void notifyExit() {
