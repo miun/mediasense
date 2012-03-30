@@ -6,7 +6,6 @@ import manager.ui.console.Console;
 
 public final class Manager {
 	private static Manager instance;
-	private boolean bRun = true;
 	
 	//Class for handling nodes at let them communicate with each other
 	Communication communication;
@@ -35,37 +34,20 @@ public final class Manager {
 		
 		//Create communication object
 		communication = new Communication();
-		
+
 		//Create UI classes
 		console = new Console(this.getInstance());
 		gui = new GUI(this.getInstance());
-		
-		try {
-			Thread.sleep(5000);
-		}
-		catch(Exception e) {
-			
-		}
 
-		stopManager();
+		//Add listener
+		communication.addNodeMessageListener(console);
 		
-		while(bRun) {
-			try {
-				Thread.sleep(1000);
-			}
-			catch (Exception e) {
-				
-			}
-		}
-
+		console.run();
 		System.out.println("Good bye!");
 	}
 	
 	public void stopManager() {
 		//Stop everything
-		console.stop();
-		
-		//Finally stop ourselves
-		bRun = false;
+		console.notifyExit();
 	}
 }
