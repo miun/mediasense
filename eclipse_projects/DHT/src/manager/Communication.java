@@ -1,10 +1,8 @@
 package manager;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import manager.listener.NodeMessageListener;
 
 /**
  * The communication simulates the communication layer between the nodes. To test our implementation of the DHT on its own this class
@@ -12,13 +10,30 @@ import manager.listener.NodeMessageListener;
  * @author florianrueter
  *
  */
-public class Communication implements CommunicationInterface{
-	private List<NodeMessageListener> nodemessagelisteners;
+public class Communication extends Thread implements CommunicationInterface{
 	private Network network;
+	private LookupServiceInterface node = null;
+	private BlockingQueue<Message> queue;
+	private String networkAddress;
 	
-	public Communication(Network network, List<NodeMessageListener> nodemessagelistener) {
+	public Communication(Network network,String networkAddress) {
 		this.network = network;
-		nodemessagelisteners = nodemessagelistener;
+		this.networkAddress = networkAddress;
+		
+		//Create message queue
+		queue = new LinkedBlockingQueue<Message>();
+	}
+	
+	public void setLookServiceInterface(LookupServiceInterface node) {
+		//Set node to manage
+		this.node = node;
+	}
+	
+	public void start(LookupServiceInterface node) {
+		//Start
+		if(node == null) return;
+		this.node = node;
+		this.start();
 	}
 	
 	/**
@@ -28,20 +43,33 @@ public class Communication implements CommunicationInterface{
 	public void sendMessage(Message m) {
 		//Get the receiver of the message
 		network.sendMessage(m);
-		//Inform all NodeMessageListeners about the message
-		//TODO maybe only if receiver is reachable? Or sign the message?!
-		for(NodeMessageListener nml: nodemessagelisteners)
-			nml.OnNodeMessage(m);
 	}
 	
-	//Add listener for node messages
-	//TODO parameter for message filtering ?!?!!?!?
-	public void addNodeMessageListener(NodeMessageListener listener) {
-		nodemessagelisteners.add(listener);
+	public void handleMessage(Message msg) {
+		//Add message to queue
+		queue.add(msg);
 	}
 	
-	//Remove listener for node messages
-	public void removeNodeMessageListener(NodeMessageListener listener) {
-		nodemessagelisteners.remove(listener);
+	@Override
+	public void run() {
+		Message msg;
+		
+		while(true) {
+			try {
+				//Receive message and forward them
+				msg = queue.take();
+				node.handleMessage(msg);
+			}
+			catch (InterruptedException e) {
+				//Aborted!! => delete queue and abort thread
+				queue.clear();
+				break;
+			}
+		}
+	}
+
+	@Override
+	public String getLocalIp() {
+		return networkAddress;
 	}
 }
