@@ -10,7 +10,7 @@ public class SHA1Generator {
 	 * @param data sha1 key in byte array
 	 * @return sha1 key as hex string
 	 */
-	private static String convertToHex(byte[] data) { 
+	public static String convertToHex(byte[] data) { 
         StringBuffer buf = new StringBuffer();
         for (int i = 0; i < data.length; i++) { 
             int halfbyte = (data[i] >>> 4) & 0x0F;
@@ -33,21 +33,27 @@ public class SHA1Generator {
 	 * @throws NoSuchAlgorithmException
 	 * @throws UnsupportedEncodingException
 	 */
-    public static String SHA1(String text) { 
+    public static byte[] SHA1(String text) { 
+    	try {
+    		return SHA1(text.getBytes("iso-8859-1"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+    }
+    
+    public static byte[] SHA1(byte[] data) {
 	    MessageDigest md;
+
 	    try {
 			md = MessageDigest.getInstance("SHA-1");
 			byte[] sha1hash = new byte[40];
-			md.update(text.getBytes("iso-8859-1"), 0, text.length());
+			md.update(data);
 		    sha1hash = md.digest();
-		    return convertToHex(sha1hash);
+		    return sha1hash;
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		    return null;
 		}
-	    return null;
     }
 }

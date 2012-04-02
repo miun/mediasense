@@ -10,10 +10,8 @@ public interface CommunicationInterface {
 	
 	public void sendMessage(Message message);
 	
-	/*unneccesary fo our test environment
 	public String getLocalIp();
 	
-	public void shutdown();
+	/*public void shutdown();
 	*/
-
 }

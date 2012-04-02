@@ -1,6 +1,5 @@
 package manager;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import manager.dht.Node;
@@ -11,19 +10,19 @@ import manager.ui.console.Console;
 
 public final class Manager {
 	private static Manager instance;
-	private static int addressCounter = 0;
 	
 	//Classes for handling nodes at let them communicate with each other
-	private List<Communication> communications;
-	private List<NodeMessageListener> nodeMessageListeners; //This listeners listen to all messages
 	private Network network;
 	
 	//UI classes
 	private Console console;
 	private GUI gui;
 	
+	//To create nodes in ascending order
+	private int newNodeCounter = 0;
+	
 	public static void main(String[] args) {
-		instance = new Manager();
+		new Manager();
 	}
 	
 	public Manager getInstance() {
@@ -32,20 +31,18 @@ public final class Manager {
 	
 	//Singleton class
 	private Manager() {
-		//Set own instance
+		//Set own class as instance
 		instance = this;
 		
 		//Create objects for node communication
-		communications = new ArrayList<Communication>();
-		nodeMessageListeners = new ArrayList<NodeMessageListener>();
-		network = new Network();
+		network = Network.getInstance();
 
 		//Create UI classes
 		console = new Console(this.getInstance());
-		gui = new GUI(this.getInstance());
+		//gui = new GUI(this.getInstance());
 
 		//Add listener that is listening to all messages
-		this.addNodeMessageListener(console);
+		network.addNodeMessageListener(console);
 		
 		console.run();
 		System.out.println("Good bye!");
@@ -56,27 +53,28 @@ public final class Manager {
 		console.notifyExit();
 	}
 	
-	public void addNode() {
-		//Create a communicatoin object for the node (With all listeners)
-		Communication nodesCommunicator = new Communication(network, nodeMessageListeners);
-		//Make a node Object
-		Node joining = new Node(String.valueOf(addressCounter), nodesCommunicator);
-		//Add node with the next address
-		network.addNode(String.valueOf(addressCounter), joining);
-		//Not very good but simple and good enough for the beginning
-		//Join the network
-		if(addressCounter>0)
-			joining.joinNetwork("0");
-		addressCounter++;
+	public Node createNode(String networkAddress) {
+		return null;
 	}
 	
-	/**
-	 * Add a listener that is listening to all me
-	 * @param listener
-	 */
-	public void addNodeMessageListener(NodeMessageListener listener) {
-		this.nodeMessageListeners.add(listener);
-		for(Communication com: communications)
-			com.addNodeMessageListener(listener);
+	public void addNode() {
+		//No bootstrapping!
+		addNode(null);
+	}
+	
+	public void addNode(String bootstrapAddress) {
+		Communication comm;
+		LookupServiceInterface node;
+		
+		//Add node with communication interface adopted from MediaSense
+		comm = new Communication(network,new Integer(newNodeCounter++).toString());
+		node = new Node(comm,bootstrapAddress);
+
+		//Give control to the network
+		network.addNode(comm);
+		
+		//Start
+		//TODO allow to create nodes with delayed starting capability
+		comm.start(node);
 	}
 }
