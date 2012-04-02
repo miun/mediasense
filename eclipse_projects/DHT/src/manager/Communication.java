@@ -58,6 +58,8 @@ public class Communication extends Thread implements CommunicationInterface{
 			try {
 				//Receive message and forward them
 				msg = queue.take();
+				//Simulate the time that the message takes over the network
+				Thread.sleep(1000);
 				node.handleMessage(msg);
 			}
 			catch (InterruptedException e) {
