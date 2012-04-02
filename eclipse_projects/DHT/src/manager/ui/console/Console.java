@@ -10,12 +10,12 @@ import manager.listener.NodeMessageListener;
 
 public class Console implements NodeMessageListener {
 	private Manager manager;
-	private Communication com;
+	//private Communication communication;
 	
 	public Console(Manager manager) {
 		//Set objects
 		this.manager = manager;
-		com = manager.getCommunication();
+		//communication = manager.getCommunication();
 	}
 		
 	public void run() {
@@ -55,7 +55,7 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
 					if(cmd.param.length != 1) throw new InvalidParamAmountException();
-					com.addNodeMessageListener(this);
+					//communication.addNodeMessageListener(this);
 				}
 				else if(cmd.cmd.toLowerCase().equals("exit")) {
 					
