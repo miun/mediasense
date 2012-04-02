@@ -13,24 +13,12 @@ import manager.listener.NodeMessageListener;
  *
  */
 public class Communication implements CommunicationInterface{
-	private HashMap<String,LookupServiceInterface> clients;
 	private List<NodeMessageListener> nodemessagelisteners;
+	private Network network;
 	
-	public Communication() {
-		clients = new HashMap<String,LookupServiceInterface>();
-		nodemessagelisteners = new ArrayList<NodeMessageListener>();
-	}
-	
-	public boolean addNode(String address, LookupServiceInterface node) {
-		if(!clients.containsKey(address)) {
-			clients.put(address, node);
-			return true;
-		} else 
-			return false;
-	}
-	
-	public void removeNode(String address) {
-		clients.remove(address);
+	public Communication(Network network, List<NodeMessageListener> nodemessagelistener) {
+		this.network = network;
+		nodemessagelisteners = nodemessagelistener;
 	}
 	
 	/**
@@ -39,11 +27,7 @@ public class Communication implements CommunicationInterface{
 	 */
 	public void sendMessage(Message m) {
 		//Get the receiver of the message
-		LookupServiceInterface receiver = null;
-		receiver = clients.get(m.toIp);
-		//Send the message to the receiver
-		if(receiver!=null)
-			receiver.handleMessage(m);
+		network.sendMessage(m);
 		//Inform all NodeMessageListeners about the message
 		//TODO maybe only if receiver is reachable? Or sign the message?!
 		for(NodeMessageListener nml: nodemessagelisteners)
