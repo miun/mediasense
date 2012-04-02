@@ -1,6 +1,7 @@
 package manager;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
+	public static Integer msg_delay = 0; 
 	
 	//Listener lists
 	private List<NodeMessageListener> nodeMessageListener;
@@ -41,7 +43,7 @@ public class Network {
 		
 		//Inform all NodeMessageListeners about the message
 		for(NodeMessageListener nml: nodeMessageListener) {
-			nml.OnNodeMessage(m);
+			nml.OnNodeMessage(new Date(),m);
 		}
 	}
 
@@ -60,5 +62,22 @@ public class Network {
 	
 	public void addNodeMessageListener(NodeMessageListener listener) {
 		nodeMessageListener.add(listener);
+	}
+	
+	public boolean setMessageDelay(int delay,String networkAddress) {
+		if(networkAddress == null) {
+			msg_delay = delay;
+			return true;
+		}
+		else {
+			//Find node and set delay
+			Communication comm = clients.get(networkAddress);
+			
+			if(comm != null) {
+				comm.setMessageDelay(delay);
+				return true;
+			}
+			else return false;
+		}
 	}
 }
