@@ -15,6 +15,7 @@ public class Communication extends Thread implements CommunicationInterface{
 	private LookupServiceInterface node = null;
 	private BlockingQueue<Message> queue;
 	private String networkAddress;
+	private Integer delay = 0;
 	
 	public Communication(Network network,String networkAddress) {
 		this.network = network;
@@ -59,7 +60,8 @@ public class Communication extends Thread implements CommunicationInterface{
 				//Receive message and forward them
 				msg = queue.take();
 				//Simulate the time that the message takes over the network
-				Thread.sleep(1000);
+				Integer totalDelay = Network.msg_delay + delay;
+				if(totalDelay>0) Thread.sleep(totalDelay);
 				node.handleMessage(msg);
 			}
 			catch (InterruptedException e) {
@@ -69,9 +71,13 @@ public class Communication extends Thread implements CommunicationInterface{
 			}
 		}
 	}
+	
+	public void setMessageDelay(Integer delay) {
+		this.delay = delay;
+	}
 
 	@Override
 	public String getLocalIp() {
 		return networkAddress;
-	}
+	}	
 }

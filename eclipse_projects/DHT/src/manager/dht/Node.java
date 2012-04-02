@@ -1,6 +1,10 @@
 package manager.dht;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Random;
+import java.util.TreeSet;
 
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
@@ -8,12 +12,10 @@ import manager.Message;
 
 public class Node extends Thread implements LookupServiceInterface {
 	private CommunicationInterface communication;
-	private byte[] nodeID;
+	private FingerEntry identity;
 	
 	private String bootstrapAddress;
-	private Node finger;
-
-	private boolean connected = false;
+	private TreeSet<FingerEntry> finger;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -21,11 +23,21 @@ public class Node extends Thread implements LookupServiceInterface {
 		//TODO there might be a better way for the generation of a random SHA key
 		//nodeID = SHA1Generator.SHA1(String.valueOf(new Random().nextInt()));
 		//generate a Random byte Array as ID later SHA1Key ?!
-		nodeID = new byte[1];
-		new Random().nextBytes(nodeID);
+		byte[] rb = new byte[NodeID.ADDRESS_SIZE];
+		new Random().nextBytes(rb);
+		identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
+		
+		//Initialize finger table
+		finger = new TreeSet<FingerEntry>();
 		
 		//Save bootstrap address
-		this.bootstrapAddress = bootstrapAddress;
+		if(bootstrapAddress == null) {
+			//No bootstrap means, WE are the DHT
+			finger.add(identity);
+		}
+		else {
+			this.bootstrapAddress = bootstrapAddress;
+		}
 		
 		//Start thread
 		this.start();
@@ -54,30 +66,38 @@ public class Node extends Thread implements LookupServiceInterface {
 		switch (message.type) {
 			//react on a Join message
 			case Message.JOIN:
-				//answer with Join response;
-				Message answer = new JoinResponseMessage(communication.getLocalIp(), message.fromIp);
+				JoinMessage join_msg = (JoinMessage) message;
+				FingerEntry successor = findSuccessor(new FingerEntry(new NodeID(join_msg.key.getID()),message.fromIp));
+				Message answer;
+				
+				//Forward or answer?
+				if(successor.equals(identity)) {
+					//Its us => reply on JOIN
+					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,successor.getNodeID());
+				}
+				else {
+					//Forward to successor
+					message.toIp = successor.getNetworkAddress();
+					answer = message;
+				}
+				
+				//Send message
 				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
 				//Yeeha
-				connected = true;
 				break;
-			default: 
+			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
 		
 	}
 	
-	public void joinNetwork(String contactAddress) {
-		JoinMessage jm = new JoinMessage(communication.getLocalIp(), contactAddress, nodeID);
-		communication.sendMessage(jm);
-	}
-	
 	@Override
 	public void run() {
-		while(!connected) {
+		while(finger.isEmpty()) {
 			//Try to connect to DHT#
-			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,nodeID));
+			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,identity.getNodeID()));
 			
 			try {
 				//Wait for connection and try again
@@ -100,5 +120,32 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			}
 		}*/
+	}
+	
+	private FingerEntry findSuccessor(FingerEntry fingerEntry) {
+		//in the first place we are the successor
+		FingerEntry successor;// = identity;
+		NodeID dist,current_dist;
+		FingerEntry f1,f2;
+		
+		f1 = finger.higher(identity);
+		f2 = finger.higher(fingerEntry);
+		
+		
+		
+/*		for(FingerEntry current: finger) {
+			current_dist = fingerEntry.getNodeID().distanceTo(current); 
+			if(current_dist.compareTo(dist) > ) { 
+				//New nearer finger found
+				dist = current_dist;
+				successor = current;
+			}
+		}
+		
+		successor = finger.higher(fingerEntry);
+		if(fingerEntry)*/
+		
+		
+		return null;
 	}
 }

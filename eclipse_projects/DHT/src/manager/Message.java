@@ -29,6 +29,6 @@ public abstract class Message {
 	
 	public String toString() {
 		//Return message info
-		return "MSG: " + type + " - " + fromIp + " - " + toIp; 
+		return "MSG: type:{" + type + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
 	}
 }

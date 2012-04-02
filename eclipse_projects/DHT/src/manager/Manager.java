@@ -77,4 +77,9 @@ public final class Manager {
 		//TODO allow to create nodes with delayed starting capability
 		comm.start(node);
 	}
+	
+	public boolean setMessageDelay(int delay,String networkAddress) {
+		//Forward to network
+		return network.setMessageDelay(delay, networkAddress);
+	}
 }
