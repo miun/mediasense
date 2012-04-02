@@ -44,7 +44,7 @@ public class Console implements NodeMessageListener {
 					break;
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_add")) {
-					System.out.println("node add");
+					manager.addNode();
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_del")) {
 					

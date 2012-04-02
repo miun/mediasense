@@ -49,5 +49,5 @@ public class SHA1Generator {
 			e.printStackTrace();
 		}
 	    return null;
-    } 
+    }
 }

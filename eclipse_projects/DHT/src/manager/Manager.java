@@ -1,18 +1,13 @@
 package manager;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Random;
-
 import manager.dht.Node;
-import manager.dht.SHA1Generator;
 import manager.ui.GUI;
 import manager.ui.console.Console;
 
 
 public final class Manager {
 	private static Manager instance;
-	private static int adressCounter = 0;
+	private static int addressCounter = 0;
 	
 	//Class for handling nodes at let them communicate with each other
 	private Communication communication;
@@ -58,7 +53,14 @@ public final class Manager {
 	}
 	
 	public void addNode() {
-		//Add node with the next address 
-		communication.addNode(String.valueOf(adressCounter++), new Node());
+		//Make a node Object
+		Node joining = new Node(String.valueOf(addressCounter), communication);
+		//Add node with the next address
+		communication.addNode(String.valueOf(addressCounter), joining);
+		//Not very good but simple and good enough for the beginning
+		//Join the network
+		if(addressCounter>0)
+			joining.joinNetwork("0");
+		addressCounter++;
 	}
 }

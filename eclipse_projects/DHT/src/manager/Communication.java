@@ -12,7 +12,7 @@ import manager.listener.NodeMessageListener;
  * @author florianrueter
  *
  */
-public class Communication {
+public class Communication implements CommunicationInterface{
 	private HashMap<String,LookupServiceInterface> clients;
 	private List<NodeMessageListener> nodemessagelisteners;
 	
