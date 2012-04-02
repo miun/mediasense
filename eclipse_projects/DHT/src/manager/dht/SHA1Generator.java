@@ -33,12 +33,21 @@ public class SHA1Generator {
 	 * @throws NoSuchAlgorithmException
 	 * @throws UnsupportedEncodingException
 	 */
-    public static String SHA1(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException  { 
+    public static String SHA1(String text) { 
 	    MessageDigest md;
-	    md = MessageDigest.getInstance("SHA-1");
-	    byte[] sha1hash = new byte[40];
-	    md.update(text.getBytes("iso-8859-1"), 0, text.length());
-	    sha1hash = md.digest();
-	    return convertToHex(sha1hash);
+	    try {
+			md = MessageDigest.getInstance("SHA-1");
+			byte[] sha1hash = new byte[40];
+			md.update(text.getBytes("iso-8859-1"), 0, text.length());
+		    sha1hash = md.digest();
+		    return convertToHex(sha1hash);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    return null;
     } 
 }

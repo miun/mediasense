@@ -1,22 +1,28 @@
 package manager;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Random;
+
+import manager.dht.Node;
+import manager.dht.SHA1Generator;
 import manager.ui.GUI;
 import manager.ui.console.Console;
 
 
 public final class Manager {
 	private static Manager instance;
+	private static int adressCounter = 0;
 	
 	//Class for handling nodes at let them communicate with each other
-	Communication communication;
+	private Communication communication;
 	
 	//UI classes
-	Console console;
-	GUI gui;
+	private Console console;
+	private GUI gui;
 	
 	public static void main(String[] args) {
 		instance = new Manager();
-		new GUI(instance);
 	}
 	
 	public Manager getInstance() {
@@ -49,5 +55,10 @@ public final class Manager {
 	public void stopManager() {
 		//Stop everything
 		console.notifyExit();
+	}
+	
+	public void addNode() {
+		//Add node with the next address 
+		communication.addNode(String.valueOf(adressCounter++), new Node());
 	}
 }
