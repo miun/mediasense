@@ -13,6 +13,6 @@ public class JoinMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return "MSG-JOIN| from:{" + fromIp + "} - to:{" + toIp + "} - key:{" + SHA1Generator.convertToHex(key.getID()) + "}"; 
+		return "MSG-JOIN | from:{" + fromIp + "} - to:{" + toIp + "} - key:{" + SHA1Generator.convertToHex(key.getID()) + "}"; 
 	}
 }

@@ -19,7 +19,7 @@ public abstract class Message {
 	public final static int JOIN_RESPONSE = 12;
 	public final static int KEEPALIVE = 13;
 	
-	public final static int KEYNOTALLOWED = 16;
+	public final static int DUPLICATE_NODE_ID = 16;
 	
 	public final static int KEEPALIVE_RESPONSE = 14;
 	public final static int RESOLVE_RESPONSE = 15;

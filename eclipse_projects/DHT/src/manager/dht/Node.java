@@ -22,14 +22,11 @@ public class Node extends Thread implements LookupServiceInterface {
 		//TODO there might be a better way for the generation of a random SHA key
 		//nodeID = SHA1Generator.SHA1(String.valueOf(new Random().nextInt()));
 		//generate a Random byte Array as ID later SHA1Key ?!
-		byte[] rb = new byte[NodeID.ADDRESS_SIZE];
-		new Random().nextBytes(rb);
-		identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
-		
-		//Initialize finger table
-		//Always add ourselves to the finger table
-		finger = new TreeSet<FingerEntry>();
-		finger.add(identity);
+		byte[] hash = new byte[NodeID.ADDRESS_SIZE];
+		new Random().nextBytes(hash);
+
+		//Set identity
+		setIdentity(hash);
 		
 		//Save bootstrap address
 		//No bootstrap means, WE are the beginning of the DHT
@@ -72,20 +69,25 @@ public class Node extends Thread implements LookupServiceInterface {
 				JoinMessage join_msg = (JoinMessage) message;
 				Message answer;
 
-				FingerEntry predecessor = findPredecessorOf(new NodeID(join_msg.key.getID()));
+				FingerEntry predecessor = findPredecessorOf(join_msg.key);
 				FingerEntry successor = getSuccessor();
-				FingerEntry newNode = new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp);
-				//Forbid or answer or forward?
-				if(predecessor.equals(newNode)) {
-					answer = new KeyNotAllowedMessage(identity.getNetworkAddress(), join_msg.fromIp);
-				}
-				else if(predecessor.equals(identity)) {
+				
+				//Forward or answer?
+				if(predecessor.equals(identity)) {
 					//Its us => reply on JOIN
-					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,successor.getNodeID());
+					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,join_msg.key,successor.getNodeID());
 					
-					//Change our successor (Only if it's not us!)
-					if(!successor.equals(identity)) finger.remove(successor);
-					finger.add(newNode);
+					//Check if it exists
+					FingerEntry newNode = new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp);
+					if(finger.contains(newNode)) {
+						//Key not allowed msg
+						answer = new DuplicateNodeId(identity.getNetworkAddress(), join_msg.fromIp);
+					}
+					else {
+						//Change our successor (Only if it's not us!)
+						if(!successor.equals(identity)) finger.remove(successor);
+						finger.add(newNode);
+					}
 				}
 				else {
 					//Forward to successor
@@ -96,15 +98,32 @@ public class Node extends Thread implements LookupServiceInterface {
 				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
-				JoinResponseMessage jrm = (JoinResponseMessage) message;
-				finger.add(new FingerEntry(jrm.getNodeID(), jrm.fromIp));
-				bConnected = true;
-				break;
-			case Message.KEYNOTALLOWED:
-				byte[] rb = new byte[NodeID.ADDRESS_SIZE];
-				new Random().nextBytes(rb);
-				identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
-				break;
+				//Ignore JOIN_RESPONSE message if the node are already connected!
+				if(!bConnected) {
+					JoinResponseMessage jrm = (JoinResponseMessage) message;
+					
+					if(jrm.getKey().equals(identity.getNodeID())) {
+						//
+						finger.add(new FingerEntry(jrm.getNodeID(), jrm.fromIp));
+						bConnected = true;
+					}
+					else {
+						//Ignore this because the key does not match!!!
+						//TODO react on this
+					}
+					
+					break;
+				}
+			case Message.DUPLICATE_NODE_ID:
+				//If the node is not connected allow the change of the identity
+				if(!bConnected) {
+					byte[] hash = new byte[NodeID.ADDRESS_SIZE];
+					new Random().nextBytes(hash);
+					
+					//Create new identity and try again
+					setIdentity(hash);
+					break;
+				}
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
@@ -155,11 +174,21 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	private FingerEntry findPredecessorOf(NodeID nodeID) {
-		FingerEntry predecessor;
+		FingerEntry precessor;
 		
 		//Find predecessor of a node
-		predecessor = finger.lower(new FingerEntry(nodeID,null));
-		if(predecessor == null) predecessor = finger.lower(FingerEntry.MAX_POS_FINGER);
-		return predecessor;
+		precessor = finger.lower(new FingerEntry(nodeID,null));
+		if(precessor == null) precessor = finger.lower(FingerEntry.MAX_POS_FINGER);
+		return precessor;
+	}
+	
+	private void setIdentity(byte[] hash) {
+		//Set identity
+		identity = new FingerEntry(new NodeID(hash),communication.getLocalIp());
+		
+		//(Re-)initialize finger table
+		//Always add ourselves to the finger table
+		finger = new TreeSet<FingerEntry>();
+		finger.add(identity);
 	}
 }

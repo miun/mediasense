@@ -10,7 +10,7 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static Integer msg_delay = 250; 
+	public static Integer msg_delay = 100; 
 	
 	//Listener lists
 	private List<NodeMessageListener> nodeMessageListener;
@@ -135,7 +135,7 @@ public class Network {
 		}
 		else {
 			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentNode.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		return result.toString();
