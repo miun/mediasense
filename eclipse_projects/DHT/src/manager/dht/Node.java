@@ -11,7 +11,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	private byte[] nodeID;
 	
 	private String bootstrapAddress;
-	private Node finger;
+	private Node finger = null;
 
 	private boolean connected = false;
 
@@ -75,7 +75,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	@Override
 	public void run() {
-		while(!connected) {
+		while(finger==null) {
+		//while(!connected) {
 			//Try to connect to DHT#
 			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,nodeID));
 			
