@@ -15,6 +15,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	private FingerEntry identity;
 	
 	private String bootstrapAddress;
+
 	private TreeSet<FingerEntry> finger;
 	private boolean bConnected = false;
 
@@ -86,11 +87,15 @@ public class Node extends Thread implements LookupServiceInterface {
 					answer = message;
 				}
 				
-				//Send message
-				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
-				//Yeeha
+				JoinResponseMessage jrm = (JoinResponseMessage) message;
+				//this.finger = new FingerEntry(jrm.getNodeID(), jrm.fromIp);
+				break;
+			case Message.KEYNOTALLOWED:
+				byte[] rb = new byte[NodeID.ADDRESS_SIZE];
+				new Random().nextBytes(rb);
+				identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
@@ -113,18 +118,22 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			}
 		}
+	}
+	
+	public NodeID getIdentity() {
+		return identity.getNodeID();
+	}
+	
+	public FingerEntry getDirectSuccessor() {
+		FingerEntry successor = null;
 		
-/*		while(true) {
-			//TODO Do what ever... Check TTL
-			try {
-				Thread.sleep(1000);
-			}
-			catch (InterruptedException e) {
-				//Exit requested!
-				//Probably shutdown things
-				break;
-			}
-		}*/
+		successor = finger.higher(identity);
+		
+		if(successor == null) {
+			successor = finger.higher(FingerEntry.MIN_POS_FINGER);
+		}
+		
+		return successor;
 	}
 	
 	private FingerEntry findSuccessor(NodeID nodeID) {

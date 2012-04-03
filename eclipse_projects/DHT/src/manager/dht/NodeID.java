@@ -17,7 +17,7 @@ public class NodeID implements Comparable<NodeID> {
 	}
 	
 	public String toString() {
-		return SHA1Generator.convertToHex(id);
+		return String.valueOf(Integer.parseInt(SHA1Generator.convertToHex(id),16));
 	}
 
 	@Override

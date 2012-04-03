@@ -1,5 +1,6 @@
 package manager;
 
+import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,5 +80,27 @@ public class Network {
 			}
 			else return false;
 		}
+	}
+	
+	public String showNode(String networkAddress) {
+		//forward to the communication
+		Communication comm = clients.get(networkAddress);
+		if(comm == null) {
+			return "There is no node with networkAddress {" + networkAddress + "}";
+		}
+		else {
+			return comm.showNode();
+		}
+	}
+	
+	public String showCircle(String startNode) {
+		//forward to the communication
+		Communication comm = clients.get(startNode);
+		StringBuffer result = new StringBuffer();
+		do {
+			result.append(" --> " + comm.showNode());
+			comm = clients.get(comm.getFingerAddress());
+		}while(!comm.getLocalIp().equals(startNode));
+		return result.append(" --> ").toString();
 	}
 }
