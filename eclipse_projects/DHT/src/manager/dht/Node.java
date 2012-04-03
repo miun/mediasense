@@ -74,17 +74,18 @@ public class Node extends Thread implements LookupServiceInterface {
 
 				FingerEntry predecessor = findPredecessorOf(new NodeID(join_msg.key.getID()));
 				FingerEntry successor = getSuccessor();
-				
-				assert(predecessor == null);
-				
-				//Forward or answer?
-				if(predecessor.equals(identity)) {
+				FingerEntry newNode = new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp);
+				//Forbid or answer or forward?
+				if(predecessor.equals(newNode)) {
+					answer = new KeyNotAllowedMessage(identity.getNetworkAddress(), join_msg.fromIp);
+				}
+				else if(predecessor.equals(identity)) {
 					//Its us => reply on JOIN
 					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,successor.getNodeID());
 					
 					//Change our successor (Only if it's not us!)
 					if(!successor.equals(identity)) finger.remove(successor);
-					finger.add(new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp));
+					finger.add(newNode);
 				}
 				else {
 					//Forward to successor
@@ -154,11 +155,11 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	private FingerEntry findPredecessorOf(NodeID nodeID) {
-		FingerEntry precessor;
+		FingerEntry predecessor;
 		
 		//Find predecessor of a node
-		precessor = finger.lower(new FingerEntry(nodeID,null));
-		if(precessor == null) precessor = finger.lower(FingerEntry.MAX_POS_FINGER);
-		return precessor;
+		predecessor = finger.lower(new FingerEntry(nodeID,null));
+		if(predecessor == null) predecessor = finger.lower(FingerEntry.MAX_POS_FINGER);
+		return predecessor;
 	}
 }
