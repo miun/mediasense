@@ -18,4 +18,8 @@ public class JoinResponseMessage extends Message {
 		//Return message info
 		return "MSG-JOIN-RESPONSE | from:{" + fromIp + "} - to:{" + toIp + "} - key:{" + SHA1Generator.convertToHex(successor.getID()) + "}"; 
 	}
+	
+	public NodeID getNodeID() {
+		return this.successor;
+	}
 }

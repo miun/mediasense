@@ -82,4 +82,10 @@ public final class Manager {
 		//Forward to network
 		return network.setMessageDelay(delay, networkAddress);
 	}
+	
+	public String showNode(String NetworkAddress) {
+		//Forward to network
+		return network.showNode();
+		
+	}
 }

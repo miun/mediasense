@@ -15,7 +15,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	private FingerEntry identity;
 	
 	private String bootstrapAddress;
-	private TreeSet<FingerEntry> finger;
+	private FingerEntry finger;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -28,12 +28,13 @@ public class Node extends Thread implements LookupServiceInterface {
 		identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
 		
 		//Initialize finger table
-		finger = new TreeSet<FingerEntry>();
+		//finger = new TreeSet<FingerEntry>();
 		
 		//Save bootstrap address
 		if(bootstrapAddress == null) {
 			//No bootstrap means, WE are the DHT
-			finger.add(identity);
+			//finger.add(identity);
+			finger = identity;
 		}
 		else {
 			this.bootstrapAddress = bootstrapAddress;
@@ -66,6 +67,22 @@ public class Node extends Thread implements LookupServiceInterface {
 		switch (message.type) {
 			//react on a Join message
 			case Message.JOIN:
+				JoinMessage jm = (JoinMessage) message;
+				Message answer=null;
+				if(finger.equals(identity) || (jm.key.compareTo(finger.getNodeID())<0)){
+					//extra case for startphase - If Iam my only finger
+					answer = new JoinResponseMessage(finger.getNetworkAddress(), jm.fromIp, finger.getNodeID());
+					this.finger = new FingerEntry(jm.key, jm.fromIp);
+				}
+				else if(jm.key.compareTo(finger.getNodeID())>0) {
+					//if the new node is bigger than my finger
+					jm.toIp = finger.getNetworkAddress();
+					answer = jm;
+				} else {
+					answer = new KeyNotAllowedMessage(identity.getNetworkAddress(), jm.fromIp, jm.key);
+				}
+				
+				/*
 				JoinMessage join_msg = (JoinMessage) message;
 				FingerEntry successor = findSuccessor(new FingerEntry(new NodeID(join_msg.key.getID()),message.fromIp));
 				Message answer;
@@ -80,12 +97,18 @@ public class Node extends Thread implements LookupServiceInterface {
 					message.toIp = successor.getNetworkAddress();
 					answer = message;
 				}
-				
+				*/
 				//Send message
 				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
-				//Yeeha
+				JoinResponseMessage jrm = (JoinResponseMessage) message;
+				this.finger = new FingerEntry(jrm.getNodeID(), jrm.fromIp);
+				break;
+			case Message.KEYNOTALLOWED:
+				byte[] rb = new byte[NodeID.ADDRESS_SIZE];
+				new Random().nextBytes(rb);
+				identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
@@ -95,7 +118,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	@Override
 	public void run() {
-		while(finger.isEmpty()) {
+		//while(finger.isEmpty()) {
+		while(finger == null) {
 			//Try to connect to DHT#
 			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,identity.getNodeID()));
 			
@@ -121,7 +145,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}*/
 	}
-	
+	/*
 	private FingerEntry findSuccessor(FingerEntry fingerEntry) {
 		//in the first place we are the successor
 		FingerEntry successor;// = identity;
@@ -144,8 +168,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		successor = finger.higher(fingerEntry);
 		if(fingerEntry)*/
-		
+		/*
 		
 		return null;
-	}
+	}*/
 }

@@ -55,7 +55,8 @@ public class Console implements NodeMessageListener {
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
-					
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					System.out.println(manager.showNode(cmd.param[0]));
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
