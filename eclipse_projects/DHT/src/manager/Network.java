@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import manager.dht.NodeID;
 import manager.listener.NodeMessageListener;
 
 public class Network {
@@ -106,11 +107,13 @@ public class Network {
 	
 	public String showCircle(String startNodeName) {
 		HashSet<Communication> alreadyShown = new HashSet<Communication>();
-		Communication startNode = clients.get(startNodeName);
-		Communication currentNode = startNode;
+		Communication startClient = clients.get(startNodeName);
+		Communication currentClient = startClient;
+		NodeID start = currentClient.getNode();
+		NodeID end = start;
 
 		//Test if node exists
-		if(startNode == null) {
+		if(startClient == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
 		
@@ -119,12 +122,29 @@ public class Network {
 
 		//Loop through the circle
 		do {
-			result.append(currentNode.showNodeInfo()+"\n");
-			alreadyShown.add(currentNode);
-			currentNode = clients.get(currentNode.getSuccessorAddress());
-		} while(!alreadyShown.contains(currentNode));
+			result.append(currentClient.showNodeInfo()+"\n");
+			alreadyShown.add(currentClient);
+			currentClient = clients.get(currentClient.getSuccessorAddress());
+			
+			//Test for loop intersections
+			if(start.compareTo(end) == 1) {
+				if(currentClient.getNode().compareTo(start) < 1 || currentClient.getNode().compareTo(end) > -1) {
+					//Intersection detected!!
+					result.append(">>> Intersection detected <<<");
+				}
+			}
+			else {
+				if(currentClient.getNode().compareTo(start) > -1 && currentClient.getNode().compareTo(end) < 1) {
+					//Intersection detected!!
+					result.append(">>> Intersection detected <<<");
+				}
+			}
+			
+			//Shift end forward
+			end = currentClient.getNode();
+		} while(!alreadyShown.contains(currentClient));
 		
-		if(currentNode == startNode) {
+		if(currentClient == startClient) {
 			//Circle does not contain side-loop
 			if(alreadyShown.size() < clients.size()) {
 				result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
@@ -135,7 +155,7 @@ public class Network {
 		}
 		else {
 			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentNode.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		return result.toString();
