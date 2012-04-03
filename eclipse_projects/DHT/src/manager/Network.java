@@ -1,9 +1,9 @@
 package manager;
 
-import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import manager.listener.NodeMessageListener;
@@ -104,21 +104,39 @@ public class Network {
 		}
 	}
 	
-	public String showCircle(String startNode) {
-		//forward to the communication
-		ArrayList<Communication> alreadyShown = new ArrayList<Communication>();
-		Communication start = clients.get(startNode);
-		Communication comm = start;
+	public String showCircle(String startNodeName) {
+		HashSet<Communication> alreadyShown = new HashSet<Communication>();
+		Communication startNode = clients.get(startNodeName);
+		Communication currentNode = startNode;
+
+		//Test if node exists
+		if(startNode == null) {
+			return "Cannot find node " + startNodeName + "\n"; 
+		}
+		
+		//Header
 		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
+
+		//Loop through the circle
 		do {
-			result.append(comm.showNodeInfo()+"\n");
-			alreadyShown.add(comm);
-			comm = clients.get(comm.getFingerAddress());
-		}while(!alreadyShown.contains(comm));
-		if(!alreadyShown.contains(start)) result.append("Failure only " + alreadyShown.size() + "Nodes in the DHT");
-		result.append("----------------------------------\n" +
-				"dht contains: " + alreadyShown.size() + "\n" +
-				"network contains: " + clients.size());
+			result.append(currentNode.showNodeInfo()+"\n");
+			alreadyShown.add(currentNode);
+			currentNode = clients.get(currentNode.getSuccessorAddress());
+		} while(!alreadyShown.contains(currentNode));
+		
+		if(currentNode == startNode) {
+			//Circle does not contain side-loop
+			if(alreadyShown.size() < clients.size()) {
+				result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
+			}
+			else {
+				result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
+			}
+		}
+		else {
+			//Circle contains a side-loop! 
+			result.append("Aborting iteration! DHT contains side-loop!\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+		}
 		
 		return result.toString();
 	}
