@@ -78,15 +78,15 @@ public class Communication extends Thread implements CommunicationInterface{
 		return networkAddress;
 	}
 	
-	public String showNode() {
+	public String showNodeInfo() {
 		if(node!=null) {
-			return "Node_info{" + networkAddress + "}: - NodeID{" + node.getIdentity() + "}";
+			return "Node_info{" + networkAddress + "}: - NodeID{0x" + node.getIdentity().toString() + "}";
 		} else {
 			return "Node_info{" + networkAddress + "}: Node not started";
 		}
 	}
 	
 	public String getFingerAddress() {
-		return node.getDirectSuccessor().getNetworkAddress();
+		return node.getSuccessor().getNetworkAddress();
 	}
 }

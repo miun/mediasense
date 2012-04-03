@@ -1,8 +1,5 @@
 package manager.dht;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Random;
 import java.util.TreeSet;
 
@@ -73,24 +70,34 @@ public class Node extends Thread implements LookupServiceInterface {
 			//react on a Join message
 			case Message.JOIN:
 				JoinMessage join_msg = (JoinMessage) message;
-				FingerEntry successor = findSuccessor(new NodeID(join_msg.key.getID()));
 				Message answer;
+
+				FingerEntry predecessor = findPredecessorOf(new NodeID(join_msg.key.getID()));
+				FingerEntry successor = getSuccessor();
+				
+				assert(predecessor == null);
 				
 				//Forward or answer?
-				if(successor.equals(identity)) {
+				if(predecessor.equals(identity)) {
 					//Its us => reply on JOIN
 					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,successor.getNodeID());
+					
+					//Change our successor (Only if it's not us!)
+					if(!successor.equals(identity)) finger.remove(successor);
+					finger.add(new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp));
 				}
 				else {
 					//Forward to successor
-					message.toIp = successor.getNetworkAddress();
+					message.toIp = getSuccessor().getNetworkAddress();
 					answer = message;
 				}
 				
+				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
 				JoinResponseMessage jrm = (JoinResponseMessage) message;
-				//this.finger = new FingerEntry(jrm.getNodeID(), jrm.fromIp);
+				finger.add(new FingerEntry(jrm.getNodeID(), jrm.fromIp));
+				bConnected = true;
 				break;
 			case Message.KEYNOTALLOWED:
 				byte[] rb = new byte[NodeID.ADDRESS_SIZE];
@@ -105,10 +112,23 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	@Override
 	public void run() {
+		//Connect DHT node
 		while(bConnected == false) {
-			//Try to connect to DHT#
+			//Try to connect to DHT
 			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,identity.getNodeID()));
 			
+			try {
+				//Wait for connection and try again
+				Thread.sleep(5000);
+			}
+			catch (InterruptedException e) {
+				//Exit thread
+				break;
+			}
+		}
+		
+		//Wait for nothing
+		while(true) {
 			try {
 				//Wait for connection and try again
 				Thread.sleep(5000);
@@ -124,24 +144,21 @@ public class Node extends Thread implements LookupServiceInterface {
 		return identity.getNodeID();
 	}
 	
-	public FingerEntry getDirectSuccessor() {
-		FingerEntry successor = null;
+	public FingerEntry getSuccessor() {
+		FingerEntry successor;
 		
+		//Get successor of us
 		successor = finger.higher(identity);
-		
-		if(successor == null) {
-			successor = finger.higher(FingerEntry.MIN_POS_FINGER);
-		}
-		
+		if(successor == null) successor = finger.higher(FingerEntry.MIN_POS_FINGER);
 		return successor;
 	}
 	
-	private FingerEntry findSuccessor(NodeID nodeID) {
-		FingerEntry successor;
+	private FingerEntry findPredecessorOf(NodeID nodeID) {
+		FingerEntry precessor;
 		
-		//Find responsible node
-		successor = finger.lower(new FingerEntry(nodeID,null));
-		if(successor == null) successor = finger.lower(FingerEntry.MAX_POS_FINGER);
-		return successor;
+		//Find predecessor of a node
+		precessor = finger.lower(new FingerEntry(nodeID,null));
+		if(precessor == null) precessor = finger.lower(FingerEntry.MAX_POS_FINGER);
+		return precessor;
 	}
 }

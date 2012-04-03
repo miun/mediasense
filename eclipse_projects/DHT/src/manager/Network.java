@@ -10,7 +10,7 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static Integer msg_delay = 0; 
+	public static Integer msg_delay = 250; 
 	
 	//Listener lists
 	private List<NodeMessageListener> nodeMessageListener;
@@ -82,14 +82,25 @@ public class Network {
 		}
 	}
 	
-	public String showNode(String networkAddress) {
+	public String showNodeInfo() {
+		String result = "";
+		
+		//For each node
+		for(Communication comm: clients.values()) {
+			result += comm.showNodeInfo() + "\n";
+		}
+		
+		return result;
+	}
+	
+	public String showNodeInfo(String networkAddress) {
 		//forward to the communication
 		Communication comm = clients.get(networkAddress);
 		if(comm == null) {
 			return "There is no node with networkAddress {" + networkAddress + "}";
 		}
 		else {
-			return comm.showNode();
+			return comm.showNodeInfo();
 		}
 	}
 	
@@ -98,7 +109,7 @@ public class Network {
 		Communication comm = clients.get(startNode);
 		StringBuffer result = new StringBuffer();
 		do {
-			result.append(" --> " + comm.showNode());
+			result.append(" --> " + comm.showNodeInfo());
 			comm = clients.get(comm.getFingerAddress());
 		}while(!comm.getLocalIp().equals(startNode));
 		return result.append(" --> ").toString();

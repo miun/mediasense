@@ -83,9 +83,14 @@ public final class Manager {
 		return network.setMessageDelay(delay, networkAddress);
 	}
 	
-	public String showNode(String networkAddress) {
+	public String showNodeInfo() {
 		//Forward to network
-		return network.showNode(networkAddress);
+		return network.showNodeInfo();
+	}
+	
+	public String showNodeInfo(String networkAddress) {
+		//Forward to network
+		return network.showNodeInfo(networkAddress);
 	}
 	
 	public String showCircle(String startAddress) {
