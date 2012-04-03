@@ -106,12 +106,20 @@ public class Network {
 	
 	public String showCircle(String startNode) {
 		//forward to the communication
-		Communication comm = clients.get(startNode);
-		StringBuffer result = new StringBuffer();
+		ArrayList<Communication> alreadyShown = new ArrayList<Communication>();
+		Communication start = clients.get(startNode);
+		Communication comm = start;
+		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
 		do {
-			result.append(" --> " + comm.showNodeInfo());
+			result.append(comm.showNodeInfo()+"\n");
+			alreadyShown.add(comm);
 			comm = clients.get(comm.getFingerAddress());
-		}while(!comm.getLocalIp().equals(startNode));
-		return result.append(" --> ").toString();
+		}while(!alreadyShown.contains(comm));
+		if(!alreadyShown.contains(start)) result.append("Failure only " + alreadyShown.size() + "Nodes in the DHT");
+		result.append("----------------------------------\n" +
+				"dht contains: " + alreadyShown.size() + "\n" +
+				"network contains: " + clients.size());
+		
+		return result.toString();
 	}
 }
