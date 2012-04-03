@@ -4,9 +4,9 @@ public class FingerEntry implements Comparable<FingerEntry> {
 	private NodeID nodeID;
 	private String networkAddress;
 	
-	//Null position for comparison with zero position on DHT circle
-	private static final byte[] NULL_POSITION_CONSTANT = new byte[NodeID.ADDRESS_SIZE];
-	public static final FingerEntry NULL_POSITION = new FingerEntry(new NodeID(NULL_POSITION_CONSTANT),null);
+	//Static constants for max and min positions on the DHT 
+	public static final FingerEntry MIN_POS_FINGER = new FingerEntry(NodeID.MIN_POSITION(),null);
+	public static final FingerEntry MAX_POS_FINGER = new FingerEntry(NodeID.MAX_POSITION(),null);
 	
 	//TODO for later optimization
 	private int avg_delay;

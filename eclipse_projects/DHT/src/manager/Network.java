@@ -98,9 +98,9 @@ public class Network {
 		Communication comm = clients.get(startNode);
 		StringBuffer result = new StringBuffer();
 		do {
-			result.append("->" + comm.showNode());
+			result.append(" --> " + comm.showNode());
 			comm = clients.get(comm.getFingerAddress());
 		}while(!comm.getLocalIp().equals(startNode));
-		return result.append("->").toString();
+		return result.append(" --> ").toString();
 	}
 }
