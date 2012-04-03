@@ -1,6 +1,8 @@
 package manager;
 
+import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -8,6 +10,7 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
+	public static Integer msg_delay = 0; 
 	
 	//Listener lists
 	private List<NodeMessageListener> nodeMessageListener;
@@ -41,7 +44,7 @@ public class Network {
 		
 		//Inform all NodeMessageListeners about the message
 		for(NodeMessageListener nml: nodeMessageListener) {
-			nml.OnNodeMessage(m);
+			nml.OnNodeMessage(new Date(),m);
 		}
 	}
 
@@ -60,5 +63,44 @@ public class Network {
 	
 	public void addNodeMessageListener(NodeMessageListener listener) {
 		nodeMessageListener.add(listener);
+	}
+	
+	public boolean setMessageDelay(int delay,String networkAddress) {
+		if(networkAddress == null) {
+			msg_delay = delay;
+			return true;
+		}
+		else {
+			//Find node and set delay
+			Communication comm = clients.get(networkAddress);
+			
+			if(comm != null) {
+				comm.setMessageDelay(delay);
+				return true;
+			}
+			else return false;
+		}
+	}
+	
+	public String showNode(String networkAddress) {
+		//forward to the communication
+		Communication comm = clients.get(networkAddress);
+		if(comm == null) {
+			return "There is no node with networkAddress {" + networkAddress + "}";
+		}
+		else {
+			return comm.showNode();
+		}
+	}
+	
+	public String showCircle(String startNode) {
+		//forward to the communication
+		Communication comm = clients.get(startNode);
+		StringBuffer result = new StringBuffer();
+		do {
+			result.append("->" + comm.showNode());
+			comm = clients.get(comm.getFingerAddress());
+		}while(!comm.getLocalIp().equals(startNode));
+		return result.append("->").toString();
 	}
 }

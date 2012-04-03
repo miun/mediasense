@@ -3,6 +3,8 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import manager.dht.Node;
+
 
 /**
  * The communication simulates the communication layer between the nodes. To test our implementation of the DHT on its own this class
@@ -12,9 +14,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Communication extends Thread implements CommunicationInterface{
 	private Network network;
-	private LookupServiceInterface node = null;
+	private Node node = null;
 	private BlockingQueue<Message> queue;
 	private String networkAddress;
+	private Integer delay = 0;
 	
 	public Communication(Network network,String networkAddress) {
 		this.network = network;
@@ -24,12 +27,7 @@ public class Communication extends Thread implements CommunicationInterface{
 		queue = new LinkedBlockingQueue<Message>();
 	}
 	
-	public void setLookServiceInterface(LookupServiceInterface node) {
-		//Set node to manage
-		this.node = node;
-	}
-	
-	public void start(LookupServiceInterface node) {
+	public void start(Node node) {
 		//Start
 		if(node == null) return;
 		this.node = node;
@@ -59,7 +57,8 @@ public class Communication extends Thread implements CommunicationInterface{
 				//Receive message and forward them
 				msg = queue.take();
 				//Simulate the time that the message takes over the network
-				//Thread.sleep(1);
+				Integer totalDelay = Network.msg_delay + delay;
+				if(totalDelay>0) Thread.sleep(totalDelay);
 				node.handleMessage(msg);
 			}
 			catch (InterruptedException e) {
@@ -69,9 +68,25 @@ public class Communication extends Thread implements CommunicationInterface{
 			}
 		}
 	}
+	
+	public void setMessageDelay(Integer delay) {
+		this.delay = delay;
+	}
 
 	@Override
 	public String getLocalIp() {
 		return networkAddress;
+	}
+	
+	public String showNode() {
+		if(node!=null) {
+			return "Node_info{" + networkAddress + "}: NodeID{" + node.getIdentity() + "}";
+		} else {
+			return "Node_info{" + networkAddress + "}: Node not started";
+		}
+	}
+	
+	public String getFingerAddress() {
+		return node.getFinger().getNetworkAddress();
 	}
 }

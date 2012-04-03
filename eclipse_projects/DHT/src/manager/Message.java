@@ -19,6 +19,8 @@ public abstract class Message {
 	public final static int JOIN_RESPONSE = 12;
 	public final static int KEEPALIVE = 13;
 	
+	public final static int KEYNOTALLOWED = 16;
+	
 	public final static int KEEPALIVE_RESPONSE = 14;
 	public final static int RESOLVE_RESPONSE = 15;
 
@@ -29,6 +31,6 @@ public abstract class Message {
 	
 	public String toString() {
 		//Return message info
-		return "MSG: " + type + " - " + fromIp + " - " + toIp; 
+		return "MSG: type:{" + type + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
 	}
 }

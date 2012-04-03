@@ -2,10 +2,12 @@ package manager.ui.console;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import manager.Communication;
 import manager.Manager;
 import manager.Message;
+import manager.Network;
 import manager.listener.NodeMessageListener;
 
 public class Console implements NodeMessageListener {
@@ -54,18 +56,34 @@ public class Console implements NodeMessageListener {
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
-					
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					System.out.println(manager.showNode(cmd.param[0]));
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
-					if(cmd.param.length != 1) throw new InvalidParamAmountException();
+					if(cmd.param == null) throw new InvalidParamAmountException();
 					//communication.addNodeMessageListener(this);
 				}
-				else if(cmd.cmd.toLowerCase().equals("exit")) {
+				else if(cmd.cmd.toLowerCase().equals("msg_delay")) {
+					//Set delay for message
+					if(cmd.param == null || cmd.param.length > 2) throw new InvalidParamAmountException();
+					
+					boolean result;
+					
+					if(cmd.param.length == 1) {
+						result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),null);
+					}
+					else {
+						result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),cmd.param[1]);
+					}
+					
+					//Print result
+					System.out.println("setMessageDelay: " + (result ? "SUCCESSFUL" : "FAILED"));
 					
 				}
-				else if(cmd.cmd.toLowerCase().equals("exit")) {
-					
+				else if(cmd.cmd.toLowerCase().equals("circle")) {
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					System.out.println(manager.showCircle(cmd.param[0]));
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
@@ -96,7 +114,7 @@ public class Console implements NodeMessageListener {
 	}
 
 	@Override
-	public void OnNodeMessage(Message msg) {
-		System.out.println(msg.toString());
+	public void OnNodeMessage(Date timeStamp,Message msg) {
+		System.out.println(new SimpleDateFormat().format(timeStamp) + " | "  + msg.toString());
 	}
 }

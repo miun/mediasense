@@ -64,7 +64,7 @@ public final class Manager {
 	
 	public void addNode(String bootstrapAddress) {
 		Communication comm;
-		LookupServiceInterface node;
+		Node node;
 		
 		//Add node with communication interface adopted from MediaSense
 		comm = new Communication(network,new Integer(newNodeCounter++).toString());
@@ -76,5 +76,20 @@ public final class Manager {
 		//Start
 		//TODO allow to create nodes with delayed starting capability
 		comm.start(node);
+	}
+	
+	public boolean setMessageDelay(int delay,String networkAddress) {
+		//Forward to network
+		return network.setMessageDelay(delay, networkAddress);
+	}
+	
+	public String showNode(String networkAddress) {
+		//Forward to network
+		return network.showNode(networkAddress);
+	}
+	
+	public String showCircle(String startAddress) {
+		//Forward to network
+		return network.showCircle(startAddress);
 	}
 }
