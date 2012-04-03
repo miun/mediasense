@@ -26,8 +26,8 @@ public class NodeID implements Comparable<NodeID> {
 		if(comp == this) return 0;
 		
 		for(int i = 0; i < ADDRESS_SIZE; i++) {
-			if(comp.id[i] > id[i]) return 1;
-			else if(comp.id[i] < id[i]) return -1;
+			if((comp.id[i] < 0 ? comp.id[i] + 255 : comp.id[i]) > (id[i] < 0 ? id[i] + 255 : id[i])) return 1;
+			else if((comp.id[i] < 0 ? comp.id[i] + 255 : comp.id[i]) > (id[i] < 0 ? id[i] + 255 : id[i])) return -1;
 		}
 
 		//Equal
