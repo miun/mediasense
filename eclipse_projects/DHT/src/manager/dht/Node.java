@@ -16,10 +16,11 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	private String bootstrapAddress;
 	private TreeSet<FingerEntry> finger;
+	private boolean bConnected = false;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
-
+						
 		//TODO there might be a better way for the generation of a random SHA key
 		//nodeID = SHA1Generator.SHA1(String.valueOf(new Random().nextInt()));
 		//generate a Random byte Array as ID later SHA1Key ?!
@@ -28,12 +29,16 @@ public class Node extends Thread implements LookupServiceInterface {
 		identity = new FingerEntry(new NodeID(rb),communication.getLocalIp());
 		
 		//Initialize finger table
+		//Always add ourselves to the finger table
 		finger = new TreeSet<FingerEntry>();
+		finger.add(identity);
 		
 		//Save bootstrap address
-		if(bootstrapAddress == null) {
-			//No bootstrap means, WE are the DHT
-			finger.add(identity);
+		//No bootstrap means, WE are the beginning of the DHT
+		//If we are a bootstrapping node, that means bootstrapping address is null or is our address,
+		//we are always connected !!
+		if(bootstrapAddress == null || bootstrapAddress.equals(communication.getLocalIp())) {
+			bConnected = true;
 		}
 		else {
 			this.bootstrapAddress = bootstrapAddress;
@@ -67,7 +72,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//react on a Join message
 			case Message.JOIN:
 				JoinMessage join_msg = (JoinMessage) message;
-				FingerEntry successor = findSuccessor(new FingerEntry(new NodeID(join_msg.key.getID()),message.fromIp));
+				FingerEntry successor = findSuccessor(new NodeID(join_msg.key.getID()));
 				Message answer;
 				
 				//Forward or answer?
@@ -95,7 +100,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	@Override
 	public void run() {
-		while(finger.isEmpty()) {
+		while(bConnected == false) {
 			//Try to connect to DHT#
 			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,identity.getNodeID()));
 			
@@ -122,30 +127,12 @@ public class Node extends Thread implements LookupServiceInterface {
 		}*/
 	}
 	
-	private FingerEntry findSuccessor(FingerEntry fingerEntry) {
-		//in the first place we are the successor
-		FingerEntry successor;// = identity;
-		NodeID dist,current_dist;
-		FingerEntry f1,f2;
+	private FingerEntry findSuccessor(NodeID nodeID) {
+		FingerEntry successor;
 		
-		f1 = finger.higher(identity);
-		f2 = finger.higher(fingerEntry);
-		
-		
-		
-/*		for(FingerEntry current: finger) {
-			current_dist = fingerEntry.getNodeID().distanceTo(current); 
-			if(current_dist.compareTo(dist) > ) { 
-				//New nearer finger found
-				dist = current_dist;
-				successor = current;
-			}
-		}
-		
-		successor = finger.higher(fingerEntry);
-		if(fingerEntry)*/
-		
-		
-		return null;
+		//Find responsible node
+		successor = finger.lower(new FingerEntry(nodeID,null));
+		if(successor == null) successor = finger.lower(FingerEntry.MAX_POS_FINGER);
+		return successor;
 	}
 }
