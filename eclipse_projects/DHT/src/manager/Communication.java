@@ -55,7 +55,7 @@ public class Communication extends Thread implements CommunicationInterface{
 		
 		while(true) {
 			try {
-				//Receive message and forward them
+				//Receive messages and forward them
 				msg = queue.take();
 				//Simulate the time that the message takes over the network
 				Integer totalDelay = Network.msg_delay + delay;
