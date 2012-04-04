@@ -4,6 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import manager.dht.Node;
+import manager.dht.NodeID;
 
 
 /**
@@ -88,5 +89,12 @@ public class Communication extends Thread implements CommunicationInterface{
 	
 	public String getSuccessorAddress() {
 		return node.getSuccessor().getNetworkAddress();
+	}
+	
+	public NodeID getNodeID() {
+		if(node!=null) {
+			return node.getIdentity();
+		}
+		return null;
 	}
 }

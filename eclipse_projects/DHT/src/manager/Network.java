@@ -6,11 +6,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import manager.dht.NodeID;
 import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static Integer msg_delay = 100; 
+	public static Integer msg_delay = 250; 
 	
 	//Listener lists
 	private List<NodeMessageListener> nodeMessageListener;
@@ -108,20 +109,44 @@ public class Network {
 		HashSet<Communication> alreadyShown = new HashSet<Communication>();
 		Communication startNode = clients.get(startNodeName);
 		Communication currentNode = startNode;
-
+		
 		//Test if node exists
 		if(startNode == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
+		
+		/*
+		//To test if the ID is in the allowed range (avoid "eight-circles")
+		NodeID startNodeID = startNode.getNodeID();
+		NodeID endNodeID = startNodeID;
+		NodeID currentNodeID = startNodeID;
+		*/
 		
 		//Header
 		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
 
 		//Loop through the circle
 		do {
+			/*
+			//If startNodeID > endNodeID
+			if(endNodeID.compareTo(startNodeID)>0) {
+				//Check if we have a eight
+				if(startNodeID.compareTo(currentNodeID)>=0 || currentNodeID.compareTo(endNodeID)>=0) {
+					result.append("\nhere is a eight");
+					return result.toString();
+				}
+				else if (startNodeID.compareTo(currentNodeID)>=0 && NodeID.MIN_POSITION().compareTo(endNodeID)>=0) {
+					result.append("\nhere is a eight");
+					return result.toString();
+				}
+			}
+			endNodeID = currentNode.getNodeID();
+			*/
 			result.append(currentNode.showNodeInfo()+"\n");
 			alreadyShown.add(currentNode);
 			currentNode = clients.get(currentNode.getSuccessorAddress());
+			
+			//currentNodeID = currentNode.getNodeID();
 		} while(!alreadyShown.contains(currentNode));
 		
 		if(currentNode == startNode) {
@@ -135,7 +160,7 @@ public class Network {
 		}
 		else {
 			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentNode.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+			result.append("Aborting iteration! DHT contains side-loop!\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		return result.toString();
