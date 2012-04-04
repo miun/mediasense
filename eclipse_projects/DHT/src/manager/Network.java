@@ -1,10 +1,10 @@
 package manager;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import manager.dht.NodeID;
 import manager.listener.NodeMessageListener;
@@ -14,7 +14,8 @@ public class Network {
 	public static Integer msg_delay = 250; 
 	
 	//Listener lists
-	private List<NodeMessageListener> nodeMessageListener;
+	//private List<NodeMessageListener> nodeMessageListener;
+	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
 
 	//Client list
 	private HashMap<String,Communication> clients;
@@ -24,8 +25,7 @@ public class Network {
 		instance = this;
 		clients = new HashMap<String,Communication>();
 		
-		//Init lists
-		nodeMessageListener = new ArrayList<NodeMessageListener>();
+		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();  
 	}
 	
 	public static Network getInstance() {
@@ -43,9 +43,11 @@ public class Network {
 		if(receiver != null)
 			receiver.handleMessage(m);
 		
-		//Inform all NodeMessageListeners about the message
-		for(NodeMessageListener nml: nodeMessageListener) {
-			nml.OnNodeMessage(new Date(),m);
+		//Inform all NodeMessageListeners listening to that type of message
+		if(nodeMessageListener.containsKey(m.type)) {
+			for(NodeMessageListener nml: nodeMessageListener.get(m.type)) {
+				nml.OnNodeMessage(new Date(),m);
+			}
 		}
 	}
 
@@ -62,8 +64,22 @@ public class Network {
 		clients.remove(networkAddress);
 	}
 	
-	public void addNodeMessageListener(NodeMessageListener listener) {
-		nodeMessageListener.add(listener);
+	public void addNodeMessageListener(int msgType,NodeMessageListener listener) {
+		//Check if list exists, otherwise create it
+		if(!nodeMessageListener.containsKey(msgType)) {
+			nodeMessageListener.put(msgType,new HashSet<NodeMessageListener>());
+		}
+		
+		//Get listener list
+		Set<NodeMessageListener> nml = nodeMessageListener.get(msgType);
+		nml.add(listener);
+	}
+	
+	public void removeNodeMessageListener(int msgType,NodeMessageListener listener) {
+		Set<NodeMessageListener> listeners = nodeMessageListener.get(msgType);
+		if(listeners!=null) {
+			listeners.remove(listener);
+		}
 	}
 	
 	public boolean setMessageDelay(int delay,String networkAddress) {
