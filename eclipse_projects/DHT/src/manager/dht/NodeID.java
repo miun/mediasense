@@ -1,10 +1,10 @@
 package manager.dht;
 
 public class NodeID implements Comparable<NodeID> {
-	public static final int ADDRESS_SIZE = 1;
+	public static final int ADDRESS_SIZE = 20;
 
-	private static NodeID MIN_POSITION_CONSTANT = null;
-	private static NodeID MAX_POSITION_CONSTANT = null;
+//	private static NodeID MIN_POSITION_CONSTANT = null;
+//	private static NodeID MAX_POSITION_CONSTANT = null;
 	
 	private byte[] id = new byte[ADDRESS_SIZE];
 	
@@ -34,6 +34,7 @@ public class NodeID implements Comparable<NodeID> {
 		return 0;
 	}
 	
+	/* R.I.P 
 	public final static NodeID MIN_POSITION() {
 		//Create address if necessary
 		if(MIN_POSITION_CONSTANT == null) {
@@ -52,5 +53,5 @@ public class NodeID implements Comparable<NodeID> {
 			MAX_POSITION_CONSTANT = new NodeID(address);
 		}
 		return MAX_POSITION_CONSTANT;
-	}
+	}*/
 }

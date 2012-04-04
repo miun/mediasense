@@ -19,11 +19,9 @@ public class Node extends Thread implements LookupServiceInterface {
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
 
-		//TODO there might be a better way for the generation of a random SHA key
-		//nodeID = SHA1Generator.SHA1(String.valueOf(new Random().nextInt()));
-		//generate a Random byte Array as ID later SHA1Key ?!
-		byte[] hash = new byte[NodeID.ADDRESS_SIZE];
-		new Random().nextBytes(hash);
+		//Generate hash from the local network address
+		//TODO ask stefan if inclusion of port address is reasonable
+		byte[] hash = SHA1Generator.SHA1(communication.getLocalIp());
 
 		//Set identity
 		setIdentity(hash);
@@ -66,6 +64,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Don't process message if it was not for us!!
 		//TODO probably not necessary
 		if(!message.toIp.equals(identity.getNetworkAddress())) return;
+		
+		//Safe performance for node
+		//if(finger.))
 		
 		switch (message.type) {
 			//react on a Join message
@@ -125,11 +126,8 @@ public class Node extends Thread implements LookupServiceInterface {
 				//If the node is not connected allow the change of the identity
 				//Check the duplicate id also
 				if(!bConnected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
-					byte[] hash = new byte[NodeID.ADDRESS_SIZE];
-					new Random().nextBytes(hash);
-					
-					//Create new identity and try again
-					setIdentity(hash);
+					//TODO what shall we do here?????
+					assert(true);
 				}
 
 				break;
