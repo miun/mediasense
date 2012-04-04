@@ -35,7 +35,7 @@ public abstract class Message {
 		return toString(new Integer(type).toString());
 	}
 	
-	public String toString(String msgType) {
+	protected String toString(String msgType) {
 		//Return message info
 		return "MSG: type:{" + msgType + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
 	}
