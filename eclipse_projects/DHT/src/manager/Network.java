@@ -119,8 +119,8 @@ public class Network {
 	}
 	
 	/**
-	 * This method return a Śtring representing the whole circle structure
-	 * starting at the Node which belongs to the Networksaddress given as
+	 * This method return a String representing the whole circle structure
+	 * starting at the Node which belongs to the Network address given as
 	 * parameter
 	 * @param startNodeName Entry point for the circle
 	 * @return A string that represents the circle if it is ok, or shows
@@ -143,28 +143,32 @@ public class Network {
 		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
 
 		//Loop through the circle
-		do {
+		while(true) {
+			//Get next node
 			result.append(currentClient.showNodeInfo()+"\n");
 			alreadyShown.add(currentClient);
 			currentClient = clients.get(currentClient.getSuccessorAddress());
 			
+			//Check for loop
+			if(alreadyShown.contains(currentClient)) break;
+			
 			//Test for loop intersections
-			if(start.compareTo(end) == 1) {
-				if(currentClient.getNodeID().compareTo(start) < 1 || currentClient.getNodeID().compareTo(end) > -1) {
+			if(start.compareTo(end) > 0) {
+				if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
 					//Intersection detected!!
-					result.append(">>> Intersection detected <<<");
+					result.append(">>> Intersection detected <<<\n");
 				}
 			}
 			else {
-				if(currentClient.getNodeID().compareTo(start) > -1 && currentClient.getNodeID().compareTo(end) < 1) {
+				if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
 					//Intersection detected!!
-					result.append(">>> Intersection detected <<<");
+					result.append(">>> Intersection detected <<<\n");
 				}
 			}
 			
 			//Shift end forward
 			end = currentClient.getNodeID();
-		} while(!alreadyShown.contains(currentClient));
+		};
 		
 		if(currentClient == startClient) {
 			//Circle does not contain side-loop

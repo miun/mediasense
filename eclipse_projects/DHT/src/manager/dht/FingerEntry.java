@@ -47,6 +47,10 @@ public class FingerEntry implements Comparable<FingerEntry> {
 			return false;
 		return true;
 	}
+	
+	public void setKeepAliveTime(int time) {
+		lastKeepAliveTime = time;
+	}
 
 	public NodeID getNodeID() {
 		return nodeID;
