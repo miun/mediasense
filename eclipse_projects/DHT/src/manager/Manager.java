@@ -40,9 +40,6 @@ public final class Manager {
 		//Create UI classes
 		console = new Console(this.getInstance());
 		//gui = new GUI(this.getInstance());
-
-		//Add listener that is listening to all messages
-		network.addNodeMessageListener(console);
 		
 		console.run();
 		System.out.println("Good bye!");
@@ -96,5 +93,15 @@ public final class Manager {
 	public String showCircle(String startAddress) {
 		//Forward to network
 		return network.showCircle(startAddress);
+	}
+	
+	public void addNodeMessageListener(int msgType, NodeMessageListener listener) {
+		//Forward to network
+		network.addNodeMessageListener(msgType, listener);
+	}
+	
+	public void removeNodeMessageListener(int msgType, NodeMessageListener listener) {
+		//Forward to network
+		network.removeNodeMessageListener(msgType, listener);
 	}
 }

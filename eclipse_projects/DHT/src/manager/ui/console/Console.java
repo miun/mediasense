@@ -6,6 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import manager.Manager;
 import manager.Message;
@@ -14,9 +17,13 @@ import manager.listener.NodeMessageListener;
 public class Console implements NodeMessageListener {
 	private Manager manager;
 	
+	private HashSet<Integer> messageTypesToListen;
+	
 	public Console(Manager manager) {
 		//Set objects
 		this.manager = manager;
+		
+		messageTypesToListen = new HashSet<Integer>();
 	}
 		
 	public void run() {
@@ -91,6 +98,36 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("circle")) {
 					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
 					System.out.println(manager.showCircle(cmd.param[0]));
+				}
+				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
+					if(cmd.param == null) throw new InvalidParamAmountException();
+					for(String type: cmd.param) {
+						boolean remove = false;
+						//Check if add or remove
+						if(type.charAt(0)=='!') {
+							remove = true;
+							type = type.substring(1).toLowerCase();
+						}else type = type.toLowerCase();
+						
+						int msgType = -1;
+						//Get the Message Type
+						if(type.equals("join")) {
+							msgType = Message.JOIN;
+						} else if(type.equals("join_response")) {
+							msgType = Message.JOIN_RESPONSE;
+						} else if(type.equals("broadcast")) {
+							msgType = Message.BROADCAST;
+						} else if(type.equals("duplicate")) {
+							msgType = Message.DUPLICATE_NODE_ID;
+						}
+						
+						//Call the function
+						if(remove){
+							manager.removeNodeMessageListener(msgType, this);
+						}else manager.addNodeMessageListener(msgType, this);
+						
+					}
+					System.out.println(cmd.cmd + "successful");
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
