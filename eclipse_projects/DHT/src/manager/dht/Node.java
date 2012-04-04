@@ -63,25 +63,29 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	@Override
 	public void handleMessage(Message message) {
+		//Don't process message if it was not for us!!
+		//TODO probably not necessary
+		if(!message.toIp.equals(identity.getNetworkAddress())) return;
+		
 		switch (message.type) {
 			//react on a Join message
 			case Message.JOIN:
 				JoinMessage join_msg = (JoinMessage) message;
 				Message answer;
 
-				FingerEntry predecessor = findPredecessorOf(join_msg.key);
+				FingerEntry predecessor = findPredecessorOf(join_msg.getKey());
 				FingerEntry successor = getSuccessor();
 				
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
 					//Its us => reply on JOIN
-					answer = new JoinResponseMessage(successor.getNetworkAddress(),message.fromIp,join_msg.key,successor.getNodeID());
+					answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID());
 					
 					//Check if it exists
-					FingerEntry newNode = new FingerEntry(new NodeID(join_msg.key.getID()),join_msg.fromIp);
+					FingerEntry newNode = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.fromIp);
 					if(finger.contains(newNode)) {
 						//Key not allowed msg
-						answer = new DuplicateNodeId(identity.getNetworkAddress(), join_msg.fromIp);
+						answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.fromIp,join_msg.getKey());
 					}
 					else {
 						//Change our successor (Only if it's not us!)
@@ -95,35 +99,40 @@ public class Node extends Thread implements LookupServiceInterface {
 					answer = message;
 				}
 				
+				//Send
 				communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
-				//Ignore JOIN_RESPONSE message if the node are already connected!
+				JoinResponseMessage jrm = (JoinResponseMessage) message;
+
+				//Ignore JOIN_RESPONSE message if the node is already connected!
 				if(!bConnected) {
-					JoinResponseMessage jrm = (JoinResponseMessage) message;
-					
-					if(jrm.getKey().equals(identity.getNodeID())) {
-						//
-						finger.add(new FingerEntry(jrm.getNodeID(), jrm.fromIp));
+					if(jrm.getJoinKey().equals(identity.getNodeID())) {
+						//Add finger
+						finger.add(new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress()));
 						bConnected = true;
 					}
 					else {
 						//Ignore this because the key does not match!!!
 						//TODO react on this
 					}
-					
-					break;
 				}
+				
+				break;
 			case Message.DUPLICATE_NODE_ID:
+				DuplicateNodeIdMessage dupMsg = (DuplicateNodeIdMessage)message;
+				
 				//If the node is not connected allow the change of the identity
-				if(!bConnected) {
+				//Check the duplicate id also
+				if(!bConnected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
 					byte[] hash = new byte[NodeID.ADDRESS_SIZE];
 					new Random().nextBytes(hash);
 					
 					//Create new identity and try again
 					setIdentity(hash);
-					break;
 				}
+
+				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
@@ -135,7 +144,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Connect DHT node
 		while(bConnected == false) {
 			//Try to connect to DHT
-			communication.sendMessage(new JoinMessage(communication.getLocalIp(),bootstrapAddress,identity.getNodeID()));
+			communication.sendMessage(new JoinMessage(identity.getNetworkAddress(),bootstrapAddress,identity.getNetworkAddress(),identity.getNodeID()));
 			
 			try {
 				//Wait for connection and try again
@@ -169,7 +178,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Get successor of us
 		successor = finger.higher(identity);
-		if(successor == null) successor = finger.higher(FingerEntry.MIN_POS_FINGER);
+		if(successor == null) 
+			successor = finger.first();
 		return successor;
 	}
 	
@@ -178,7 +188,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Find predecessor of a node
 		precessor = finger.lower(new FingerEntry(nodeID,null));
-		if(precessor == null) precessor = finger.lower(FingerEntry.MAX_POS_FINGER);
+		if(precessor == null) 
+			precessor = finger.last();
+					
 		return precessor;
 	}
 	

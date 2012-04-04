@@ -23,6 +23,7 @@ public abstract class Message {
 	
 	public final static int KEEPALIVE_RESPONSE = 14;
 	public final static int RESOLVE_RESPONSE = 15;
+	public final static int BROADCAST = 17;
 
 	
 	public int type = Message.UNKNOWN;
@@ -30,7 +31,12 @@ public abstract class Message {
 	public String toIp = "";
 	
 	public String toString() {
+		//Return type as number
+		return toString(new Integer(type).toString());
+	}
+	
+	public String toString(String msgType) {
 		//Return message info
-		return "MSG: type:{" + type + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
+		return "MSG: type:{" + msgType + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
 	}
 }
