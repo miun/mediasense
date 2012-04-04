@@ -18,7 +18,7 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
-						
+
 		//TODO there might be a better way for the generation of a random SHA key
 		//nodeID = SHA1Generator.SHA1(String.valueOf(new Random().nextInt()));
 		//generate a Random byte Array as ID later SHA1Key ?!
@@ -132,6 +132,17 @@ public class Node extends Thread implements LookupServiceInterface {
 					setIdentity(hash);
 				}
 
+				break;
+			case Message.BROADCAST:
+				BroadcastMessage bcast_msg = (BroadcastMessage)message; 
+				
+				//TODO Forward broadcast
+				
+				//Process broadcast
+				handleMessage(bcast_msg.extractMessage());
+				break;
+			case Message.KEEPALIVE:
+				//Handle keep-alive message 
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!

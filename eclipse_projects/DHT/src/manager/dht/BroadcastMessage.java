@@ -6,21 +6,25 @@ public abstract class BroadcastMessage extends Message {
 	//Type is always BRAODCAST
 	public final int type = Message.BROADCAST;
 	
-	//Type of the delivered message
-	protected int internalType = Message.UNKNOWN;
-	
 	//Limit counter for spanning tree
 	private int TTL;
+
+	//Type of the delivered message
+	protected int internalType;
 	
 	public int getTTL() {
 		return TTL;
 	}
 	
-	public BroadcastMessage(int TTL) {
+	public BroadcastMessage(int TTL,int internalType) {
 		this.TTL = TTL;
+		this.internalType = internalType;
 	}
 	
-	protected String toString(String type) {
-		return super.toString("BROADCAST-" + type);
+	protected String toString(String text) {
+		return super.toString("BROADCAST-" + " | " + text);
 	}
+	
+	//Extract unicast message
+	public abstract Message extractMessage();
 }
