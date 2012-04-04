@@ -8,8 +8,10 @@ public class FingerEntry implements Comparable<FingerEntry> {
 	public static final FingerEntry MIN_POS_FINGER = new FingerEntry(NodeID.MIN_POSITION(),null);
 	public static final FingerEntry MAX_POS_FINGER = new FingerEntry(NodeID.MAX_POSITION(),null);
 	
-	//TODO for later optimization
+	//TODO for later optimization and fault handling
 	private int avg_delay;
+	private boolean bad_connection = false;
+	private int lastKeepAliveTime = -1;
 
 	public FingerEntry(NodeID nodeID,String networkAddress) {
 		this.nodeID = nodeID;

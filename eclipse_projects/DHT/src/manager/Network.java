@@ -83,6 +83,13 @@ public class Network {
 		}
 	}
 	
+	/**
+	 * Returns a String representing detailed information about all nodes 
+	 * in the network 
+	 * @return A String representing detailed information about all nodes in
+	 * the network
+	 * @see public String showNodeInfo(String networkAddress)
+	 */
 	public String showNodeInfo() {
 		String result = "";
 		
@@ -94,6 +101,12 @@ public class Network {
 		return result;
 	}
 	
+	/**
+	 * This method returns a String representing detailed information about the 
+	 * node that belongs to the network address given as parameter
+	 * @param networkAddress from the Node to show
+	 * @return A String representing detailed Node information
+	 */
 	public String showNodeInfo(String networkAddress) {
 		//forward to the communication
 		Communication comm = clients.get(networkAddress);
@@ -105,51 +118,55 @@ public class Network {
 		}
 	}
 	
+	/**
+	 * This method return a Śtring representing the whole circle structure
+	 * starting at the Node which belongs to the Networksaddress given as
+	 * parameter
+	 * @param startNodeName Entry point for the circle
+	 * @return A string that represents the circle if it is ok, or shows
+	 * error information if not
+	 */
 	public String showCircle(String startNodeName) {
 		HashSet<Communication> alreadyShown = new HashSet<Communication>();
-		Communication startNode = clients.get(startNodeName);
-		Communication currentNode = startNode;
-		
+
+		Communication startClient = clients.get(startNodeName);
+		Communication currentClient = startClient;
+		NodeID start = currentClient.getNodeID();
+		NodeID end = start;
+
 		//Test if node exists
-		if(startNode == null) {
+		if(startClient == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
-		
-		/*
-		//To test if the ID is in the allowed range (avoid "eight-circles")
-		NodeID startNodeID = startNode.getNodeID();
-		NodeID endNodeID = startNodeID;
-		NodeID currentNodeID = startNodeID;
-		*/
-		
+				
 		//Header
 		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
 
 		//Loop through the circle
 		do {
-			/*
-			//If startNodeID > endNodeID
-			if(endNodeID.compareTo(startNodeID)>0) {
-				//Check if we have a eight
-				if(startNodeID.compareTo(currentNodeID)>=0 || currentNodeID.compareTo(endNodeID)>=0) {
-					result.append("\nhere is a eight");
-					return result.toString();
-				}
-				else if (startNodeID.compareTo(currentNodeID)>=0 && NodeID.MIN_POSITION().compareTo(endNodeID)>=0) {
-					result.append("\nhere is a eight");
-					return result.toString();
+			result.append(currentClient.showNodeInfo()+"\n");
+			alreadyShown.add(currentClient);
+			currentClient = clients.get(currentClient.getSuccessorAddress());
+			
+			//Test for loop intersections
+			if(start.compareTo(end) == 1) {
+				if(currentClient.getNodeID().compareTo(start) < 1 || currentClient.getNodeID().compareTo(end) > -1) {
+					//Intersection detected!!
+					result.append(">>> Intersection detected <<<");
 				}
 			}
-			endNodeID = currentNode.getNodeID();
-			*/
-			result.append(currentNode.showNodeInfo()+"\n");
-			alreadyShown.add(currentNode);
-			currentNode = clients.get(currentNode.getSuccessorAddress());
+			else {
+				if(currentClient.getNodeID().compareTo(start) > -1 && currentClient.getNodeID().compareTo(end) < 1) {
+					//Intersection detected!!
+					result.append(">>> Intersection detected <<<");
+				}
+			}
 			
-			//currentNodeID = currentNode.getNodeID();
-		} while(!alreadyShown.contains(currentNode));
+			//Shift end forward
+			end = currentClient.getNodeID();
+		} while(!alreadyShown.contains(currentClient));
 		
-		if(currentNode == startNode) {
+		if(currentClient == startClient) {
 			//Circle does not contain side-loop
 			if(alreadyShown.size() < clients.size()) {
 				result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
@@ -160,7 +177,7 @@ public class Network {
 		}
 		else {
 			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		return result.toString();

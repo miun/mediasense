@@ -3,11 +3,12 @@ package manager.ui.console;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
-import manager.Network;
 import manager.listener.NodeMessageListener;
 
 public class Console implements NodeMessageListener {
@@ -104,15 +105,27 @@ public class Console implements NodeMessageListener {
 	private Command extractCmd(String str) {
 		//Split cmd from params
 		String[] line =  str.split(" ",2);
-		String cmd = line [0];
+		String[] params = new String[0];
+		String cmd = line[0].trim();
 		
-		if (line.length<2)
+		//No parameters
+		if(line.length < 2)
 			return new Command(cmd,null);
 
-		//Split the params
-		String[] param = line[1].split(",");
-		return new Command(cmd,param);
-		
+		//Split the parameters and drop empty ones
+		ArrayList<String> temp = new ArrayList<String>(Arrays.asList(line[1].split(",")));
+		for(int i = 0; i < temp.size(); i++) {
+			if(temp.get(i).trim().length() == 0) {
+				temp.remove(i);
+			}
+			else {
+				temp.set(i, temp.get(i).trim()); 
+			}
+		}
+
+		//Return list if it contains elements
+		if(temp.size() > 0) params = temp.toArray(params);
+		return new Command(cmd,params);
 	}
 	
 	public void notifyExit() {

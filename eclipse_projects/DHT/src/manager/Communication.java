@@ -92,9 +92,6 @@ public class Communication extends Thread implements CommunicationInterface{
 	}
 	
 	public NodeID getNodeID() {
-		if(node!=null) {
-			return node.getIdentity();
-		}
-		return null;
+		return node.getIdentity();
 	}
 }
