@@ -97,6 +97,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				else {
 					//Forward to successor
+					message.fromIp = identity.getNetworkAddress();
 					message.toIp = getSuccessor().getNetworkAddress();
 					answer = message;
 				}
