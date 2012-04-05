@@ -13,6 +13,9 @@ public abstract class Message {
 	public final static int ACK = 10;
 
 	
+	//DHT messages
+	public final static int BROADCAST = 17;
+
 	public final static int REGISTER = 4;
 
 	public final static int RESOLVE = 5;
@@ -27,8 +30,9 @@ public abstract class Message {
 	
 	public final static int NODE_JOIN_NOTIFY = 18;
 	public final static int NODE_LEAVE_NOTIFY = 19;
-
-	public final static int BROADCAST = 17;
+	
+	public final static int FIND_PREDECESSOR = 20;
+	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 
 	
 	public int type = Message.UNKNOWN;

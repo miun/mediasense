@@ -1,4 +1,4 @@
-package manager.dht.messages;
+package manager.dht.messages.unicast;
 
 import manager.Message;
 

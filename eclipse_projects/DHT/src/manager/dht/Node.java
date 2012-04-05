@@ -1,15 +1,14 @@
 package manager.dht;
 
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;
-import manager.dht.messages.BroadcastMessage;
-import manager.dht.messages.DuplicateNodeIdMessage;
-import manager.dht.messages.JoinMessage;
-import manager.dht.messages.JoinResponseMessage;
+import manager.dht.messages.broadcast.BroadcastMessage;
+import manager.dht.messages.unicast.DuplicateNodeIdMessage;
+import manager.dht.messages.unicast.JoinMessage;
+import manager.dht.messages.unicast.JoinResponseMessage;
 
 public class Node extends Thread implements LookupServiceInterface {
 	private CommunicationInterface communication;
@@ -19,6 +18,8 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private boolean bConnected = false;
+	
+	private int nodeCount;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;

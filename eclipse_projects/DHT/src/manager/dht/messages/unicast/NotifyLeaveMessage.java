@@ -1,14 +1,14 @@
-package manager.dht.messages;
+package manager.dht.messages.unicast;
 
 import manager.Message;
 import manager.dht.NodeID;
 
-public class NotifyJoinMessage extends Message {
+public class NotifyLeaveMessage extends Message {
 	private String networkAddress;
 	private NodeID hash;
 	
-	NotifyJoinMessage(String from,String to,String networkAddress,NodeID hash) {
-		super(from,to,Message.NODE_JOIN_NOTIFY);
+	NotifyLeaveMessage(String from,String to,String networkAddress,NodeID hash) {
+		super(from,to,Message.NODE_LEAVE_NOTIFY);
 		this.networkAddress = networkAddress;
 		this.hash = hash;
 	}
@@ -20,6 +20,4 @@ public class NotifyJoinMessage extends Message {
 	public NodeID getHash() {
 		return hash;
 	}
-	
-	
 }
