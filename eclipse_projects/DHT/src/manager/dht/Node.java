@@ -84,7 +84,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					
 					//Check if it exists
 					FingerEntry newNode = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.fromIp);
-					if(finger.contains(newNode)) {
+					//if(finger.contains(newNode)) {
+					if(newNode.equals(identity)) {
 						//Key not allowed msg
 						answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.fromIp,join_msg.getKey());
 					}

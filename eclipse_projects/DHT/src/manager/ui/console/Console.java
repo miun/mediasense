@@ -76,7 +76,6 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
 					if(cmd.param == null) throw new InvalidParamAmountException();
-					//communication.addNodeMessageListener(this);
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_delay")) {
 					//Set delay for message
@@ -101,10 +100,33 @@ public class Console implements NodeMessageListener {
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
 					if(cmd.param == null) throw new InvalidParamAmountException();
-					for(String type: cmd.param) {
+					String[] types = null;
+					//Check if it is onlz one parameter, then might be ! or all
+					if(cmd.param.length == 1){
+						//Only one parameter, check for ! or all
+						if(cmd.param[0].equals("!")) {
+							//remove all
+							types = new String[]{"!join","!join_response","!broadcast","!duplicate"};
+						}else if(cmd.param[0].equals("all")) {
+							//add all
+							types = new String[]{"join","join_response","broadcast","duplicate"};
+						} else {
+							//Just forward all parameters as they are
+							types = cmd.param;
+						}
+					}
+					else {
+						//Just forward all parameters as they are
+						types = cmd.param;
+					}
+					
+					StringBuffer answer = new StringBuffer("Applied following msg_watch: ");
+					//Handle each parameter
+					for(String type: types) {
 						boolean remove = false;
 						//Check if add or remove
 						if(type.charAt(0)=='!') {
+							//this is a remove
 							remove = true;
 							type = type.substring(1).toLowerCase();
 						}else type = type.toLowerCase();
@@ -121,13 +143,18 @@ public class Console implements NodeMessageListener {
 							msgType = Message.DUPLICATE_NODE_ID;
 						}
 						
-						//Call the function
-						if(remove){
-							manager.removeNodeMessageListener(msgType, this);
-						}else manager.addNodeMessageListener(msgType, this);
-						
+						//Call the function for every valid message type
+						if(msgType >= 0) {
+							if(remove) {
+								manager.removeNodeMessageListener(msgType, this);
+								answer.append("!"+type+",");
+							}else {
+								manager.addNodeMessageListener(msgType, this);
+								answer.append(type+",");
+							}
+						}
 					}
-					System.out.println(cmd.cmd + "successful");
+					System.out.println(answer.toString());
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");

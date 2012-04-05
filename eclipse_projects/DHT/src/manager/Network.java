@@ -147,14 +147,15 @@ public class Network {
 
 		Communication startClient = clients.get(startNodeName);
 		Communication currentClient = startClient;
-		NodeID start = currentClient.getNodeID();
-		NodeID end = start;
-
+		
 		//Test if node exists
 		if(startClient == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
-				
+		
+		NodeID start = currentClient.getNodeID();
+		NodeID end = start;
+			
 		//Header
 		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
 
