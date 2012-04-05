@@ -301,7 +301,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry startFinger = finger.get(identity);
 		FingerEntry currentFinger = startFinger;
 		
-		for(int i = 0; i < finger.size() - 2; i++) {
+		for(int i = 0; i < finger.size() - 1; i++) {
 			//Get next finger
 			currentFinger = getSuccessor(currentFinger);
 			if(currentFinger == startFinger) {

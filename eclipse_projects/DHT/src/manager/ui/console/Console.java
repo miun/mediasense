@@ -157,9 +157,9 @@ public class Console implements NodeMessageListener {
 						} else if(type.equals("keepalive_response")) {
 							msgType = Message.KEEPALIVE_RESPONSE;
 						} else if(type.equals("notify_join")) {
-							msgType = Message.JOIN;
+							msgType = Message.NODE_JOIN_NOTIFY;
 						} else if(type.equals("notify_leave")) {
-							msgType = Message.JOIN_RESPONSE;
+							msgType = Message.NODE_LEAVE_NOTIFY;
 						}
 						
 						//Call the function for every valid message type
