@@ -64,7 +64,7 @@ public final class Manager {
 		Node node;
 		
 		//Add node with communication interface adopted from MediaSense
-		comm = new Communication(network,new Integer(newNodeCounter++).toString());
+		comm = new Communication(network,new Integer(++newNodeCounter).toString());
 		node = new Node(comm,bootstrapAddress);
 
 		//Give control to the network
