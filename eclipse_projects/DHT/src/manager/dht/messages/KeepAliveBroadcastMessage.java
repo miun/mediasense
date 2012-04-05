@@ -1,4 +1,4 @@
-package manager.dht;
+package manager.dht.messages;
 
 import manager.Message;
 

@@ -6,6 +6,10 @@ import java.util.TreeSet;
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;
+import manager.dht.messages.BroadcastMessage;
+import manager.dht.messages.DuplicateNodeIdMessage;
+import manager.dht.messages.JoinMessage;
+import manager.dht.messages.JoinResponseMessage;
 
 public class Node extends Thread implements LookupServiceInterface {
 	private CommunicationInterface communication;
@@ -75,7 +79,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				Message answer;
 
 				FingerEntry predecessor = findPredecessorOf(join_msg.getKey());
-				FingerEntry successor = getSuccessor();
+				FingerEntry successor = getSuccessor(identity);
 				
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
@@ -103,7 +107,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				else {
 					//Forward to successor
 					message.fromIp = identity.getNetworkAddress();
-					message.toIp = getSuccessor().getNetworkAddress();
+					message.toIp = getSuccessor(identity).getNetworkAddress();
 					answer = message;
 				}
 				
@@ -140,9 +144,26 @@ public class Node extends Thread implements LookupServiceInterface {
 
 				break;
 			case Message.BROADCAST:
-				BroadcastMessage bcast_msg = (BroadcastMessage)message; 
+				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
 				//TODO Forward broadcast
+				FingerEntry startFinger = finger.get(identity);
+				FingerEntry currentFinger = startFinger;
+				
+				for(int i = 1; i <= bcast_msg.getTTL(); i++) {
+					//Get next finger
+					currentFinger = getSuccessor(currentFinger);
+					if(currentFinger == startFinger) {
+						//Too less fingers !
+						break;
+					}
+					
+					//Forward broadcast to this finger with decreased TTL
+					bcast_msg.fromIp = identity.getNetworkAddress();
+					bcast_msg.toIp = currentFinger.getNetworkAddress();
+					bcast_msg.setTTL(i  - 1);
+					communication.sendMessage(bcast_msg);
+				}
 				
 				//Process broadcast
 				handleMessage(bcast_msg.extractMessage());
@@ -186,15 +207,15 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}
 	
-	public NodeID getIdentity() {
-		return identity.getNodeID();
+	public FingerEntry getIdentity() {
+		return identity;
 	}
 	
-	public FingerEntry getSuccessor() {
+	public FingerEntry getSuccessor(FingerEntry startFinger) {
 		FingerEntry successor;
 		
 		//Get successor of us
-		successor = finger.higherKey(identity);
+		successor = finger.higherKey(startFinger);
 		if(successor == null) 
 			successor = finger.firstKey();
 		return successor;
@@ -220,4 +241,5 @@ public class Node extends Thread implements LookupServiceInterface {
 		finger = new TreeMap<FingerEntry,FingerEntry>();
 		finger.put(identity,identity);
 	}
+	
 }
