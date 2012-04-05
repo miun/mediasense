@@ -46,16 +46,16 @@ public class Network {
 		if(receiver != null)
 			receiver.handleMessage(m);
 		
+		int messageType = m.type;
 		//Check whether it is a Broadcast message
 		if (m.type==Message.BROADCAST) {
 			//Extract the broadcastmessage
-			BroadcastMessage msg = (BroadcastMessage)m;
-			m = msg.extractMessage();
+			messageType = ((BroadcastMessage)m).extractMessage().type;
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
-		if(nodeMessageListener.containsKey(m.type)) {
-			for(NodeMessageListener nml: nodeMessageListener.get(m.type)) {
+		if(nodeMessageListener.containsKey(messageType)) {
+			for(NodeMessageListener nml: nodeMessageListener.get(messageType)) {
 				nml.OnNodeMessage(new Date(),m);
 			}
 		}
