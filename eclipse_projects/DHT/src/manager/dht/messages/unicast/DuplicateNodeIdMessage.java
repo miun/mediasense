@@ -1,15 +1,15 @@
-package manager.dht;
+package manager.dht.messages.unicast;
 
 import manager.Message;
+import manager.dht.NodeID;
+import manager.dht.SHA1Generator;
 
 public class DuplicateNodeIdMessage extends Message{
 	//Specify the duplicate key in the DHT
 	private NodeID duplicateKey;
 	
 	public DuplicateNodeIdMessage(String fromIp, String toIp,NodeID duplicateKey) {
-		this.type = Message.DUPLICATE_NODE_ID;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
+		super(fromIp,toIp,Message.DUPLICATE_NODE_ID);
 		this.duplicateKey = duplicateKey;
 	}
 	

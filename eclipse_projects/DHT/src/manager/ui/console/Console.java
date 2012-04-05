@@ -76,7 +76,6 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
 					if(cmd.param == null) throw new InvalidParamAmountException();
-					//communication.addNodeMessageListener(this);
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_delay")) {
 					//Set delay for message
@@ -101,10 +100,41 @@ public class Console implements NodeMessageListener {
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
 					if(cmd.param == null) throw new InvalidParamAmountException();
-					for(String type: cmd.param) {
+					String[] types = null;
+					//Check if it is onlz one parameter, then might be ! or all
+					if(cmd.param.length == 1){
+						//Only one parameter, check for ! or all
+						if(cmd.param[0].equals("!")) {
+							//remove all
+							types = new String[]{"!join","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						}
+						else if(cmd.param[0].equals("all")) {
+							//add all
+							types = new String[]{"join","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+						}
+						else if(cmd.param[0].equals("!broadcast")) {
+							types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						}
+						else if(cmd.param[0].equals("broadcast")) {
+							types = new String[]{"keepalive","keepalive_response","notify_join","notify_leave"};
+						}
+						else {
+							//Just forward all parameters as they are
+							types = cmd.param;
+						}
+					}
+					else {
+						//Just forward all parameters as they are
+						types = cmd.param;
+					}
+					
+					StringBuffer answer = new StringBuffer("Applied following msg_watch: ");
+					//Handle each parameter
+					for(String type: types) {
 						boolean remove = false;
 						//Check if add or remove
 						if(type.charAt(0)=='!') {
+							//this is a remove
 							remove = true;
 							type = type.substring(1).toLowerCase();
 						}else type = type.toLowerCase();
@@ -115,19 +145,35 @@ public class Console implements NodeMessageListener {
 							msgType = Message.JOIN;
 						} else if(type.equals("join_response")) {
 							msgType = Message.JOIN_RESPONSE;
-						} else if(type.equals("broadcast")) {
-							msgType = Message.BROADCAST;
-						} else if(type.equals("duplicate")) {
+						} 
+						else if(type.equals("duplicate")) {
 							msgType = Message.DUPLICATE_NODE_ID;
+						} else if(type.equals("predecessor")) {
+							msgType = Message.FIND_PREDECESSOR;
+						} else if(type.equals("predecessor_response")) {
+							msgType = Message.FIND_PREDECESSOR_RESPONSE;
+						} else if(type.equals("keepalive")) {
+							msgType = Message.KEEPALIVE;
+						} else if(type.equals("keepalive_response")) {
+							msgType = Message.KEEPALIVE_RESPONSE;
+						} else if(type.equals("notify_join")) {
+							msgType = Message.JOIN;
+						} else if(type.equals("notify_leave")) {
+							msgType = Message.JOIN_RESPONSE;
 						}
 						
-						//Call the function
-						if(remove){
-							manager.removeNodeMessageListener(msgType, this);
-						}else manager.addNodeMessageListener(msgType, this);
-						
+						//Call the function for every valid message type
+						if(msgType >= 0) {
+							if(remove) {
+								manager.removeNodeMessageListener(msgType, this);
+								answer.append("!"+type+",");
+							}else {
+								manager.addNodeMessageListener(msgType, this);
+								answer.append(type+",");
+							}
+						}
 					}
-					System.out.println(cmd.cmd + "successful");
+					System.out.println(answer.toString());
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");

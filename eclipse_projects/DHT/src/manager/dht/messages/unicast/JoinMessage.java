@@ -1,15 +1,15 @@
-package manager.dht;
+package manager.dht.messages.unicast;
 
 import manager.Message;
+import manager.dht.NodeID;
+import manager.dht.SHA1Generator;
 
 public class JoinMessage extends Message {
 	private NodeID key;
 	private String originatorAddress;
 	
 	public JoinMessage(String fromIp, String toIp, String originatorAddress, NodeID key) {
-		this.type = Message.JOIN;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
+		super(fromIp,toIp,Message.JOIN);
 		this.originatorAddress = originatorAddress;
 		this.key = key;
 	}

@@ -1,14 +1,10 @@
-package manager.dht;
+package manager.dht.messages.unicast;
 
 import manager.Message;
 
 public class KeepAliveResponse extends Message {
-	public int type = Message.KEEPALIVE_RESPONSE;
-	
 	public KeepAliveResponse(String from,String to) {
-		//Init addresses
-		this.fromIp = from;
-		this.toIp = to;
+		super(from,to,Message.KEEPALIVE_RESPONSE);
 	}
 	
 	public String toString() {

@@ -1,12 +1,15 @@
 package manager;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 
 import manager.dht.NodeID;
+import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.NodeMessageListener;
 
 public class Network {
@@ -18,12 +21,12 @@ public class Network {
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
 
 	//Client list
-	private HashMap<String,Communication> clients;
+	private TreeMap<String,Communication> clients;
 	
 	private Network() {
 		//Singleton class
 		instance = this;
-		clients = new HashMap<String,Communication>();
+		clients = new TreeMap<String,Communication>();
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();  
 	}
@@ -42,6 +45,13 @@ public class Network {
 		//Send the message to the receiver
 		if(receiver != null)
 			receiver.handleMessage(m);
+		
+		//Check whether it is a Broadcast message
+		if (m.type==Message.BROADCAST) {
+			//Extract the broadcastmessage
+			BroadcastMessage msg = (BroadcastMessage)m;
+			m = msg.extractMessage();
+		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
 		if(nodeMessageListener.containsKey(m.type)) {
@@ -144,24 +154,30 @@ public class Network {
 	 */
 	public String showCircle(String startNodeName) {
 		HashSet<Communication> alreadyShown = new HashSet<Communication>();
+		List<Integer> intersections = new ArrayList<Integer>();
 
 		Communication startClient = clients.get(startNodeName);
 		Communication currentClient = startClient;
-		NodeID start = currentClient.getNodeID();
-		NodeID end = start;
+
+		NodeID start,end;
+		int counter = 0;
 
 		//Test if node exists
 		if(startClient == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
-				
+		
+		//Set start and end region on DHT circle
+		start  = currentClient.getNodeID();
+		end = start;
+		
 		//Header
-		StringBuffer result = new StringBuffer("NetworkAddress\t||  NodeID\n");
+		StringBuffer result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");
 
 		//Loop through the circle
 		while(true) {
 			//Get next node
-			result.append(currentClient.showNodeInfo()+"\n");
+			result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
 			alreadyShown.add(currentClient);
 			currentClient = clients.get(currentClient.getSuccessorAddress());
 			
@@ -173,17 +189,20 @@ public class Network {
 				if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
 					//Intersection detected!!
 					result.append(">>> Intersection detected <<<\n");
+					intersections.add(counter);
 				}
 			}
 			else {
 				if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
 					//Intersection detected!!
 					result.append(">>> Intersection detected <<<\n");
+					intersections.add(counter);
 				}
 			}
 			
 			//Shift end forward
 			end = currentClient.getNodeID();
+			counter++;
 		};
 		
 		if(currentClient == startClient) {
@@ -198,6 +217,14 @@ public class Network {
 		else {
 			//Circle contains a side-loop! 
 			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
+		}
+		
+		//Show intersections
+		if(intersections.size() > 0) {
+			result.append("\nDHT contains " + new Integer(intersections.size()).toString() + " intersections @ ");
+			for(int i: intersections) {
+				result.append(new Integer(i).toString() + ",");
+			}
 		}
 		
 		return result.toString();

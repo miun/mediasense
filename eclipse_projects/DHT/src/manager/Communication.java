@@ -3,6 +3,7 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
 
@@ -55,7 +56,7 @@ public class Communication extends Thread implements CommunicationInterface{
 		
 		while(true) {
 			try {
-				//Receive message and forward them
+				//Receive messages and forward them
 				msg = queue.take();
 				//Simulate the time that the message takes over the network
 				Integer totalDelay = Network.msg_delay + delay;
@@ -81,17 +82,17 @@ public class Communication extends Thread implements CommunicationInterface{
 	
 	public String showNodeInfo() {
 		if(node!=null) {
-			return "Node_info{" + networkAddress + "}\t||  NodeID{0x" + node.getIdentity().toString() + "}";
+			return "Node_info{" + networkAddress + "}\t||  NodeID{0x" + node.getIdentity().getNodeID().toString() + "}";
 		} else {
 			return "Node_info{" + networkAddress + "}: Node not started";
 		}
 	}
 	
 	public String getSuccessorAddress() {
-		return node.getSuccessor().getNetworkAddress();
+		return node.getSuccessor(node.getIdentity()).getNetworkAddress();
 	}
 	
 	public NodeID getNodeID() {
-		return node.getIdentity();
+		return node.getIdentity().getNodeID();
 	}
 }

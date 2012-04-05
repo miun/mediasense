@@ -1,6 +1,8 @@
-package manager.dht;
+package manager.dht.messages.unicast;
 
 import manager.Message;
+import manager.dht.NodeID;
+import manager.dht.SHA1Generator;
 
 public class JoinResponseMessage extends Message {
 	//Send the own key to prevent exploits and duplicate entries
@@ -10,14 +12,20 @@ public class JoinResponseMessage extends Message {
 	private NodeID successor;
 	private String successorAddress;
 	
+	//Count of nodes in the DHT
+	private int nodeCount;
+	
+	public int getNodeCount() {
+		return nodeCount;
+	}
+
 	//TODO Which information could be already provided in a JoinResponse
-	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor) {
-		this.type = Message.JOIN_RESPONSE;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
+	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor,int nodeCount) {
+		super(fromIp,toIp,Message.JOIN_RESPONSE);
 		this.joinKey = joinKey;
 		this.successor = successor;
 		this.successorAddress = successorAddress;
+		this.nodeCount = nodeCount;
 	}
 
 	public String toString() {

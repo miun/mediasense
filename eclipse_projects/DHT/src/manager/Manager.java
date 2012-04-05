@@ -1,7 +1,5 @@
 package manager;
 
-import java.util.List;
-
 import manager.dht.Node;
 import manager.listener.NodeMessageListener;
 import manager.ui.GUI;
@@ -19,7 +17,7 @@ public final class Manager {
 	private GUI gui;
 	
 	//To create nodes in ascending order
-	private int newNodeCounter = 0;
+	private int newNodeCounter = -1;
 	
 	public static void main(String[] args) {
 		new Manager();

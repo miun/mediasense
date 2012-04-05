@@ -1,4 +1,4 @@
-package manager.dht;
+package manager.dht.messages.broadcast;
 
 import manager.Message;
 
@@ -16,8 +16,11 @@ public abstract class BroadcastMessage extends Message {
 		return TTL;
 	}
 	
-	public BroadcastMessage(int TTL,int internalType) {
+	public void setTTL(int TTL) {
 		this.TTL = TTL;
+	}
+	
+	public BroadcastMessage(int internalType) {
 		this.internalType = internalType;
 	}
 	

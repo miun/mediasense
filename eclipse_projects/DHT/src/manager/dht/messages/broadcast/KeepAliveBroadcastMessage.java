@@ -1,11 +1,12 @@
-package manager.dht;
+package manager.dht.messages.broadcast;
 
 import manager.Message;
+import manager.dht.messages.unicast.KeepAliveMessage;
 
 public class KeepAliveBroadcastMessage extends BroadcastMessage {
 
-	public KeepAliveBroadcastMessage(int TTL) {
-		super(TTL, Message.KEEPALIVE);
+	public KeepAliveBroadcastMessage() {
+		super(Message.KEEPALIVE);
 	}
 
 	@Override

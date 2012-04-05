@@ -13,22 +13,41 @@ public abstract class Message {
 	public final static int ACK = 10;
 
 	
+	//DHT messages
+	public final static int BROADCAST = 17;
+
 	public final static int REGISTER = 4;
+
 	public final static int RESOLVE = 5;
+	public final static int RESOLVE_RESPONSE = 15;
+	
 	public final static int JOIN = 11;
 	public final static int JOIN_RESPONSE = 12;
-	public final static int KEEPALIVE = 13;
-	
 	public final static int DUPLICATE_NODE_ID = 16;
 	
+	public final static int KEEPALIVE = 13;
 	public final static int KEEPALIVE_RESPONSE = 14;
-	public final static int RESOLVE_RESPONSE = 15;
-	public final static int BROADCAST = 17;
+	
+	public final static int NODE_JOIN_NOTIFY = 18;
+	public final static int NODE_LEAVE_NOTIFY = 19;
+	
+	public final static int FIND_PREDECESSOR = 20;
+	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 
 	
 	public int type = Message.UNKNOWN;
 	public String fromIp = "";
 	public String toIp = "";
+	
+	public Message() {
+		
+	}
+	
+	public Message(String from,String to,int type) {
+		this.fromIp = from;
+		this.toIp = to;
+		this.type = type;
+	}
 	
 	public String toString() {
 		//Return type as number
