@@ -106,11 +106,19 @@ public class Console implements NodeMessageListener {
 						//Only one parameter, check for ! or all
 						if(cmd.param[0].equals("!")) {
 							//remove all
-							types = new String[]{"!join","!join_response","!broadcast","!duplicate"};
-						}else if(cmd.param[0].equals("all")) {
+							types = new String[]{"!join","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						}
+						else if(cmd.param[0].equals("all")) {
 							//add all
-							types = new String[]{"join","join_response","broadcast","duplicate"};
-						} else {
+							types = new String[]{"join","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+						}
+						else if(cmd.param[0].equals("!broadcast")) {
+							types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						}
+						else if(cmd.param[0].equals("broadcast")) {
+							types = new String[]{"keepalive","keepalive_response","notify_join","notify_leave"};
+						}
+						else {
 							//Just forward all parameters as they are
 							types = cmd.param;
 						}
@@ -137,10 +145,21 @@ public class Console implements NodeMessageListener {
 							msgType = Message.JOIN;
 						} else if(type.equals("join_response")) {
 							msgType = Message.JOIN_RESPONSE;
-						} else if(type.equals("broadcast")) {
-							msgType = Message.BROADCAST;
-						} else if(type.equals("duplicate")) {
+						} 
+						else if(type.equals("duplicate")) {
 							msgType = Message.DUPLICATE_NODE_ID;
+						} else if(type.equals("predecessor")) {
+							msgType = Message.FIND_PREDECESSOR;
+						} else if(type.equals("predecessor_response")) {
+							msgType = Message.FIND_PREDECESSOR_RESPONSE;
+						} else if(type.equals("keepalive")) {
+							msgType = Message.KEEPALIVE;
+						} else if(type.equals("keepalive_response")) {
+							msgType = Message.KEEPALIVE_RESPONSE;
+						} else if(type.equals("notify_join")) {
+							msgType = Message.JOIN;
+						} else if(type.equals("notify_leave")) {
+							msgType = Message.JOIN_RESPONSE;
 						}
 						
 						//Call the function for every valid message type

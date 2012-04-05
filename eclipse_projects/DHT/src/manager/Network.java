@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import manager.dht.NodeID;
+import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.NodeMessageListener;
 
 public class Network {
@@ -45,8 +46,15 @@ public class Network {
 		if(receiver != null)
 			receiver.handleMessage(m);
 		
+		//Check whether it is a Broadcast message
+		if (m.type==Message.BROADCAST) {
+			//Extract the broadcastmessage
+			BroadcastMessage msg = (BroadcastMessage)m;
+			m = msg.extractMessage();
+		}
+		
 		//Inform all NodeMessageListeners listening to that type of message
-		if(nodeMessageListener.containsKey(m.type)) {
+		if(nodeMessageListener.containsKey(m.type)  && nodeMessageListener.containsKey(Message.BROADCAST)) {
 			for(NodeMessageListener nml: nodeMessageListener.get(m.type)) {
 				nml.OnNodeMessage(new Date(),m);
 			}
