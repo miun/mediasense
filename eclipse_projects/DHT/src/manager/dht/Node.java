@@ -1,6 +1,6 @@
 package manager.dht;
 
-import java.util.Random;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import manager.CommunicationInterface;
@@ -13,7 +13,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	private String bootstrapAddress;
 
-	private TreeSet<FingerEntry> finger;
+	private TreeMap<FingerEntry,FingerEntry> finger;
 	private boolean bConnected = false;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
@@ -83,19 +83,26 @@ public class Node extends Thread implements LookupServiceInterface {
 					answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID());
 					
 					//Check if it exists
-					FingerEntry newNode = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.fromIp);
-					if(finger.contains(newNode)) {
-						//Key not allowed msg
-						answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.fromIp,join_msg.getKey());
+					FingerEntry newFingerEntry = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.getOriginatorAddress());
+					FingerEntry tempFinger = finger.get(newFingerEntry);
+					
+					//If another node tried to enter the DHT with the same key
+					//Skip if the same node tried again!
+					if(tempFinger != null) {
+						if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
+							//Key not allowed message
+							answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.fromIp,join_msg.getKey());
+						}
 					}
 					else {
 						//Change our successor (Only if it's not us!)
 						if(!successor.equals(identity)) finger.remove(successor);
-						finger.add(newNode);
+						finger.put(newFingerEntry,newFingerEntry);
 					}
 				}
 				else {
 					//Forward to successor
+					message.fromIp = identity.getNetworkAddress();
 					message.toIp = getSuccessor().getNetworkAddress();
 					answer = message;
 				}
@@ -110,7 +117,8 @@ public class Node extends Thread implements LookupServiceInterface {
 				if(!bConnected) {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
-						finger.add(new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress()));
+						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
+						finger.put(newFingerEntry,newFingerEntry);
 						bConnected = true;
 					}
 					else {
@@ -186,9 +194,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry successor;
 		
 		//Get successor of us
-		successor = finger.higher(identity);
+		successor = finger.higherKey(identity);
 		if(successor == null) 
-			successor = finger.first();
+			successor = finger.firstKey();
 		return successor;
 	}
 	
@@ -196,10 +204,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry precessor;
 		
 		//Find predecessor of a node
-		precessor = finger.lower(new FingerEntry(nodeID,null));
+		precessor = finger.lowerKey(new FingerEntry(nodeID,null));
 		if(precessor == null) 
-			precessor = finger.last();
-					
+			precessor = finger.lastKey();
+		
 		return precessor;
 	}
 	
@@ -209,7 +217,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//(Re-)initialize finger table
 		//Always add ourselves to the finger table
-		finger = new TreeSet<FingerEntry>();
-		finger.add(identity);
+		finger = new TreeMap<FingerEntry,FingerEntry>();
+		finger.put(identity,identity);
 	}
 }
