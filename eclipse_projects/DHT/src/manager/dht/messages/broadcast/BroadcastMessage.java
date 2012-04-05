@@ -20,8 +20,7 @@ public abstract class BroadcastMessage extends Message {
 		this.TTL = TTL;
 	}
 	
-	public BroadcastMessage(int TTL,int internalType) {
-		this.TTL = TTL;
+	public BroadcastMessage(int internalType) {
 		this.internalType = internalType;
 	}
 	

@@ -3,8 +3,8 @@ package manager.dht.messages.broadcast;
 import manager.Message;
 
 public class NotifyJoinBroadcastMessage extends BroadcastMessage {
-	public NotifyJoinBroadcastMessage(int TTL) {
-		super(TTL,Message.NODE_JOIN_NOTIFY);
+	public NotifyJoinBroadcastMessage() {
+		super(Message.NODE_JOIN_NOTIFY);
 	}
 
 	@Override

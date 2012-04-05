@@ -12,4 +12,12 @@ public class FindPredecessorResponseMessage extends Message {
 		this.networkAddress = networkAddress;
 		this.hash = hash;
 	}
+
+	public String getNetworkAddress() {
+		return networkAddress;
+	}
+
+	public NodeID getHash() {
+		return hash;
+	}
 }

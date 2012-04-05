@@ -6,20 +6,26 @@ import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
+import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
+import manager.dht.messages.unicast.FindPredecessorMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 
 public class Node extends Thread implements LookupServiceInterface {
+	//Communication
 	private CommunicationInterface communication;
-	private FingerEntry identity;
-	
 	private String bootstrapAddress;
 
+	//Own state in the DHT
 	private TreeMap<FingerEntry,FingerEntry> finger;
+	private FingerEntry identity;
 	private boolean bConnected = false;
-	
-	private int nodeCount;
+
+	//This is the node count of the DHT
+	//At the beginning it's one (we)
+	//After every change call checkFingerTable
+	private int nodeCount = 1; 
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -77,7 +83,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//react on a Join message
 			case Message.JOIN:
 				JoinMessage join_msg = (JoinMessage) message;
-				Message answer;
+				Message answer = null;
 
 				FingerEntry predecessor = findPredecessorOf(join_msg.getKey());
 				FingerEntry successor = getSuccessor(identity);
@@ -85,8 +91,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
 					//Its us => reply on JOIN
-					answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID());
-					
+
 					//Check if it exists
 					FingerEntry newFingerEntry = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.getOriginatorAddress());
 					FingerEntry tempFinger = finger.get(newFingerEntry);
@@ -100,9 +105,21 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 					}
 					else {
+						//Prepare answer
+						nodeCount++;
+						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),nodeCount);
+
 						//Change our successor (Only if it's not us!)
-						if(!successor.equals(identity)) finger.remove(successor);
+						
+						sendBroadcast(new NotifyJoinBroadcastMessage());
+						
+						//TODO figure out if this works!!!
+						//if(!successor.equals(identity))
+						//	finger.remove(successor);
 						finger.put(newFingerEntry,newFingerEntry);
+						
+						//Repair finger count
+						checkFingerTable();
 					}
 				}
 				else {
@@ -112,8 +129,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					answer = message;
 				}
 				
-				//Send
-				communication.sendMessage(answer);
+				//Send message
+				if(answer != null) communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
 				JoinResponseMessage jrm = (JoinResponseMessage) message;
@@ -125,6 +142,10 @@ public class Node extends Thread implements LookupServiceInterface {
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
 						finger.put(newFingerEntry,newFingerEntry);
 						bConnected = true;
+														
+						//Repair finger table
+						nodeCount = jrm.getNodeCount();
+						checkFingerTable();
 					}
 					else {
 						//Ignore this because the key does not match!!!
@@ -147,23 +168,15 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
-				//TODO Forward broadcast
-				FingerEntry startFinger = finger.get(identity);
-				FingerEntry currentFinger = startFinger;
-				
-				for(int i = 1; i <= bcast_msg.getTTL(); i++) {
-					//Get next finger
-					currentFinger = getSuccessor(currentFinger);
-					if(currentFinger == startFinger) {
-						//Too less fingers !
-						break;
+				//Forward broadcast
+				if(bcast_msg.getTTL() > 0) {
+					for(FingerEntry fingerEntry: finger.keySet()) {
+						if(!fingerEntry.equals(identity)) {
+							//Decrement TTL
+							bcast_msg.setTTL(bcast_msg.getTTL());
+							communication.sendMessage(bcast_msg);
+						}
 					}
-					
-					//Forward broadcast to this finger with decreased TTL
-					bcast_msg.fromIp = identity.getNetworkAddress();
-					bcast_msg.toIp = currentFinger.getNetworkAddress();
-					bcast_msg.setTTL(i  - 1);
-					communication.sendMessage(bcast_msg);
 				}
 				
 				//Process broadcast
@@ -212,6 +225,16 @@ public class Node extends Thread implements LookupServiceInterface {
 		return identity;
 	}
 	
+	private FingerEntry getPredecessor(FingerEntry startFinger) {
+		FingerEntry predecessor;
+		
+		//Get successor of us
+		predecessor = finger.lowerKey(startFinger);
+		if(predecessor == null) 
+			predecessor = finger.lastKey();
+		return predecessor;
+	}
+	
 	public FingerEntry getSuccessor(FingerEntry startFinger) {
 		FingerEntry successor;
 		
@@ -243,4 +266,52 @@ public class Node extends Thread implements LookupServiceInterface {
 		finger.put(identity,identity);
 	}
 	
+	private void checkFingerTable() {
+		//Calculate the nominal amount of finger-table entries;
+		int nominalCount = new Double(Math.ceil(Math.log10(nodeCount) / Math.log10(2))).intValue() + 1;
+		FingerEntry fingerEntry;
+		NodeID hash;
+		
+		if(nominalCount > finger.size()) {
+			FindPredecessorMessage msg;
+			
+			for(int n = finger.size(); n < nominalCount; n++) {
+				//Calculate hash of the Node that we want to have...
+				//hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
+				
+				//... and find its predecessor
+				//msg = new FindPredecessorMessage(identity.getNetworkAddress(), finger.higherKey(new FingerEntry(hash,null)).getNetworkAddress(), hash);
+				
+				//TODO send message!
+			}
+		}
+		else {
+			//Drop some fingers
+			for(int n = 0; n < finger.size() - nominalCount; n++) {
+				fingerEntry = getPredecessor(identity);
+				finger.remove(fingerEntry);
+			}
+		}
+	}
+	
+	private void sendBroadcast(BroadcastMessage bcast_msg) {
+		//Forward broadcast
+		FingerEntry startFinger = finger.get(identity);
+		FingerEntry currentFinger = startFinger;
+		
+		for(int i = 0; i < finger.size() - 2; i++) {
+			//Get next finger
+			currentFinger = getSuccessor(currentFinger);
+			if(currentFinger == startFinger) {
+				//Too less fingers !
+				break;
+			}
+			
+			//Send broadcast message
+			bcast_msg.fromIp = identity.getNetworkAddress();
+			bcast_msg.toIp = currentFinger.getNetworkAddress();
+			bcast_msg.setTTL(i);
+			communication.sendMessage(bcast_msg);
+		}
+	}
 }

@@ -20,6 +20,4 @@ public class NotifyJoinMessage extends Message {
 	public NodeID getHash() {
 		return hash;
 	}
-	
-	
 }
