@@ -150,14 +150,18 @@ public class Network {
 
 		Communication startClient = clients.get(startNodeName);
 		Communication currentClient = startClient;
-		NodeID start = currentClient.getNodeID();
-		NodeID end = start;
+
+		NodeID start,end;
 		int counter = 0;
 
 		//Test if node exists
 		if(startClient == null) {
 			return "Cannot find node " + startNodeName + "\n"; 
 		}
+		
+		//Set start and end region on DHT circle
+		start  = currentClient.getNodeID();
+		end = start;
 		
 		//Header
 		StringBuffer result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");

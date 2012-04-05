@@ -1,8 +1,9 @@
 package manager;
 
-import java.util.List;
+import java.util.HashSet;
 
 import manager.dht.Node;
+import manager.dht.SHA1Generator;
 import manager.listener.NodeMessageListener;
 import manager.ui.GUI;
 import manager.ui.console.Console;
@@ -19,7 +20,7 @@ public final class Manager {
 	private GUI gui;
 	
 	//To create nodes in ascending order
-	private int newNodeCounter = 0;
+	private int newNodeCounter = -1;
 	
 	public static void main(String[] args) {
 		new Manager();
@@ -64,7 +65,7 @@ public final class Manager {
 		Node node;
 		
 		//Add node with communication interface adopted from MediaSense
-		comm = new Communication(network,new Integer(newNodeCounter++).toString());
+		comm = new Communication(network,new Integer(++newNodeCounter).toString());
 		node = new Node(comm,bootstrapAddress);
 
 		//Give control to the network
