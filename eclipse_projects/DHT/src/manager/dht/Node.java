@@ -1,5 +1,6 @@
 package manager.dht;
 
+import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
 import manager.CommunicationInterface;
@@ -21,14 +22,17 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Own state in the DHT
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private FingerEntry identity;
-	private FingerEntry successor = null;
+	private FingerEntry successor;
 	
 	//Connection state
 	private boolean bConnected = false;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
-
+		
+		//Init fingertable
+		finger = new TreeMap<FingerEntry, FingerEntry>();
+		
 		//Generate hash from the local network address
 		//TODO ask stefan if inclusion of port address is reasonable
 		byte[] hash = SHA1Generator.SHA1(communication.getLocalIp());
@@ -41,7 +45,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		//If we are a bootstrapping node, that means bootstrapping address is null or is our address,
 		//we are always connected !!
 		if(bootstrapAddress == null || bootstrapAddress.equals(communication.getLocalIp())) {
+			//We are connected and we are our own successor
 			bConnected = true;
+			this.successor = identity;
 		}
 		else {
 			this.bootstrapAddress = bootstrapAddress;
@@ -85,8 +91,8 @@ public class Node extends Thread implements LookupServiceInterface {
 				JoinMessage join_msg = (JoinMessage) message;
 				Message answer = null;
 
-				FingerEntry predecessor = findPredecessorOf(join_msg.getKey());
-				FingerEntry successor = getSuccessor(identity.getNodeID());
+				FingerEntry predecessor = getPredecessor(join_msg.getKey());
+				//FingerEntry successor = getSuccessor(identity.getNodeID());
 				
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
@@ -114,7 +120,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						
 						//Set successor and insert into finger table
 						successor = newFingerEntry;
-						updateFingerTable(newFingerEntry);
+						//updateFingerTable(newFingerEntry);
 						//finger.put(newFingerEntry,newFingerEntry);
 						
 						//Repair finger count
@@ -137,7 +143,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
-						finger.put(newFingerEntry,newFingerEntry);
+						//finger.put(newFingerEntry,newFingerEntry);
+						successor = newFingerEntry;
 						bConnected = true;
 														
 						//Repair finger table
@@ -227,35 +234,48 @@ public class Node extends Thread implements LookupServiceInterface {
 		return identity;
 	}
 	
-	private FingerEntry getPredecessor(NodeID startHash) {
-		FingerEntry predecessor;
-		
-		//Get successor of us
-		predecessor = finger.lowerKey(new FingerEntry(startHash,null));
-		if(predecessor == null) 
-			predecessor = finger.lastKey();
-		return predecessor;
+	private FingerEntry getPredecessor(NodeID nodeID) {
+		//Add identity and successor to the fingertable - IMPORTANT: remove them before return
+				finger.put(identity, identity);
+				finger.put(successor, successor);
+				
+				FingerEntry hash = new FingerEntry(nodeID,null);
+				FingerEntry result;
+				
+				//Find predecessor of a node
+				result = finger.lowerKey(hash);
+				if(result == null) {
+					//There is no lower key in the finger tree
+					result = finger.lastKey();
+				}
+				
+				//Remove identity and successor from the fingertable
+				finger.remove(identity);
+				finger.remove(successor);
+				
+				return result;
 	}
 	
-	public FingerEntry getSuccessor(NodeID startHash) {
-		FingerEntry successor;
+	public FingerEntry getSuccessor(NodeID nodeID) {
+		//Add identity and successor to the fingertable - IMPORTANT: remove them before return
+		finger.put(identity, identity);
+		finger.put(successor, successor);
+		
+		FingerEntry hash = new FingerEntry(nodeID,null);
+		FingerEntry result;
 		
 		//Get successor of us
-		successor = finger.higherKey(new FingerEntry(startHash,null));
-		if(successor == null) 
-			successor = finger.firstKey();
-		return successor;
-	}
-	
-	private FingerEntry findPredecessorOf(NodeID nodeID) {
-		FingerEntry precessor;
+		result = finger.higherKey(hash);
+		if(result == null) { 
+			//There is no higher key in the finger tree
+			result = finger.firstKey();
+		}
 		
-		//Find predecessor of a node
-		precessor = finger.lowerKey(new FingerEntry(nodeID,null));
-		if(precessor == null) 
-			precessor = finger.lastKey();
+		//Remove identity and successor from the fingertable
+		finger.remove(identity);
+		finger.remove(successor);
 		
-		return precessor;
+		return result;
 	}
 	
 	private void setIdentity(byte[] hash) {
@@ -264,8 +284,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//(Re-)initialize finger table
 		//Always add ourselves to the finger table
-		finger = new TreeMap<FingerEntry,FingerEntry>();
-		finger.put(identity,identity);
+		//finger = new TreeMap<FingerEntry,FingerEntry>();
+		//finger.put(identity,identity);
 	}
 	
 	//Check if new node can be inserted into finger table
