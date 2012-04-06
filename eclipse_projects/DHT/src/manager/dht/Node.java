@@ -12,6 +12,7 @@ import manager.dht.messages.unicast.FindPredecessorMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
+import manager.dht.messages.unicast.NotifyLeaveMessage;
 
 public class Node extends Thread implements LookupServiceInterface {
 	//Communication
@@ -90,7 +91,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
-					//Its us => reply on JOIN
+					//It's us => reply on JOIN
 
 					//Check if it exists
 					FingerEntry newFingerEntry = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.getOriginatorAddress());
@@ -114,8 +115,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						
 						//Set successor and insert into finger table
 						successor = newFingerEntry;
-						updateFingerTable(newFingerEntry);
-						//finger.put(newFingerEntry,newFingerEntry);
+						updateFingerTableEntry(newFingerEntry);
 						
 						//Repair finger count
 						// checkFingerTable();
@@ -137,10 +137,11 @@ public class Node extends Thread implements LookupServiceInterface {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
+						successor = newFingerEntry;
 						finger.put(newFingerEntry,newFingerEntry);
 						bConnected = true;
 														
-						//Repair finger table
+						//"Repair" finger table
 						//checkFingerTable();
 					}
 					else {
@@ -184,10 +185,20 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.NODE_JOIN_NOTIFY:
 				NotifyJoinMessage njm = (NotifyJoinMessage)message;
 				
+				//Check if this node can use the newly added node
+				//for the finger table
+				updateFingerTableEntry(new FingerEntry(njm.getHash(),njm.getNetworkAddress()));
+					
 				//Check finger table
 				//checkFingerTable();
 				
 				break;
+			case Message.NODE_LEAVE_NOTIFY:
+				NotifyLeaveMessage nlm = (NotifyLeaveMessage)message;
+				
+				//Remove finger from finger table and exchange by successor
+				removeFingerTableEntry(new FingerEntry(nlm.getHash(),nlm.getNetworkAddress()),new FingerEntry(nlm.getSuccessorHash(),nlm.getSuccessorNetworkAddress()));
+				
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
@@ -269,26 +280,35 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	//Check if new node can be inserted into finger table
-	public void updateFingerTable(FingerEntry fingerEntry) {
+	public void updateFingerTableEntry(FingerEntry newFinger) {
 		FingerEntry predecessor;
 		NodeID hash;
 		int log2up;
-		
-		//1 - Rotate hash to the "origin"(point)
-		//2 - Then get the logarithm of base 2 rounded up
+				//Exists? => nothing to do
+		if(finger.containsKey(newFinger)) return;
+
+		//1 - Rotate hash to the "origin"
+		//2 - Then get the logarithm of base 2, rounded up
 		//3 - Calculate the new hash
-		//4 - Rotate back to original point
 		
-		hash = fingerEntry.getNodeID().Sub(identity.getNodeID());
-		log2up = hash.logTwoRoundUp(hash);
+		hash = newFinger.getNodeID().Sub(identity.getNodeID());
+		log2up = NodeID.logTwoRoundUp(hash);
 		hash = NodeID.powerOfTwo(log2up);
-		hash = hash.add(identity.getNodeID());
+
+		//Get previous predecessor - Shift to original position first
+		predecessor = getPredecessor(hash.add(identity.getNodeID()));
 		
-		//Exists?
-		if(finger.containsKey(fingerEntry)) return;
+		//Need to replace the predecessor with a better one?
+		//Check if done in zero-origin hash-space
+		if(predecessor.getNodeID().Sub(identity.getNodeID()).compareTo(hash) == -1) {
+			//Yep, replace
+			finger.remove(predecessor);
+			finger.put(newFinger,newFinger);
+		}
+	}
+	
+	public void removeFingerTableEntry(FingerEntry remove,FingerEntry successor) {
 		
-		//Get previous predecessor
-		predecessor = getPredecessor(fingerEntry.getNodeID());
 	}
 	
 	//TODO figure out where and how to use

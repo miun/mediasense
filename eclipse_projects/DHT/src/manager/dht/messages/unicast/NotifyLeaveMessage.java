@@ -4,17 +4,30 @@ import manager.Message;
 import manager.dht.NodeID;
 
 public class NotifyLeaveMessage extends Message {
-	private String networkAddress;
 	private NodeID hash;
+	private NodeID successorHash;
+
+	private String networkAddress;
+	private String successorNetworkAddress;
 	
-	NotifyLeaveMessage(String from,String to,String networkAddress,NodeID hash) {
+	NotifyLeaveMessage(String from,String to,NodeID hash,String networkAddress,NodeID successorHash,String successorNetworkAddress) {
 		super(from,to,Message.NODE_LEAVE_NOTIFY);
-		this.networkAddress = networkAddress;
 		this.hash = hash;
+		this.successorHash = successorHash;
+		this.networkAddress = networkAddress;
+		this.successorNetworkAddress = successorNetworkAddress;
 	}
 
 	public String getNetworkAddress() {
 		return networkAddress;
+	}
+
+	public NodeID getSuccessorHash() {
+		return successorHash;
+	}
+
+	public String getSuccessorNetworkAddress() {
+		return successorNetworkAddress;
 	}
 
 	public NodeID getHash() {

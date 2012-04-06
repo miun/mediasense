@@ -34,6 +34,7 @@ public class NodeID implements Comparable<NodeID> {
 	//Static math functions
 	//-----
 	
+	//Add two node hash values
 	public NodeID add(NodeID hash) {
 		int immediate;
 		int carry = 0;
@@ -56,11 +57,41 @@ public class NodeID implements Comparable<NodeID> {
 		return null;
 	}
 
+	//Subtract two node hash values
 	public NodeID Sub(NodeID hash) {
-		return null;
+		int immediate;
+		int carry = 0;
+		byte[] temp = new byte[ADDRESS_SIZE];
+		
+		for(int i = 0; i < ADDRESS_SIZE; i++) {
+			immediate = id[i] - hash.id[i] - carry;
+			temp[i] = (byte)(immediate % 255); 
+			carry = immediate >> 8;
+		}
+		
+		return new NodeID(temp);
 	}
 	
+	//TODO figure out if this works!!!
 	public static int logTwoRoundUp(NodeID nodeID) {
+		int temp;
+		
+		//For each byte
+		for(int i = 0; i < NodeID.ADDRESS_SIZE; i++) {
+			if(nodeID.id[i] != 0) {
+				temp = nodeID.id[i];
+				
+				//For each bit
+				for(int j = 0; j < 8; j++) {
+					temp = temp << 1;
+					if(temp > 255) {
+						//Return found position
+						return NodeID.ADDRESS_SIZE - (i * 8) - 1 + (7 - j) + 1;
+					}
+				}
+			}
+		}
+		
 		return 0;
 	}
 }
