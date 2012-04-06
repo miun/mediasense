@@ -52,13 +52,13 @@ public class NodeID implements Comparable<NodeID> {
 	public static NodeID powerOfTwo(int n) {
 		byte[] hash = new byte[ADDRESS_SIZE];
 		if(n >= 0 && n < ADDRESS_SIZE * 8) {
-			hash[n / 8] = (byte)(n % 8);
+			hash[(NodeID.ADDRESS_SIZE - 1) - (n / 8)] = (byte)(1 << (n % 8));
 		}
 		return new NodeID(hash);
 	}
 
 	//Subtract two node hash values
-	public NodeID Sub(NodeID hash) {
+	public NodeID sub(NodeID hash) {
 		int immediate;
 		int carry = 0;
 		byte[] temp = new byte[ADDRESS_SIZE];
@@ -73,7 +73,7 @@ public class NodeID implements Comparable<NodeID> {
 	}
 	
 	//TODO figure out if this works!!!
-	public static int logTwoRoundUp(NodeID nodeID) {
+	public static int logTwoFloor(NodeID nodeID) {
 		int temp;
 		
 		//For each byte
@@ -86,12 +86,17 @@ public class NodeID implements Comparable<NodeID> {
 					temp = temp << 1;
 					if(temp > 255) {
 						//Return found position
-						return NodeID.ADDRESS_SIZE - (i * 8) - 1 + (7 - j) + 1;
+						return (NodeID.ADDRESS_SIZE * 8 - 1) - (i * 8) - j;
 					}
 				}
 			}
 		}
 		
 		return 0;
+	}
+	
+	public static int logTwoCeil(NodeID nodeID) {
+		//Easy as that :-)
+		return logTwoFloor(nodeID) + 1;
 	}
 }
