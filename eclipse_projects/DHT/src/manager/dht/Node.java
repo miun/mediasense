@@ -293,7 +293,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
 				
 				//... and find its predecessor
-				msg = new FindPredecessorMessage(identity.getNetworkAddress(), getSuccessor(new FingerEntry(hash,null)).getNetworkAddress(), hash);
+				msg = new FindPredecessorMessage(identity.getNetworkAddress(), getSuccessor(hash).getNetworkAddress(), hash);
 				
 				//TODO send message!
 				communication.sendMessage(msg);
@@ -302,7 +302,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		else if(nominalCount < finger.size()) {
 			//Drop some fingers
 			for(int n = 0; n < finger.size() - nominalCount; n++) {
-				fingerEntry = getPredecessor(identity);
+				fingerEntry = getPredecessor(identity.getNodeID());
 				finger.remove(fingerEntry);
 			}
 		}
@@ -315,7 +315,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		for(int i = 0; i < finger.size() - 1; i++) {
 			//Get next finger
-			currentFinger = getSuccessor(currentFinger);
+			currentFinger = getSuccessor(currentFinger.getNodeID());
 			if(currentFinger == startFinger) {
 				//Too less fingers !
 				break;
