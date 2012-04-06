@@ -54,7 +54,7 @@ public class NodeID implements Comparable<NodeID> {
 		if(n >= 0 && n < ADDRESS_SIZE * 8) {
 			hash[n / 8] = (byte)(n % 8);
 		}
-		return null;
+		return new NodeID(hash);
 	}
 
 	//Subtract two node hash values

@@ -55,7 +55,7 @@ public class Network {
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
-		if(nodeMessageListener.containsKey(m.type)) {
+		if(nodeMessageListener.containsKey(messageType)) {
 			for(NodeMessageListener nml: nodeMessageListener.get(messageType)) {
 				nml.OnNodeMessage(new Date(),m);
 			}
