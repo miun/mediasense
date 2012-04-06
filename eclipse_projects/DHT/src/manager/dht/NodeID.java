@@ -34,10 +34,18 @@ public class NodeID implements Comparable<NodeID> {
 	//Static math functions
 	//-----
 	
-	public static NodeID add(NodeID hash) {
-		for(int i = 0; )
+	public NodeID add(NodeID hash) {
+		int immediate;
+		int carry = 0;
+		byte[] temp = new byte[ADDRESS_SIZE];
 		
-		return null;
+		for(int i = 0; i < ADDRESS_SIZE; i++) {
+			immediate = id[i] + hash.id[i] + carry;
+			temp[i] = (byte)(immediate % 255); 
+			carry = immediate >> 8;
+		}
+		
+		return new NodeID(temp);
 	}
 	
 	public static NodeID powerOfTwo(int n) {

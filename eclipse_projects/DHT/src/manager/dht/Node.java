@@ -11,6 +11,7 @@ import manager.dht.messages.unicast.DuplicateNodeIdMessage;
 import manager.dht.messages.unicast.FindPredecessorMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
+import manager.dht.messages.unicast.NotifyJoinMessage;
 
 public class Node extends Thread implements LookupServiceInterface {
 	//Communication
@@ -87,7 +88,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				Message answer = null;
 
 				FingerEntry predecessor = findPredecessorOf(join_msg.getKey());
-				FingerEntry successor = getSuccessor(identity);
+				FingerEntry successor = getSuccessor(identity.getNodeID());
 				
 				//Forward or answer?
 				if(predecessor.equals(identity)) {
@@ -125,9 +126,9 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 				}
 				else {
-					//Forward to successor
+					//Forward to the best fitting predecessor
 					message.fromIp = identity.getNetworkAddress();
-					message.toIp = getSuccessor(identity).getNetworkAddress();
+					message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
 					answer = message;
 				}
 				
@@ -188,7 +189,14 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Handle keep-alive message 
 				break;
 			case Message.NODE_JOIN_NOTIFY:
-				//TODO HANDLE
+				NotifyJoinMessage njm = (NotifyJoinMessage)message;
+				
+				//New node!
+				nodeCount++;
+				
+				//Check finger table
+				checkFingerTable();
+				
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
@@ -230,21 +238,21 @@ public class Node extends Thread implements LookupServiceInterface {
 		return identity;
 	}
 	
-	private FingerEntry getPredecessor(FingerEntry startFinger) {
+	private FingerEntry getPredecessor(NodeID startHash) {
 		FingerEntry predecessor;
 		
 		//Get successor of us
-		predecessor = finger.lowerKey(startFinger);
+		predecessor = finger.lowerKey(new FingerEntry(startHash,null));
 		if(predecessor == null) 
 			predecessor = finger.lastKey();
 		return predecessor;
 	}
 	
-	public FingerEntry getSuccessor(FingerEntry startFinger) {
+	public FingerEntry getSuccessor(NodeID startHash) {
 		FingerEntry successor;
 		
 		//Get successor of us
-		successor = finger.higherKey(startFinger);
+		successor = finger.higherKey(new FingerEntry(startHash,null));
 		if(successor == null) 
 			successor = finger.firstKey();
 		return successor;
@@ -285,12 +293,13 @@ public class Node extends Thread implements LookupServiceInterface {
 				hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
 				
 				//... and find its predecessor
-				msg = new FindPredecessorMessage(identity.getNetworkAddress(), finger.higherKey(new FingerEntry(hash,null)).getNetworkAddress(), hash);
+				msg = new FindPredecessorMessage(identity.getNetworkAddress(), getSuccessor(new FingerEntry(hash,null)).getNetworkAddress(), hash);
 				
 				//TODO send message!
+				communication.sendMessage(msg);
 			}
 		}
-		else {
+		else if(nominalCount < finger.size()) {
 			//Drop some fingers
 			for(int n = 0; n < finger.size() - nominalCount; n++) {
 				fingerEntry = getPredecessor(identity);
@@ -304,7 +313,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry startFinger = finger.get(identity);
 		FingerEntry currentFinger = startFinger;
 		
-		for(int i = 0; i < finger.size() - 2; i++) {
+		for(int i = 0; i < finger.size() - 1; i++) {
 			//Get next finger
 			currentFinger = getSuccessor(currentFinger);
 			if(currentFinger == startFinger) {
