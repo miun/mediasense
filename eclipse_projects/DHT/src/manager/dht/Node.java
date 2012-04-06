@@ -21,12 +21,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Own state in the DHT
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private FingerEntry identity;
+	private FingerEntry successor = null;
+	
+	//Connection state
 	private boolean bConnected = false;
-
-	//This is the node count of the DHT
-	//At the beginning it's one (we)
-	//After every change call checkFingerTable
-	private int nodeCount = 1; 
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -98,8 +96,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					FingerEntry newFingerEntry = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.getOriginatorAddress());
 					FingerEntry tempFinger = finger.get(newFingerEntry);
 					
-					//If another node tried to enter the DHT with the same key
-					//Skip if the same node tried again!
+					//If another node tried to enter the DHT with the same key, send duplicate message
+					//Skip, if the same node tried again!
 					if(tempFinger != null) {
 						if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
 							//Key not allowed message
@@ -108,21 +106,19 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 					else {
 						//Prepare answer
-						nodeCount++;
-						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),nodeCount);
+						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID());
+						communication.sendMessage(answer);
 
-						
-						
+						//Notify everybody of the new node
 						sendBroadcast(new NotifyJoinBroadcastMessage(join_msg.getOriginatorAddress(),join_msg.getKey()));
 						
-						//TODO figure out if this works!!!
-						//Change our successor (Only if it's not us!)
-						//if(!successor.equals(identity))
-						//	finger.remove(successor);
-						finger.put(newFingerEntry,newFingerEntry);
+						//Set successor and insert into finger table
+						successor = newFingerEntry;
+						updateFingerTable(newFingerEntry);
+						//finger.put(newFingerEntry,newFingerEntry);
 						
 						//Repair finger count
-						checkFingerTable();
+						// checkFingerTable();
 					}
 				}
 				else {
@@ -130,10 +126,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					message.fromIp = identity.getNetworkAddress();
 					message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
 					answer = message;
+					communication.sendMessage(answer);
 				}
-				
-				//Send message
-				if(answer != null) communication.sendMessage(answer);
 				break;
 			case Message.JOIN_RESPONSE:
 				JoinResponseMessage jrm = (JoinResponseMessage) message;
@@ -147,8 +141,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						bConnected = true;
 														
 						//Repair finger table
-						nodeCount = jrm.getNodeCount();
-						checkFingerTable();
+						//checkFingerTable();
 					}
 					else {
 						//Ignore this because the key does not match!!!
@@ -191,17 +184,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.NODE_JOIN_NOTIFY:
 				NotifyJoinMessage njm = (NotifyJoinMessage)message;
 				
-				//New node!
-				nodeCount++;
-				
 				//Check finger table
-				checkFingerTable();
+				//checkFingerTable();
 				
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
-		
 	}
 	
 	@Override
@@ -279,9 +268,33 @@ public class Node extends Thread implements LookupServiceInterface {
 		finger.put(identity,identity);
 	}
 	
-	private void checkFingerTable() {
+	//Check if new node can be inserted into finger table
+	public void updateFingerTable(FingerEntry fingerEntry) {
+		FingerEntry predecessor;
+		NodeID hash;
+		int log2up;
+		
+		//1 - Rotate hash to the "origin"(point)
+		//2 - Then get the logarithm of base 2 rounded up
+		//3 - Calculate the new hash
+		//4 - Rotate back to original point
+		
+		hash = fingerEntry.getNodeID().Sub(identity.getNodeID());
+		log2up = hash.logTwoRoundUp(hash);
+		hash = NodeID.powerOfTwo(log2up);
+		hash = hash.add(identity.getNodeID());
+		
+		//Exists?
+		if(finger.containsKey(fingerEntry)) return;
+		
+		//Get previous predecessor
+		predecessor = getPredecessor(fingerEntry.getNodeID());
+	}
+	
+	//TODO figure out where and how to use
+/*	private void checkFingerTable() {
 		//Calculate the nominal amount of finger-table entries;
-		int nominalCount = new Double(Math.ceil(Math.log10(nodeCount) / Math.log10(2))).intValue() + 1;
+		//int nominalCount = new Double(Math.ceil(Math.log10(nodeCount) / Math.log10(2))).intValue() + 1;
 		FingerEntry fingerEntry;
 		NodeID hash;
 		
@@ -306,7 +319,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				finger.remove(fingerEntry);
 			}
 		}
-	}
+	}*/
 	
 	private void sendBroadcast(BroadcastMessage bcast_msg) {
 		//Forward broadcast

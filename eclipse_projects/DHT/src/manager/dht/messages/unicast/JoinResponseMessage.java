@@ -11,21 +11,13 @@ public class JoinResponseMessage extends Message {
 	//NodeID and network address of the successor
 	private NodeID successor;
 	private String successorAddress;
-	
-	//Count of nodes in the DHT
-	private int nodeCount;
-	
-	public int getNodeCount() {
-		return nodeCount;
-	}
 
 	//TODO Which information could be already provided in a JoinResponse
-	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor,int nodeCount) {
+	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor) {
 		super(fromIp,toIp,Message.JOIN_RESPONSE);
 		this.joinKey = joinKey;
 		this.successor = successor;
 		this.successorAddress = successorAddress;
-		this.nodeCount = nodeCount;
 	}
 
 	public String toString() {

@@ -55,4 +55,12 @@ public class NodeID implements Comparable<NodeID> {
 		}
 		return null;
 	}
+
+	public NodeID Sub(NodeID hash) {
+		return null;
+	}
+	
+	public static int logTwoRoundUp(NodeID nodeID) {
+		return 0;
+	}
 }
