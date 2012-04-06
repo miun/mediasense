@@ -3,8 +3,6 @@ package manager.dht.messages.broadcast;
 import manager.Message;
 
 public abstract class BroadcastMessage extends Message {
-	//Type is always BRAODCAST
-	public final int type = Message.BROADCAST;
 	
 	//Limit counter for spanning tree
 	private int TTL;
@@ -17,6 +15,7 @@ public abstract class BroadcastMessage extends Message {
 	}
 	
 	public void setTTL(int TTL) {
+		this.type = Message.BROADCAST;
 		this.TTL = TTL;
 	}
 	
@@ -25,7 +24,7 @@ public abstract class BroadcastMessage extends Message {
 	}
 	
 	protected String toString(String text) {
-		return super.toString("BROADCAST-" + " | " + text);
+		return super.toString("BROADCAST-" + " | " + extractMessage().toString());
 	}
 	
 	//Extract unicast message

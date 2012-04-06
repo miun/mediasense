@@ -6,9 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import manager.Manager;
 import manager.Message;
@@ -17,13 +14,9 @@ import manager.listener.NodeMessageListener;
 public class Console implements NodeMessageListener {
 	private Manager manager;
 	
-	private HashSet<Integer> messageTypesToListen;
-	
 	public Console(Manager manager) {
 		//Set objects
 		this.manager = manager;
-		
-		messageTypesToListen = new HashSet<Integer>();
 	}
 		
 	public void run() {
@@ -101,7 +94,8 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
 					if(cmd.param == null) throw new InvalidParamAmountException();
 					String[] types = null;
-					//Check if it is onlz one parameter, then might be ! or all
+					
+					//Check if it is only one parameter, then might be ! or all
 					if(cmd.param.length == 1){
 						//Only one parameter, check for ! or all
 						if(cmd.param[0].equals("!")) {
@@ -157,9 +151,9 @@ public class Console implements NodeMessageListener {
 						} else if(type.equals("keepalive_response")) {
 							msgType = Message.KEEPALIVE_RESPONSE;
 						} else if(type.equals("notify_join")) {
-							msgType = Message.JOIN;
+							msgType = Message.NODE_JOIN_NOTIFY;
 						} else if(type.equals("notify_leave")) {
-							msgType = Message.JOIN_RESPONSE;
+							msgType = Message.NODE_LEAVE_NOTIFY;
 						}
 						
 						//Call the function for every valid message type

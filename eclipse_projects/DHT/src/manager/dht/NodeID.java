@@ -2,10 +2,6 @@ package manager.dht;
 
 public class NodeID implements Comparable<NodeID> {
 	public static final int ADDRESS_SIZE = 20;
-
-//	private static NodeID MIN_POSITION_CONSTANT = null;
-//	private static NodeID MAX_POSITION_CONSTANT = null;
-	
 	private byte[] id = new byte[ADDRESS_SIZE];
 	
 	public NodeID(byte[] id) {
@@ -34,24 +30,21 @@ public class NodeID implements Comparable<NodeID> {
 		return 0;
 	}
 	
-	/* R.I.P 
-	public final static NodeID MIN_POSITION() {
-		//Create address if necessary
-		if(MIN_POSITION_CONSTANT == null) {
-			byte[] address = new byte[ADDRESS_SIZE];
-			for(int i = 0; i < ADDRESS_SIZE; i++) address[i] = 0x00;
-			MIN_POSITION_CONSTANT = new NodeID(address);
-		}
-		return MIN_POSITION_CONSTANT;
+	//-----
+	//Static math functions
+	//-----
+	
+	public static NodeID add(NodeID hash) {
+		for(int i = 0; )
+		
+		return null;
 	}
-
-	public final static NodeID MAX_POSITION() {
-		//Create address if necessary
-		if(MAX_POSITION_CONSTANT == null) {
-			byte[] address = new byte[ADDRESS_SIZE];
-			for(int i = 0; i < ADDRESS_SIZE; i++) address[i] = (byte)0xff;
-			MAX_POSITION_CONSTANT = new NodeID(address);
+	
+	public static NodeID powerOfTwo(int n) {
+		byte[] hash = new byte[ADDRESS_SIZE];
+		if(n >= 0 && n < ADDRESS_SIZE * 8) {
+			hash[n / 8] = (byte)(n % 8);
 		}
-		return MAX_POSITION_CONSTANT;
-	}*/
+		return null;
+	}
 }

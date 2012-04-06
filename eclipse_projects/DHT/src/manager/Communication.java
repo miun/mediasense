@@ -3,7 +3,6 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
 

@@ -73,7 +73,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void handleMessage(Message message) {
 		//Don't process message if it was not for us!!
-		//TODO probably not necessary
+		//TODO probably not necessary 
+		//TODO check message for null ?!?!?!?!
 		if(!message.toIp.equals(identity.getNetworkAddress())) return;
 		
 		//Safe performance for node
@@ -109,11 +110,12 @@ public class Node extends Thread implements LookupServiceInterface {
 						nodeCount++;
 						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),nodeCount);
 
-						//Change our successor (Only if it's not us!)
 						
-						sendBroadcast(new NotifyJoinBroadcastMessage());
+						
+						sendBroadcast(new NotifyJoinBroadcastMessage(join_msg.getOriginatorAddress(),join_msg.getKey()));
 						
 						//TODO figure out if this works!!!
+						//Change our successor (Only if it's not us!)
 						//if(!successor.equals(identity))
 						//	finger.remove(successor);
 						finger.put(newFingerEntry,newFingerEntry);
@@ -277,10 +279,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			
 			for(int n = finger.size(); n < nominalCount; n++) {
 				//Calculate hash of the Node that we want to have...
-				//hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
+				hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
 				
 				//... and find its predecessor
-				//msg = new FindPredecessorMessage(identity.getNetworkAddress(), finger.higherKey(new FingerEntry(hash,null)).getNetworkAddress(), hash);
+				msg = new FindPredecessorMessage(identity.getNetworkAddress(), finger.higherKey(new FingerEntry(hash,null)).getNetworkAddress(), hash);
 				
 				//TODO send message!
 			}

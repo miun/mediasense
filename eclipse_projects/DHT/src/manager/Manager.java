@@ -1,9 +1,6 @@
 package manager;
 
-import java.util.HashSet;
-
 import manager.dht.Node;
-import manager.dht.SHA1Generator;
 import manager.listener.NodeMessageListener;
 import manager.ui.GUI;
 import manager.ui.console.Console;

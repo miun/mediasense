@@ -38,6 +38,8 @@ public class Network {
 	}
 	
 	public void sendMessage(Message m) {
+		int messageType = m.type;
+
 		//Get the receiver of the message
 		Communication receiver = null;
 		receiver = clients.get(m.toIp);
@@ -47,15 +49,14 @@ public class Network {
 			receiver.handleMessage(m);
 		
 		//Check whether it is a Broadcast message
-		if (m.type==Message.BROADCAST) {
-			//Extract the broadcastmessage
-			BroadcastMessage msg = (BroadcastMessage)m;
-			m = msg.extractMessage();
+		if (messageType == Message.BROADCAST) {
+			//Extract the broadcast message
+			messageType = ((BroadcastMessage)m).extractMessage().type;
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
 		if(nodeMessageListener.containsKey(m.type)) {
-			for(NodeMessageListener nml: nodeMessageListener.get(m.type)) {
+			for(NodeMessageListener nml: nodeMessageListener.get(messageType)) {
 				nml.OnNodeMessage(new Date(),m);
 			}
 		}
