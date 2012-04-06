@@ -24,7 +24,7 @@ public abstract class BroadcastMessage extends Message {
 	}
 	
 	protected String toString(String text) {
-		return super.toString("BROADCAST-" + " | " + extractMessage().toString());
+		return ("BROADCAST-" + " | " + extractMessage().toString());
 	}
 	
 	//Extract unicast message

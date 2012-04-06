@@ -187,6 +187,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.KEEPALIVE:
 				//Handle keep-alive message 
 				break;
+			case Message.NODE_JOIN_NOTIFY:
+				//TODO HANDLE
+				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
