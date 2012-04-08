@@ -1,6 +1,7 @@
 package manager;
 
 import manager.dht.Node;
+import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.GUI;
 import manager.ui.console.Console;
@@ -101,5 +102,15 @@ public final class Manager {
 	public void removeNodeMessageListener(int msgType, NodeMessageListener listener) {
 		//Forward to network
 		network.removeNodeMessageListener(msgType, listener);
+	}
+
+	public void addFingerChangeListener(FingerChangeListener listener) {
+		//Forward listener
+		network.addFingerChangeListener(listener);
+	}
+	
+	public void removeFingerChangeListener(FingerChangeListener listener) {
+		//Forward listener
+		network.removeFingerChangeListener(listener);
 	}
 }

@@ -9,9 +9,11 @@ import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
+import manager.dht.NodeID;
+import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
 
-public class Console implements NodeMessageListener {
+public class Console implements NodeMessageListener,FingerChangeListener {
 	private Manager manager;
 	
 	public Console(Manager manager) {
@@ -90,6 +92,11 @@ public class Console implements NodeMessageListener {
 				else if(cmd.cmd.toLowerCase().equals("circle")) {
 					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
 					System.out.println(manager.showCircle(cmd.param[0]));
+				}
+				else if(cmd.cmd.toLowerCase().equals("finger_watch")) {
+					//Listen to finger changes
+					manager.addFingerChangeListener(this);
+					System.out.println("Watching finger now!");
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
 					if(cmd.param == null) throw new InvalidParamAmountException();
@@ -212,5 +219,24 @@ public class Console implements NodeMessageListener {
 	@Override
 	public void OnNodeMessage(Date timeStamp,Message msg) {
 		System.out.println(new SimpleDateFormat().format(timeStamp) + " | "  + msg.toString());
+	}
+
+	@Override
+	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+		String result;
+		
+		//Which action???
+		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
+			result = "ADDED finger: {";
+		}
+		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
+			result = "REMOVED finger: {";
+		}
+		else {
+			result = "UNKNOWN CHANGE TYPE! ";
+		}
+		
+		result = result + finger.toString() + "} @NODE: {" + node.toString() + "}";
+		System.out.println(result);
 	}
 }

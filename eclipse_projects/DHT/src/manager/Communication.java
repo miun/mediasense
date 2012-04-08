@@ -5,6 +5,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import manager.dht.Node;
 import manager.dht.NodeID;
+import manager.listener.FingerChangeListener;
 
 
 /**
@@ -13,7 +14,7 @@ import manager.dht.NodeID;
  * @author florianrueter
  *
  */
-public class Communication extends Thread implements CommunicationInterface{
+public class Communication extends Thread implements CommunicationInterface {
 	private Network network;
 	private Node node = null;
 	private BlockingQueue<Message> queue;
@@ -93,5 +94,11 @@ public class Communication extends Thread implements CommunicationInterface{
 	
 	public NodeID getNodeID() {
 		return node.getIdentity().getNodeID();
+	}
+
+	@Override
+	public void fireFingerChangeEvent(int eventType, NodeID node,NodeID finger) {
+		network.fireFingerChangeEvent(eventType, node, finger);
+		
 	}
 }

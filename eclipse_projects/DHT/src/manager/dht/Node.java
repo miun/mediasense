@@ -1,6 +1,5 @@
 package manager.dht;
 
-import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
 import manager.CommunicationInterface;
@@ -9,11 +8,11 @@ import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
-import manager.dht.messages.unicast.FindPredecessorMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
 import manager.dht.messages.unicast.NotifyLeaveMessage;
+import manager.listener.FingerChangeListener;
 
 public class Node extends Thread implements LookupServiceInterface {
 	//Communication
@@ -335,6 +334,11 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Yep, replace
 			finger.remove(suc);
 			finger.put(newFinger,newFinger);
+			
+			//TODO only for debugging
+			//Fire finger events
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity.getNodeID(), suc.getNodeID());
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
 		}
 	}
 	
@@ -411,4 +415,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}
 	}
+	
+	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+		communication.fireFingerChangeEvent(eventType,node,finger);
+	}
+
 }

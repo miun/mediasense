@@ -10,6 +10,7 @@ import java.util.TreeMap;
 
 import manager.dht.NodeID;
 import manager.dht.messages.broadcast.BroadcastMessage;
+import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
 
 public class Network {
@@ -17,8 +18,8 @@ public class Network {
 	public static Integer msg_delay = 250; 
 	
 	//Listener lists
-	//private List<NodeMessageListener> nodeMessageListener;
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
+	private Set<FingerChangeListener> fingerChangeListener;
 
 	//Client list
 	private TreeMap<String,Communication> clients;
@@ -28,7 +29,8 @@ public class Network {
 		instance = this;
 		clients = new TreeMap<String,Communication>();
 		
-		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();  
+		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
+		fingerChangeListener = new HashSet<FingerChangeListener>();
 	}
 	
 	public static Network getInstance() {
@@ -229,5 +231,20 @@ public class Network {
 		}
 		
 		return result.toString();
+	}
+
+	public void addFingerChangeListener(FingerChangeListener listener) {
+		//Add listener to list
+		fingerChangeListener.add(listener);
+	}
+	
+	public void removeFingerChangeListener(FingerChangeListener listener) {
+		//Remove listener
+		fingerChangeListener.remove(listener);
+	}
+	
+	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+		//Inform all listener
+		for(FingerChangeListener l: fingerChangeListener) l.OnFingerChange(eventType, node, finger);
 	}
 }
