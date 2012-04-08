@@ -16,7 +16,7 @@ public class JoinMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-JOIN") + " key:{" + SHA1Generator.convertToHex(key.getID()) + "} - origAdr:{" + originatorAddress + "}"; 
+		return super.toString("MSG-JOIN") + " key:{" + key.toString() + "} - origAdr:{" + originatorAddress + "}"; 
 	}
 	
 	public NodeID getKey() {
