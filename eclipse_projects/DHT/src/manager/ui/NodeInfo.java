@@ -19,7 +19,6 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	private String address;
 	private Manager manager;
 	
-	private JPanel contentPane;
 	private JTextArea console;
 
 	/**
@@ -33,14 +32,12 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 		//init
 		this.setTitle(nodeID.toString() + " {" + networkAddress + "}");
 		setBounds(100, 100, 450, 300);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPane.setLayout(new BorderLayout(0, 0));
-		setContentPane(contentPane);
-		
+		getContentPane().setLayout(new BorderLayout(0, 0));
+				
 		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);
-		contentPane.add(console);
+		getContentPane().add(console);
+		this.pack();
 		this.setVisible(true);
 		
 		//register listener at manager
@@ -57,6 +54,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 				console.setText("Last change (removed finger " + node.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			}
 		}
+		this.pack();
 	}
 
 

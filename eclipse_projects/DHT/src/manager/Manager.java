@@ -3,7 +3,6 @@ package manager;
 import manager.dht.Node;
 import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
-import manager.ui.GUI;
 import manager.ui.console.Console;
 
 
@@ -15,7 +14,6 @@ public final class Manager {
 	
 	//UI classes
 	private Console console;
-	private GUI gui;
 	
 	//To create nodes in ascending order
 	private int newNodeCounter = -1;
