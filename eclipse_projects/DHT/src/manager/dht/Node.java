@@ -408,7 +408,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Send broadcast to our successor
 		bcast_msg.fromIp = identity.getNetworkAddress();
 		
-		//Do not message to ourselves
+		//Do not send message to ourselves
 		if(!identity.equals(successor)) {
 			bcast_msg.toIp = successor.getNetworkAddress();
 			bcast_msg.setTTL(0); 
