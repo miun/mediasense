@@ -16,7 +16,7 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static Integer msg_delay = 250; 
+	public static int msg_delay = 250; 
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;

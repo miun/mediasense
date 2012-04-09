@@ -2,8 +2,10 @@ package manager;
 
 import manager.dht.Node;
 import manager.dht.NodeID;
+import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
+import manager.ui.CircleGUI;
 import manager.ui.console.Console;
 
 
@@ -19,6 +21,8 @@ public final class Manager {
 	//To create nodes in ascending order
 	private int newNodeCounter = -1;
 	
+	private CircleGUI circle;
+	
 	public static void main(String[] args) {
 		new Manager();
 	}
@@ -29,6 +33,8 @@ public final class Manager {
 	
 	//Singleton class
 	private Manager() {
+		circle = new CircleGUI();
+		
 		//Set own class as instance
 		instance = this;
 		
@@ -64,7 +70,8 @@ public final class Manager {
 		//Add node with communication interface adopted from MediaSense
 		comm = new Communication(network,new Integer(++newNodeCounter).toString());
 		node = new Node(comm,bootstrapAddress);
-
+		
+		circle.addPoint(SHA1Generator.SHA1(new Integer(newNodeCounter).toString()));
 		//Give control to the network
 		network.addNode(comm);
 		
