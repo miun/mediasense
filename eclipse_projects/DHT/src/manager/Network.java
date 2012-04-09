@@ -253,6 +253,7 @@ public class Network {
 		TreeMap<FingerEntry,FingerEntry> ft;
 		Communication client;
 		String result = "";
+		int log2;
 		
 		//Get and check node
 		client = clients.get(nodeAddress);
@@ -261,7 +262,8 @@ public class Network {
 		//Build list
 		ft = client.getNode().getFingerTable();
 		for(FingerEntry finger: ft.keySet()) {
-			result = result + "Addr: " + finger.getNetworkAddress() + " hash:{" + finger.getNodeID().toString() + "}\n";
+			log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
+			result = result + "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
 		}
 		
 		return result;
