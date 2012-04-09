@@ -113,4 +113,8 @@ public final class Manager {
 		//Forward listener
 		network.removeFingerChangeListener(listener);
 	}
+	
+	public String showFinger(String nodeAddress) {
+		return network.showFinger(nodeAddress);
+	}
 }

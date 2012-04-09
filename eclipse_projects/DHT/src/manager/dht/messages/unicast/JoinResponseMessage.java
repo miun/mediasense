@@ -11,17 +11,19 @@ public class JoinResponseMessage extends Message {
 	//NodeID and network address of the successor
 	private NodeID successor;
 	private String successorAddress;
+	private NodeID predecessor;
 
 	//TODO Which information could be already provided in a JoinResponse
-	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor) {
+	public JoinResponseMessage(String fromIp, String toIp,NodeID joinKey,String successorAddress,NodeID successor,NodeID predecessor) {
 		super(fromIp,toIp,Message.JOIN_RESPONSE);
 		this.joinKey = joinKey;
 		this.successor = successor;
 		this.successorAddress = successorAddress;
+		this.predecessor = predecessor;
 	}
 
 	public String toString() {
-		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey:{" + joinKey.toString() + "} successor:{" + successor.toString() + "}";
+		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey:{" + joinKey.toString() + "} suc:{" + successor.toString() + "} pre :{" + predecessor.toString() + "}";
 	}
 	
 	public NodeID getJoinKey() {
@@ -34,5 +36,9 @@ public class JoinResponseMessage extends Message {
 	
 	public String getSuccessorAddress() {
 		return successorAddress;
+	}
+	
+	public NodeID getPredecessor() {
+		return predecessor;
 	}
 }

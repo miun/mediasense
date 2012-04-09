@@ -99,6 +99,9 @@ public class Communication extends Thread implements CommunicationInterface {
 	@Override
 	public void fireFingerChangeEvent(int eventType, NodeID node,NodeID finger) {
 		network.fireFingerChangeEvent(eventType, node, finger);
-		
+	}
+	
+	public Node getNode() {
+		return node;
 	}
 }
