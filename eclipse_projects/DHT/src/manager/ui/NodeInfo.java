@@ -1,6 +1,7 @@
 package manager.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.Date;
 
 import javax.swing.JFrame;
@@ -19,7 +20,6 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	private String address;
 	private Manager manager;
 	
-	private JPanel content;
 	private JScrollPane scrollPane;
 	private JTextArea console;
 
@@ -34,17 +34,15 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 		//init
 		this.setTitle(nodeID.toString() + " {" + networkAddress + "}");
 		setBounds(100, 100, 250, 200);
-		content = new JPanel();
-		this.setContentPane(content);
-		content.setLayout(new BorderLayout());
-				
+		
 		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);
 		
 		scrollPane = new JScrollPane(console);
-		content.add(scrollPane,BorderLayout.CENTER);
-		//this.pack();
-
+		//setpreferred size and pack... stupid but works
+		scrollPane.setPreferredSize(new Dimension(500,300));
+		this.getContentPane().add(scrollPane,BorderLayout.CENTER);
+		this.pack();
 		this.setVisible(true);
 		
 		//register listener at manager
