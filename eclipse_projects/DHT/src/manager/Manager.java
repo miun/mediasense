@@ -52,12 +52,12 @@ public final class Manager {
 		return null;
 	}
 	
-	public void addNode() {
+	public int addNode() {
 		//No bootstrapping!
-		addNode(null);
+		return addNode(null);
 	}
 	
-	public void addNode(String bootstrapAddress) {
+	public int addNode(String bootstrapAddress) {
 		Communication comm;
 		Node node;
 		
@@ -71,6 +71,7 @@ public final class Manager {
 		//Start
 		//TODO allow to create nodes with delayed starting capability
 		comm.start(node);
+		return newNodeCounter;
 	}
 	
 	public boolean setMessageDelay(int delay,String networkAddress) {

@@ -9,7 +9,9 @@ import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
+import manager.dht.SHA1Generator;
 import manager.listener.NodeMessageListener;
+import manager.ui.NodeInfo;
 
 public class Console implements NodeMessageListener {
 	private Manager manager;
@@ -49,7 +51,11 @@ public class Console implements NodeMessageListener {
 						manager.addNode();
 					} 
 					else {
-						manager.addNode(cmd.param[0]);
+						int na = manager.addNode(cmd.param[0]);
+							if(cmd.param.length>1) {
+								//activate a node information window
+								new NodeInfo(String.valueOf(na), SHA1Generator.convertToHex(SHA1Generator.SHA1(String.valueOf(na))));
+							}
 					}
 					
 				}
