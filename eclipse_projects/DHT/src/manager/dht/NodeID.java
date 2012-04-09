@@ -115,7 +115,7 @@ public class NodeID implements Comparable<NodeID> {
 				//For each bit
 				for(int j = 0; j < 8; j++) {
 					temp = temp << 1;
-					if(temp > 255) {
+					if(temp > 255 || temp < 0) {
 						//Return found position
 						return (NodeID.ADDRESS_SIZE * 8 - 1) - (i * 8) - j;
 					}

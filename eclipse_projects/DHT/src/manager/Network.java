@@ -251,19 +251,27 @@ public class Network {
 	
 	public String showFinger(String nodeAddress) {
 		TreeMap<FingerEntry,FingerEntry> ft;
+		FingerEntry finger;
 		Communication client;
-		String result = "";
+		String result;
 		int log2;
 		
 		//Get and check node
 		client = clients.get(nodeAddress);
 		if(client == null) return "Node " + nodeAddress + " not found!";
 		
-		//Build list
+		//Get list
 		ft = client.getNode().getFingerTable();
-		for(FingerEntry finger: ft.keySet()) {
-			log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-			result = result + "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
+		
+		//Add successor
+		finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
+		log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
+		result = "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
+		
+		//Print list
+		for(FingerEntry f: ft.keySet()) {
+			log2 = NodeID.logTwoFloor(f.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
+			result = result + "Addr: " + f.getNetworkAddress() + " | hash:{" + f.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
 		}
 		
 		return result;

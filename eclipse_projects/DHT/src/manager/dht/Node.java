@@ -320,6 +320,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Check for dont's
 		if(newFinger.equals(identity)) return;
+		if(newFinger.equals(successor)) return;
 		if(finger.containsKey(newFinger)) return;
 		
 		//1 - Rotate hash to the "origin"
