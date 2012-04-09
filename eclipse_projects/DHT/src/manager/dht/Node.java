@@ -190,16 +190,20 @@ public class Node extends Thread implements LookupServiceInterface {
 				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				
 				//Process broadcast
+				System.out.println(identity.getNetworkAddress() + "BB");
 				handleMessage(bcast_msg.extractMessage());
 				break;
 			case Message.KEEPALIVE:
 				KeepAliveMessage keep_alive_msg = (KeepAliveMessage)message;
 				
-				//Handle keep-alive message
-				updateFingerTableEntry(new FingerEntry(keep_alive_msg.getAdvertisedID(),keep_alive_msg.getAdvertisedNetworkAddress()));
+				System.out.println(identity.getNetworkAddress() + "KA");
 				
 				//Reset timer
 				resetKeepAliveTimer();
+
+				//Handle keep-alive message
+				updateFingerTableEntry(new FingerEntry(keep_alive_msg.getAdvertisedID(),keep_alive_msg.getAdvertisedNetworkAddress()));
+				
 				break;
 			case Message.NODE_JOIN_NOTIFY:
 				NotifyJoinMessage njm = (NotifyJoinMessage)message;
@@ -434,6 +438,9 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 
 	private void resetKeepAliveTimer() {
+		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
+		System.out.println(identity.getNetworkAddress() + " - " + time);
+		
 		//Cancel and reschedule timer
 		if(keepAliveTimer != null) keepAliveTimer.cancel();
 		keepAliveTimer = new Timer();
@@ -444,6 +451,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Trigger keep alive
 				triggerKeepAliveTimer();
 			}
-		}, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
+		}, time);
 	}
 }
