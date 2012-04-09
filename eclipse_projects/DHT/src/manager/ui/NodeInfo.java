@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.util.Date;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import manager.Manager;
@@ -17,6 +18,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	private String address;
 	private Manager manager;
 	
+	private JPanel content;
 	private JTextArea console;
 
 	/**
@@ -29,13 +31,15 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 		this.manager = manager;
 		//init
 		this.setTitle(nodeID.toString() + " {" + networkAddress + "}");
-		setBounds(100, 100, 450, 300);
-		getContentPane().setLayout(new BorderLayout(0, 0));
+		setLocation(100, 100);
+		content = new JPanel();
+		this.setContentPane(content);
+		content.setLayout(new BorderLayout());
 				
 		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);
-
-		getContentPane().add(console,BorderLayout.CENTER);
+		content.add(console,BorderLayout.CENTER);
+		
 		this.pack();
 
 		this.setVisible(true);
@@ -54,7 +58,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 				console.setText("Last change (removed finger " + node.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			}
 		}
-		this.validate();
+		//this.validate();
 	}
 
 
