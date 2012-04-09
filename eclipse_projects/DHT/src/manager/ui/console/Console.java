@@ -53,11 +53,9 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 						manager.addNode();
 					} 
 					else {
-						int na = manager.addNode(cmd.param[0]);
-							if(cmd.param.length>1) {
-								//activate a node information window
-								new NodeInfo(String.valueOf(na), manager);
-							}
+						for(String bsa: cmd.param) {
+							manager.addNode(bsa);
+						}
 					}
 					
 				}
@@ -77,6 +75,9 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 				else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 					//Add node to watcher
 					if(cmd.param == null) throw new InvalidParamAmountException();
+					for(String node: cmd.param) {
+						new NodeInfo(node, manager);
+					}
 				}
 				else if(cmd.cmd.toLowerCase().equals("msg_delay")) {
 					//Set delay for message

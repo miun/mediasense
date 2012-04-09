@@ -26,26 +26,31 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	 * Create the frame.
 	 */
 	public NodeInfo(String networkAddress, Manager manager) {
-		super(SHA1Generator.convertToHex(SHA1Generator.SHA1(String.valueOf(networkAddress))) + "{" + networkAddress + "}");
+		super();
 		this.address = networkAddress;
 		this.nodeID = new NodeID(SHA1Generator.SHA1(String.valueOf(networkAddress)));
 		this.manager = manager;
+		//init
+		this.setTitle(nodeID.toString() + " {" + networkAddress + "}");
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 		
-		console = new JTextArea("My finger table:\n");
+		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);
 		contentPane.add(console);
 		this.setVisible(true);
+		
+		//register listener at manager
+		manager.addFingerChangeListener(this);
 	}
 
 	@Override
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
 		//Only change if the change occured on the finger we are responsible for
-		if(node.equals(nodeID)) {
+		if(nodeID.equals(node)) {
 			if(changeType == FINGER_CHANGE_ADD) {
 				console.setText("Last change (added finger " + node.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			} else if(changeType == FINGER_CHANGE_REMOVE) {

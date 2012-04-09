@@ -1,5 +1,7 @@
 package manager.dht;
 
+import java.util.Arrays;
+
 public class NodeID implements Comparable<NodeID> {
 	public static final int ADDRESS_SIZE = 20;
 	private byte[] id = new byte[ADDRESS_SIZE];
@@ -35,10 +37,34 @@ public class NodeID implements Comparable<NodeID> {
 		return 0;
 	}
 	
+	
+	
 	//-----
 	//Static math functions
 	//-----
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(id);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NodeID other = (NodeID) obj;
+		if (!Arrays.equals(id, other.id))
+			return false;
+		return true;
+	}
+
 	//Add two node hash values
 	public NodeID add(NodeID hash) {
 		int immediate;
