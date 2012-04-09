@@ -90,12 +90,15 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Don't process message if it was not for us!!
 		//TODO probably not necessary 
 		//TODO check message for null ?!?!?!?!
-		if(!message.toIp.equals(identity.getNetworkAddress())) return;
+		if(!message.getToIp().equals(identity.getNetworkAddress())) {
+			System.out.println("!!!!! Message from THIS node !!!");
+			return;
+		}
 		
 		//Safe performance for node
 		//if(finger.))
 		
-		switch (message.type) {
+		switch (message.getType()) {
 			//react on a Join message
 			case Message.JOIN:
 				JoinMessage join_msg = (JoinMessage) message;
@@ -117,7 +120,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					if(tempFinger != null) {
 						if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
 							//Key not allowed message
-							answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.fromIp,join_msg.getKey());
+							answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.getFromIp(),join_msg.getKey());
 						}
 					}
 					else {
@@ -126,7 +129,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						communication.sendMessage(answer);
 
 						//Notify everybody of the new node
-						sendBroadcast(new NotifyJoinBroadcastMessage(join_msg.getOriginatorAddress(),join_msg.getKey()),identity.getNodeID(),identity.getNodeID().sub(1));
+						sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,join_msg.getOriginatorAddress(),join_msg.getKey()),identity.getNodeID(),identity.getNodeID().sub(1));
 						
 						//Set successor to new node and update finger-table with old successor
 						FingerEntry old_successor = successor;
@@ -140,9 +143,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				else {
 					//Forward to the best fitting predecessor
-					message.fromIp = identity.getNetworkAddress();
-					message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
-					answer = message;
+					//message.fromIp = identity.getNetworkAddress();
+					//message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
+					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
 					communication.sendMessage(answer);
 				}
 				break;
@@ -158,7 +161,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						bConnected = true;
 						
 						//Check
-						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.fromIp));
+						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
 						
 						//Create finger table the first time
 						//buildFingerTable();
@@ -185,12 +188,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
+				System.out.println(identity.getNetworkAddress() + "BB - " + bcast_msg.extractMessage().getType());
+
 				//Forward broadcast
-				bcast_msg.fromIp = identity.getNetworkAddress();
+				//bcast_msg.fromIp = identity.getNetworkAddress();
 				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				
 				//Process broadcast
-				System.out.println(identity.getNetworkAddress() + "BB");
 				handleMessage(bcast_msg.extractMessage());
 				break;
 			case Message.KEEPALIVE:
@@ -378,12 +382,18 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	private void sendBroadcast(BroadcastMessage bcast_msg, NodeID startKey,NodeID endKey) {
 		FingerEntry suc,next;
-				
-		//Dont do...
-		if(!bConnected) return;
+		String from,to;
+		NodeID newStartKey,newEndKey;
+		BroadcastMessage new_bcast_msg;
+		
+		//Don't do...
+		if(!bConnected) {
+			System.out.println("NOT CONNECTED " + identity.getNetworkAddress());
+			return;
+		}
 		
 		//Prepare packet
-		bcast_msg.fromIp = identity.getNetworkAddress();
+		from = identity.getNetworkAddress();
 
 		//Get first successor
 		suc = getSuccessor(identity.getNodeID());
@@ -394,19 +404,20 @@ public class Node extends Thread implements LookupServiceInterface {
 		do {
 			//Check and set range
 			if(suc.getNodeID().between(startKey,endKey)) {
-				bcast_msg.setStartKey(suc.getNodeID());
+				newStartKey = suc.getNodeID();
 				
 				//Set endKey to next NodeID or the end of the range, whatever is smallest
 				if(next.getNodeID().between(startKey,endKey)) {
-					bcast_msg.setEndKey(next.getNodeID().sub(1));
+					newEndKey = next.getNodeID().sub(1);
 				}
 				else {
-					bcast_msg.setEndKey(endKey);
+					newEndKey = endKey;
 				}
 				
 				//Send message
-				bcast_msg.toIp = suc.getNetworkAddress();
-				communication.sendMessage(bcast_msg);
+				to = suc.getNetworkAddress();
+				new_bcast_msg = bcast_msg.cloneWithNewAddresses(from, to,newStartKey,newEndKey);
+				communication.sendMessage(new_bcast_msg);
 			}
 
 			//Move to next range
@@ -430,7 +441,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		KeepAliveBroadcastMessage msg;
 		
 		//Send broadcast
-		msg = new KeepAliveBroadcastMessage(identity.getNodeID(),identity.getNetworkAddress());
+		msg = new KeepAliveBroadcastMessage(null,null,null,null,identity.getNodeID(),identity.getNetworkAddress());
 		sendBroadcast(msg, identity.getNodeID(),identity.getNodeID().sub(1));
 		
 		//Reset time

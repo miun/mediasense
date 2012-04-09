@@ -34,13 +34,22 @@ public abstract class Message {
 	public final static int FIND_PREDECESSOR = 20;
 	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 
+	//These were public first, the so called I-LIKE-TO-SOLVE-TRICKY-PROBLEMS-IN-THE-MIDDLE-OF-THE-NIGHT design pattern
+	//Changed to something better (someone owns me a beer for that)
+	private int type = Message.UNKNOWN;
+	private String fromIp = "";
+	private String toIp = "";
 	
-	public int type = Message.UNKNOWN;
-	public String fromIp = "";
-	public String toIp = "";
+	public String getFromIp() {
+		return fromIp;
+	}
 	
-	public Message() {
-		
+	public String getToIp() {
+		return toIp;
+	}
+	
+	public int getType() {
+		return type;
 	}
 	
 	public Message(String from,String to,int type) {
