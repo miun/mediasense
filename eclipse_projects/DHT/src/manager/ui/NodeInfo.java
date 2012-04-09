@@ -32,7 +32,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 		this.manager = manager;
 		//init
 		this.setTitle(nodeID.toString() + " {" + networkAddress + "}");
-		setBounds(100, 100, 250, 200);
+		setBounds(1200, 100, 250, 200);
 		
 		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);

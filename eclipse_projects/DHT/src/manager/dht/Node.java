@@ -1,15 +1,20 @@
 package manager.dht;
 
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
+import manager.dht.messages.broadcast.KeepAliveBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
+import manager.dht.messages.unicast.KeepAliveMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
 import manager.dht.messages.unicast.NotifyLeaveMessage;
 import manager.listener.FingerChangeListener;
@@ -23,6 +28,11 @@ public class Node extends Thread implements LookupServiceInterface {
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private FingerEntry identity;
 	private FingerEntry successor;
+	
+	//Keep alive
+	private static final int KEEP_ALIVE_PERIOD = 10000;
+	private static final int KEEP_ALIVE_RANDOM_PERIOD = 10000;
+	Timer keepAliveTimer = null;
 	
 	//Connection state
 	private boolean bConnected = false;
@@ -183,7 +193,13 @@ public class Node extends Thread implements LookupServiceInterface {
 				handleMessage(bcast_msg.extractMessage());
 				break;
 			case Message.KEEPALIVE:
-				//Handle keep-alive message 
+				KeepAliveMessage keep_alive_msg = (KeepAliveMessage)message;
+				
+				//Handle keep-alive message
+				updateFingerTableEntry(new FingerEntry(keep_alive_msg.getAdvertisedID(),keep_alive_msg.getAdvertisedNetworkAddress()));
+				
+				//Reset timer
+				resetKeepAliveTimer();
 				break;
 			case Message.NODE_JOIN_NOTIFY:
 				NotifyJoinMessage njm = (NotifyJoinMessage)message;
@@ -223,6 +239,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			}
 		}
+		
+		//Connected => Set Keep alive timer
+		resetKeepAliveTimer();
 		
 		//Wait for nothing
 		while(true) {
@@ -339,18 +358,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity.getNodeID(), suc.getNodeID());
 			}
 		}
-		
-		//Need to replace the predecessor with a better one?
-		//Check if done in zero-origin hash-space
-/*		if(suc.getNodeID().sub(identity.getNodeID()).compareTo(hash) < 0) {
-			//Yep, replace
-			finger.put(newFinger,newFinger);
-			
-			//TODO only for debugging
-			//Fire finger events
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
-		}
-		*/
 	}
 	
 	public void removeFingerTableEntry(FingerEntry remove,FingerEntry suc) {
@@ -362,34 +369,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	//TODO figure out where and how to use
-/*	private void checkFingerTable() {
-		//Calculate the nominal amount of finger-table entries;
-		//int nominalCount = new Double(Math.ceil(Math.log10(nodeCount) / Math.log10(2))).intValue() + 1;
-		FingerEntry fingerEntry;
-		NodeID hash;
-		
-		if(nominalCount > finger.size()) {
-			FindPredecessorMessage msg;
-			
-			for(int n = finger.size(); n < nominalCount; n++) {
-				//Calculate hash of the Node that we want to have...
-				hash = identity.getNodeID().add(NodeID.powerOfTwo(n));
-				
-				//... and find its predecessor
-				msg = new FindPredecessorMessage(identity.getNetworkAddress(), getSuccessor(hash).getNetworkAddress(), hash);
-				
-				//TODO send message!
-				communication.sendMessage(msg);
-			}
-		}
-		else if(nominalCount < finger.size()) {
-			//Drop some fingers
-			for(int n = 0; n < finger.size() - nominalCount; n++) {
-				fingerEntry = getPredecessor(identity.getNodeID());
-				finger.remove(fingerEntry);
-			}
-		}
-	}*/
+	private void checkFingerTable() {
+	}
 	
 	private void sendBroadcast(BroadcastMessage bcast_msg, NodeID startKey,NodeID endKey) {
 		FingerEntry suc,next;
@@ -428,50 +409,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			suc = next;
 			next = getSuccessor(suc.getNodeID());
 		} while(!suc.equals(identity));
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-/*		
-		//Send broadcast to our successor
-		bcast_msg.fromIp = identity.getNetworkAddress();
-		
-		//Do not send message to ourselves
-		if(!identity.equals(successor)) {
-			bcast_msg.toIp = successor.getNetworkAddress();
-			bcast_msg.setTTL(NodeID.logTwoFloor(successor.getNodeID().sub(identity.getNodeID())) - 1); 
-			communication.sendMessage(bcast_msg);
-		}
-		
-		//Send to finger
-		if(finger.size() != 0) {
-			//Forward broadcast to fingers
-			FingerEntry startFinger = getSuccessor(successor.getNodeID());
-			FingerEntry currentFinger = startFinger;
-			
-			//Send broadcast to all fingers
-			for(int i = 1; i < finger.size(); i++) {
-				//Send broadcast message
-				bcast_msg.toIp = currentFinger.getNetworkAddress();
-				bcast_msg.setTTL(NodeID.logTwoFloor(currentFinger.getNodeID().sub(identity.getNodeID())) - 1); 
-				communication.sendMessage(bcast_msg);
-	
-				//Get next finger
-				currentFinger = getSuccessor(currentFinger.getNodeID());
-				if(currentFinger.equals(identity)) {
-					//Too less fingers !
-					break;
-				}
-			}
-		}*/
 	}
 	
+	//TODO for DEBUG
 	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
 		communication.fireFingerChangeEvent(eventType,node,finger);
 	}
@@ -480,5 +420,30 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Remove later
 	public TreeMap<FingerEntry,FingerEntry> getFingerTable() {
 		return finger;
+	}
+	
+	private void triggerKeepAliveTimer() {
+		KeepAliveBroadcastMessage msg;
+		
+		//Send broadcast
+		msg = new KeepAliveBroadcastMessage(identity.getNodeID(),identity.getNetworkAddress());
+		sendBroadcast(msg, identity.getNodeID(),identity.getNodeID().sub(1));
+		
+		//Reset time
+		resetKeepAliveTimer();
+	}
+
+	private void resetKeepAliveTimer() {
+		//Cancel and reschedule timer
+		if(keepAliveTimer != null) keepAliveTimer.cancel();
+		keepAliveTimer = new Timer();
+		keepAliveTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				//Trigger keep alive
+				triggerKeepAliveTimer();
+			}
+		}, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 	}
 }
