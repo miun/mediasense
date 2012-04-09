@@ -41,20 +41,25 @@ public class Network {
 	}
 	
 	public void sendMessage(Message m) {
-		int messageType = m.type;
+		int messageType = m.getType();
 
 		//Get the receiver of the message
 		Communication receiver = null;
-		receiver = clients.get(m.toIp);
+		receiver = clients.get(m.getToIp());
 		
 		//Send the message to the receiver
-		if(receiver != null)
+		if(receiver != null) {
 			receiver.handleMessage(m);
+		}
+		else {
+			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
+		}
 		
 		//Check whether it is a Broadcast message
 		if (messageType == Message.BROADCAST) {
 			//Extract the broadcast message
-			messageType = ((BroadcastMessage)m).extractMessage().type;
+			messageType = ((BroadcastMessage)m).extractMessage().getType();
+			System.out.println("NETWORK: " + messageType + "\n");
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
