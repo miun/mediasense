@@ -13,7 +13,12 @@ public class NodeID implements Comparable<NodeID> {
 	}
 	
 	public String toString() {
-		return SHA1Generator.convertToHex(id);
+		//Long version
+		//return SHA1Generator.convertToHex(id);
+
+		//Shorter version
+		String result = SHA1Generator.convertToHex(id);
+		return result.substring(0,4) + "..." + result.substring(36,40); 
 	}
 
 	@Override

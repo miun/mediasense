@@ -21,7 +21,7 @@ public class JoinResponseMessage extends Message {
 	}
 
 	public String toString() {
-		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey:{" + SHA1Generator.convertToHex(joinKey.getID()) + "} successor:{" + SHA1Generator.convertToHex(successor.getID()) + "}";
+		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey:{" + joinKey.toString() + "} successor:{" + successor.toString() + "}";
 	}
 	
 	public NodeID getJoinKey() {

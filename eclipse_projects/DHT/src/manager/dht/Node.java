@@ -1,6 +1,5 @@
 package manager.dht;
 
-import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
 import manager.CommunicationInterface;
@@ -9,11 +8,11 @@ import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
-import manager.dht.messages.unicast.FindPredecessorMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
 import manager.dht.messages.unicast.NotifyLeaveMessage;
+import manager.listener.FingerChangeListener;
 
 public class Node extends Thread implements LookupServiceInterface {
 	//Communication
@@ -311,8 +310,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Check if new node can be inserted into finger table
 	public void updateFingerTableEntry(FingerEntry newFinger) {
 		FingerEntry suc;
-		NodeID hash;
-		int log2up;
+		NodeID hash_finger;
+		NodeID hash_suc;
+		NodeID hash_log2;
+		int log2floor;
 		
 		//Check for dont's
 		if(newFinger.equals(identity)) return;
@@ -322,20 +323,45 @@ public class Node extends Thread implements LookupServiceInterface {
 		//2 - Then get the logarithm of base 2, rounded up
 		//3 - Calculate the new hash
 		
-		hash = newFinger.getNodeID().sub(identity.getNodeID());
-		log2up = NodeID.logTwoFloor(hash);
-		hash = NodeID.powerOfTwo(log2up);
+		hash_finger = newFinger.getNodeID().sub(identity.getNodeID());
+		log2floor = NodeID.logTwoFloor(hash_finger);
+		hash_log2 = NodeID.powerOfTwo(log2floor);
 
-		//Get previous predecessor - Shift to original position first
-		suc = getSuccessor(hash.add(identity.getNodeID()));
+		//Get previous successor - Shift to original position first
+		suc = getSuccessor(hash_log2.add(identity.getNodeID()));
+		hash_suc = suc.getNodeID().sub(identity.getNodeID());
+		
+		if(suc.equals(identity)) {
+			//In this case, there is no successor => just add the new finger
+			finger.put(newFinger,newFinger);
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+		}
+		//Check if the new finger is smaller than the successor
+		else if(hash_finger.compareTo(hash_suc) < 0) {
+			//Also add the new node in this case...
+			finger.put(newFinger,newFinger);
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+			
+			//...but also check if the successor was the old successor
+			//and, if so, remove it
+			//Old successor means, that it is between [log2floor,log2floor + 1)
+			if(log2floor == ((NodeID.ADDRESS_SIZE * 8) - 1) || hash_suc.compareTo(NodeID.powerOfTwo(log2floor + 1)) < 0) {
+				finger.remove(suc);
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity.getNodeID(), suc.getNodeID());
+			}
+		}
 		
 		//Need to replace the predecessor with a better one?
 		//Check if done in zero-origin hash-space
-		if(suc.getNodeID().sub(identity.getNodeID()).compareTo(hash) < 0) {
+/*		if(suc.getNodeID().sub(identity.getNodeID()).compareTo(hash) < 0) {
 			//Yep, replace
-			finger.remove(suc);
 			finger.put(newFinger,newFinger);
+			
+			//TODO only for debugging
+			//Fire finger events
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
 		}
+		*/
 	}
 	
 	public void removeFingerTableEntry(FingerEntry remove,FingerEntry suc) {
@@ -382,7 +408,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Send broadcast to our successor
 		bcast_msg.fromIp = identity.getNetworkAddress();
 		
-		//Do not message to ourselves
+		//Do not send message to ourselves
 		if(!identity.equals(successor)) {
 			bcast_msg.toIp = successor.getNetworkAddress();
 			bcast_msg.setTTL(0); 
@@ -411,4 +437,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}
 	}
+	
+	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+		communication.fireFingerChangeEvent(eventType,node,finger);
+	}
+
 }

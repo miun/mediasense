@@ -24,6 +24,6 @@ public class NotifyJoinMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-JOIN-NOTIFY") + " hash:{" + SHA1Generator.convertToHex(hash.getID()) + "} - Adr:{" + networkAddress + "}"; 
+		return super.toString("MSG-JOIN-NOTIFY") + " hash:{" + hash.toString() + "} - Adr:{" + networkAddress + "}"; 
 	}
 }
