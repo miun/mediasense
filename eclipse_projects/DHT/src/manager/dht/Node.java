@@ -112,7 +112,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 					else {
 						//Prepare answer
-						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID());
+						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
 						communication.sendMessage(answer);
 
 						//Notify everybody of the new node
@@ -146,9 +146,12 @@ public class Node extends Thread implements LookupServiceInterface {
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
 						successor = newFingerEntry;
 						bConnected = true;
-														
+						
+						//Check
+						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.fromIp));
+						
 						//Create finger table the first time
-						buildFingerTable();
+						//buildFingerTable();
 						//checkFingerTable();
 					}
 					else {
@@ -441,5 +444,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
 		communication.fireFingerChangeEvent(eventType,node,finger);
 	}
-
+	
+	//TODO for DEBUG
+	//Remove later
+	public TreeMap<FingerEntry,FingerEntry> getFingerTable() {
+		return finger;
+	}
 }

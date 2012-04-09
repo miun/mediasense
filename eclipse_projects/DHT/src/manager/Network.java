@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.FingerChangeListener;
@@ -246,5 +247,23 @@ public class Network {
 	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
 		//Inform all listener
 		for(FingerChangeListener l: fingerChangeListener) l.OnFingerChange(eventType, node, finger);
+	}
+	
+	public String showFinger(String nodeAddress) {
+		TreeMap<FingerEntry,FingerEntry> ft;
+		Communication client;
+		String result = "";
+		
+		//Get and check node
+		client = clients.get(nodeAddress);
+		if(client == null) return "Node " + nodeAddress + " not found!";
+		
+		//Build list
+		ft = client.getNode().getFingerTable();
+		for(FingerEntry finger: ft.keySet()) {
+			result = result + "Addr: " + finger.getNetworkAddress() + " hash:{" + finger.getNodeID().toString() + "}\n";
+		}
+		
+		return result;
 	}
 }

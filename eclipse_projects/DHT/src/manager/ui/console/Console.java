@@ -104,6 +104,11 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 					manager.addFingerChangeListener(this);
 					System.out.println("Watching finger now!");
 				}
+				else if(cmd.cmd.toLowerCase().equals("finger")) {
+					//List all fingers
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					System.out.println(manager.showFinger(cmd.param[0]));
+				}
 				else if(cmd.cmd.toLowerCase().equals("msg_watch")) {
 					if(cmd.param == null) throw new InvalidParamAmountException();
 					String[] types = null;
