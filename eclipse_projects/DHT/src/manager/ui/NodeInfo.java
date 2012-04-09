@@ -3,6 +3,7 @@ package manager.ui;
 import java.awt.BorderLayout;
 import java.util.Date;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -36,8 +37,10 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 				
 		console = new JTextArea("My finger table:\n" + manager.showFinger(networkAddress));
 		console.setEditable(false);
+
 		getContentPane().add(console);
 		this.pack();
+
 		this.setVisible(true);
 		
 		//register listener at manager
@@ -46,7 +49,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 
 	@Override
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
-		//Only change if the change occured on the finger we are responsible for
+		//Only change if the change occurred on the finger we are responsible for
 		if(nodeID.equals(node)) {
 			if(changeType == FINGER_CHANGE_ADD) {
 				console.setText("Last change (added finger " + node.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
