@@ -415,29 +415,29 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Do not send message to ourselves
 		if(!identity.equals(successor)) {
 			bcast_msg.toIp = successor.getNetworkAddress();
-			bcast_msg.setTTL(0); 
+			bcast_msg.setTTL(NodeID.logTwoFloor(successor.getNodeID().sub(identity.getNodeID())) - 1); 
 			communication.sendMessage(bcast_msg);
 		}
 		
-		//No fingers
-		if(finger.size() == 0) return;
-		
-		//Forward broadcast to fingers
-		FingerEntry startFinger = getSuccessor(identity.getNodeID());
-		FingerEntry currentFinger = startFinger;
-		
-		//Send broadcast to all fingers
-		for(int i = 1; i < finger.size(); i++) {
-			//Send broadcast message
-			bcast_msg.toIp = currentFinger.getNetworkAddress();
-			bcast_msg.setTTL(i); 
-			communication.sendMessage(bcast_msg);
-
-			//Get next finger
-			currentFinger = getSuccessor(currentFinger.getNodeID());
-			if(currentFinger.equals(identity)) {
-				//Too less fingers !
-				break;
+		//Send to finger
+		if(finger.size() != 0) {
+			//Forward broadcast to fingers
+			FingerEntry startFinger = getSuccessor(successor.getNodeID());
+			FingerEntry currentFinger = startFinger;
+			
+			//Send broadcast to all fingers
+			for(int i = 1; i < finger.size(); i++) {
+				//Send broadcast message
+				bcast_msg.toIp = currentFinger.getNetworkAddress();
+				bcast_msg.setTTL(NodeID.logTwoFloor(currentFinger.getNodeID().sub(identity.getNodeID())) - 1); 
+				communication.sendMessage(bcast_msg);
+	
+				//Get next finger
+				currentFinger = getSuccessor(currentFinger.getNodeID());
+				if(currentFinger.equals(identity)) {
+					//Too less fingers !
+					break;
+				}
 			}
 		}
 	}

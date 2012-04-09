@@ -281,11 +281,6 @@ public class Network {
 			localTable.put(log2, fingerEntry);
 		}
 		
-		//Add successor
-		//finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
-		//log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-		//result = "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
-		
 		//Print list
 		for(int log2temp: localTable.keySet()) {
 			finger = localTable.get(log2temp);
