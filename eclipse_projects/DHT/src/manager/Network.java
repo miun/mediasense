@@ -250,10 +250,14 @@ public class Network {
 	}
 	
 	public String showFinger(String nodeAddress) {
-		TreeMap<FingerEntry,FingerEntry> ft;
+		TreeMap<FingerEntry,FingerEntry> fingerTable;
+		TreeMap<Integer,FingerEntry> localTable;
+		
 		FingerEntry finger;
+		FingerEntry identity;
+		
 		Communication client;
-		String result;
+		String result = "";
 		int log2;
 		
 		//Get and check node
@@ -261,17 +265,31 @@ public class Network {
 		if(client == null) return "Node " + nodeAddress + " not found!";
 		
 		//Get list
-		ft = client.getNode().getFingerTable();
+		fingerTable = client.getNode().getFingerTable();
 		
-		//Add successor
+		//Transform table
+		localTable = new TreeMap<Integer,FingerEntry>();
+
+		//Successor
 		finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
 		log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-		result = "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
+		localTable.put(log2,finger);
+
+		//For each finger
+		for(FingerEntry fingerEntry: fingerTable.keySet()) {
+			log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
+			localTable.put(log2, fingerEntry);
+		}
+		
+		//Add successor
+		//finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
+		//log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
+		//result = "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
 		
 		//Print list
-		for(FingerEntry f: ft.keySet()) {
-			log2 = NodeID.logTwoFloor(f.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-			result = result + "Addr: " + f.getNetworkAddress() + " | hash:{" + f.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + "\n";
+		for(int log2temp: localTable.keySet()) {
+			finger = localTable.get(log2temp);
+			result = result + "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
 		}
 		
 		return result;
