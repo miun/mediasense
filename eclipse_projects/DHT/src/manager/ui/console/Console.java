@@ -56,7 +56,7 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 						int na = manager.addNode(cmd.param[0]);
 							if(cmd.param.length>1) {
 								//activate a node information window
-								manager.addNodeMessageListener(Message.JOIN, new NodeInfo(String.valueOf(na), SHA1Generator.convertToHex(SHA1Generator.SHA1(String.valueOf(na)))));
+								new NodeInfo(String.valueOf(na), manager);
 							}
 					}
 					
