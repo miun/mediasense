@@ -1,7 +1,6 @@
 package manager.ui;
 
 import java.awt.BorderLayout;
-import java.awt.EventQueue;
 import java.util.Date;
 
 import javax.swing.JFrame;
@@ -35,7 +34,7 @@ public class NodeInfo extends JFrame implements NodeMessageListener {
 
 	@Override
 	public void OnNodeMessage(Date timeStamp, Message msg) {
-		console.append(msg.toString());
+		console.append(msg.toString()+"/n");
 	}
 
 }
