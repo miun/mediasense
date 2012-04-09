@@ -1,6 +1,7 @@
 package manager.dht.messages.broadcast;
 
 import manager.Message;
+import manager.dht.NodeID;
 
 public class NotifyLeaveBroadcastMessage extends BroadcastMessage {
 	public NotifyLeaveBroadcastMessage() {

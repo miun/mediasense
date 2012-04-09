@@ -116,7 +116,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						communication.sendMessage(answer);
 
 						//Notify everybody of the new node
-						sendBroadcast(new NotifyJoinBroadcastMessage(join_msg.getOriginatorAddress(),join_msg.getKey()));
+						sendBroadcast(new NotifyJoinBroadcastMessage(join_msg.getOriginatorAddress(),join_msg.getKey()),identity.getNodeID(),identity.getNodeID().sub(1));
 						
 						//Set successor to new node and update finger-table with old successor
 						FingerEntry old_successor = successor;
@@ -176,23 +176,8 @@ public class Node extends Thread implements LookupServiceInterface {
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
 				//Forward broadcast
-				if(bcast_msg.getTTL() > 0) {
-					//Decrement TTL and set from ip
-					bcast_msg.setTTL(bcast_msg.getTTL() - 1);
-					bcast_msg.fromIp = identity.getNetworkAddress();
-
-					//Forward to successor, if necessary
-					if(identity.compareTo(successor) != 0) {
-						bcast_msg.toIp = successor.getNetworkAddress();
-						communication.sendMessage(bcast_msg);
-					}
-					
-					//Forward broadcast to all fingers
-					for(FingerEntry fingerEntry: finger.keySet()) {
-						bcast_msg.toIp = fingerEntry.getNetworkAddress();
-						communication.sendMessage(bcast_msg);
-					}
-				}
+				bcast_msg.fromIp = identity.getNetworkAddress();
+				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				
 				//Process broadcast
 				handleMessage(bcast_msg.extractMessage());
@@ -406,9 +391,54 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}*/
 	
-	private void sendBroadcast(BroadcastMessage bcast_msg) {
+	private void sendBroadcast(BroadcastMessage bcast_msg, NodeID startKey,NodeID endKey) {
+		FingerEntry suc,next;
+				
+		//Dont do...
 		if(!bConnected) return;
 		
+		//Prepare packet
+		bcast_msg.fromIp = identity.getNetworkAddress();
+
+		//Get first successor
+		suc = getSuccessor(identity.getNodeID());
+		if(suc.equals(identity)) return;
+		next = getSuccessor(suc.getNodeID());
+
+		//For each finger
+		do {
+			//Check and set range
+			if(suc.getNodeID().between(startKey,endKey)) {
+				bcast_msg.setStartKey(suc.getNodeID());
+				
+				//Set endKey to next NodeID or the end of the range, whatever is smallest
+				if(next.getNodeID().between(startKey,endKey)) {
+					bcast_msg.setEndKey(next.getNodeID().sub(1));
+				}
+				else {
+					bcast_msg.setEndKey(endKey);
+				}
+				
+				//Send message
+				bcast_msg.toIp = suc.getNetworkAddress();
+				communication.sendMessage(bcast_msg);
+			}
+
+			//Move to next range
+			suc = next;
+			next = getSuccessor(suc.getNodeID());
+		} while(!suc.equals(identity));
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+/*		
 		//Send broadcast to our successor
 		bcast_msg.fromIp = identity.getNetworkAddress();
 		
@@ -439,7 +469,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					break;
 				}
 			}
-		}
+		}*/
 	}
 	
 	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {

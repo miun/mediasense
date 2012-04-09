@@ -1,6 +1,7 @@
 package manager;
 
 import manager.dht.Node;
+import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.console.Console;

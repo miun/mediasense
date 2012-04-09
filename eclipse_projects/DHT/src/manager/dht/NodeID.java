@@ -71,7 +71,7 @@ public class NodeID implements Comparable<NodeID> {
 		int carry = 0;
 		byte[] temp = new byte[ADDRESS_SIZE];
 		
-		for(int i = 0; i < ADDRESS_SIZE; i++) {
+		for(int i = ADDRESS_SIZE - 1; i >= 0; i--) {
 			immediate = id[i] + hash.id[i] + carry;
 			temp[i] = (byte)(immediate % 255); 
 			carry = immediate >> 8;
@@ -94,15 +94,28 @@ public class NodeID implements Comparable<NodeID> {
 		int carry = 0;
 		byte[] temp = new byte[ADDRESS_SIZE];
 		
-		for(int i = 0; i < ADDRESS_SIZE; i++) {
+		for(int i = ADDRESS_SIZE - 1; i >= 0; i--) {
 			immediate = id[i] - hash.id[i] - carry;
-			temp[i] = (byte)(immediate % 255); 
-			carry = immediate >> 8;
+			temp[i] = (byte)(immediate % 255);
+			if(immediate < -128 || immediate > 127) carry = 1;
+			//carry = immediate >> 8;
 		}
 		
 		return new NodeID(temp);
 	}
 	
+	//Subtract integers
+	public NodeID sub(int n) {
+		byte hash[] = new byte[ADDRESS_SIZE];
+		
+		for(int i = 0; i < ADDRESS_SIZE; i++) {
+			hash[ADDRESS_SIZE - i - 1] = (byte)(n % 256);
+			n = n >> 8;
+		}
+		
+		return sub(new NodeID(hash));
+	}
+
 	//TODO figure out if this works!!!
 	public static int logTwoFloor(NodeID nodeID) {
 		int temp;
@@ -129,5 +142,28 @@ public class NodeID implements Comparable<NodeID> {
 	public static int logTwoCeil(NodeID nodeID) {
 		//Easy as that :-)
 		return logTwoFloor(nodeID) + 1;
+	}
+	
+	public boolean between(NodeID start,NodeID end) {
+		//Check if THIS node is in [start,end]
+		if(start.compareTo(end) < 0) {
+			//Node must be INSIDE of the range to be in between
+			if(this.compareTo(start) >= 0 && this.compareTo(end) <= 0) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else if(start.compareTo(end) > 0) {
+			//Node must be OUTSIDE of the range to be in between ;-)
+			if(this.compareTo(start) >= 0 || this.compareTo(end) <= 0) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else return false;
 	}
 }
