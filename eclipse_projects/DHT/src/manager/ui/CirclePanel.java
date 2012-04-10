@@ -1,21 +1,27 @@
 package manager.ui;
 
 import java.awt.Graphics;
+import java.util.HashMap;
 
 import javax.swing.JPanel;
 
 import manager.dht.NodeID;
+import manager.dht.SHA1Generator;
 
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
-	public static final byte[] MAXNUMBER = {Byte.MAX_VALUE,Byte.MAX_VALUE,Byte.MAX_VALUE,Byte.MAX_VALUE};
+	public static final byte[] MAXNUMBER = {-1,-1,-1,-1};
 	public static final int RADIUS = 180;
 	
-	public CirclePanel() {
+	private HashMap<String, NodePanel> nodes;
 	
+	public CirclePanel() {
+		nodes = new HashMap<String, NodePanel>();
 	}
 	
-	public void addPoint(byte[] hash) {
+	public void addPoint(String networkAddress) {
+		byte hash[] = SHA1Generator.SHA1(networkAddress);
+		
 		double winkel = 2*Math.PI/bAtoLong(MAXNUMBER);
 		
 		byte[] node = new byte[MAXNUMBER.length];
@@ -28,7 +34,10 @@ public class CirclePanel extends JPanel {
 		int y = new Double(Math.sin(longNode*winkel)*RADIUS).intValue();
 		
 		System.out.println("x: "+x+" y: "+y);
-		this.add(new NodePanel(x+RADIUS+50, y+RADIUS+50));
+		NodePanel np = new NodePanel(x+RADIUS+50, y+RADIUS+50); 
+		np.setToolTipText(networkAddress);
+		this.add(np);
+		nodes.put(networkAddress, np);
 		
 		//repaint
 		this.repaint();

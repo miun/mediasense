@@ -18,8 +18,8 @@ public class CircleGUI extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public void addPoint(byte[] hash) {
-		drawPanel.addPoint(hash);
+	public void addPoint(String networkAddress) {
+		drawPanel.addPoint(networkAddress);
 	}
 
 }

@@ -71,7 +71,7 @@ public final class Manager {
 		comm = new Communication(network,new Integer(++newNodeCounter).toString());
 		node = new Node(comm,bootstrapAddress);
 		
-		circle.addPoint(SHA1Generator.SHA1(new Integer(newNodeCounter).toString()));
+		circle.addPoint(new Integer(newNodeCounter).toString());
 		//Give control to the network
 		network.addNode(comm);
 		

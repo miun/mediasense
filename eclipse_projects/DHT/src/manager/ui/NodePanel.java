@@ -7,6 +7,7 @@ import java.awt.event.MouseListener;
 
 import javax.swing.JPanel;
 
+@SuppressWarnings("serial")
 public class NodePanel extends JPanel {
 	public static final int RADIUS = 180;
 	
@@ -36,7 +37,6 @@ public class NodePanel extends JPanel {
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				setBackground(Color.RED);
-				
 			}
 			
 			@Override
