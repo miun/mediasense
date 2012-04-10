@@ -74,7 +74,7 @@ public class NodeID implements Comparable<NodeID> {
 		for(int i = ADDRESS_SIZE - 1; i >= 0; i--) {
 			immediate = id[i] + hash.id[i] + carry;
 			temp[i] = (byte)(immediate % 255); 
-			carry = immediate >> 8;
+			if(immediate < -128 || immediate > 127) carry = 1;
 		}
 		
 		return new NodeID(temp);
