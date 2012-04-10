@@ -265,7 +265,8 @@ public class Network {
 	
 	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
 		//Inform all listener
-		for(FingerChangeListener l: fingerChangeListener) l.OnFingerChange(eventType, node, finger);
+		for(FingerChangeListener l: fingerChangeListener) 
+			l.OnFingerChange(eventType, node, finger);
 	}
 	
 	public String showFinger(String nodeAddress) {

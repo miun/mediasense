@@ -8,10 +8,12 @@ import javax.swing.JFrame;
 import manager.Communication;
 import manager.Manager;
 import manager.Network;
+import manager.dht.NodeID;
+import manager.listener.FingerChangeListener;
 import manager.listener.NodeListener;
 
 @SuppressWarnings("serial")
-public class CircleGUI extends JFrame implements NodeListener, WindowListener {
+public class CircleGUI extends JFrame implements NodeListener, WindowListener, FingerChangeListener {
 
 	private Manager manager;
 	
@@ -21,7 +23,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener {
 	 * Create the frame.
 	 */
 	public CircleGUI(Manager manager) {
-		
+		//initiate manager object
 		this.manager = manager;
 		
 		//Register for own window events
@@ -29,8 +31,9 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener {
 		
 		setBounds(100, 100, 800, 800);
 		
-		//Register for NodeEvents
+		//Register for NodeEvents and fingerevents
 		manager.addNodeListener(this);
+		manager.addFingerChangeListener(this);
 
 		//Add the circle
 		circlePanel = new CirclePanel();
@@ -79,5 +82,11 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener {
 
 	@Override
 	public void windowOpened(WindowEvent e) {}
+
+	@Override
+	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+		//Forward to CirclePanel which stores the objects
+		circlePanel.OnFingerChange(changeType, node, finger);		
+	}
 	
 }

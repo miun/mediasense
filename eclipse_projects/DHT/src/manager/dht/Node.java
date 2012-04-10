@@ -89,6 +89,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	public void handleMessage(Message message) {
 		//Don't process message if it was not for us!!
 		if(!message.getToIp().equals(identity.getNetworkAddress())) {
+			//TODO Remove sysout
 			System.out.println("!!!!! Message from THIS node !!!");
 			return;
 		}
@@ -138,6 +139,10 @@ public class Node extends Thread implements LookupServiceInterface {
 							successor = newFingerEntry;
 						}
 						
+						//TODO firefirechangeevent can be removed later
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());
+						
+						//Check if we can use the old successor as finger
 						updateFingerTableEntry(old_successor);
 
 						//Repair finger count
@@ -160,8 +165,14 @@ public class Node extends Thread implements LookupServiceInterface {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
-						successor = newFingerEntry;
+						synchronized (finger) {
+							successor = newFingerEntry;
+						}
+						
 						bConnected = true;
+						
+						//TODO firefirechangeevent can be removed later
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());
 						
 						//Check
 						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));

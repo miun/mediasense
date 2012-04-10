@@ -15,6 +15,7 @@ public class NumberPanel extends JPanel {
 		this.x = x;
 		this.y = y;
 		this.setBounds(x,y,100,100);
+		//this.setOpaque(false);
 	}
 	
 	protected void paintComponent( Graphics g ) {
@@ -22,7 +23,7 @@ public class NumberPanel extends JPanel {
 			
 		int h = g.getFontMetrics().getHeight();
 		int w = g.getFontMetrics().charsWidth(networkAddress.toCharArray(), 0, networkAddress.length());
-		setBounds(x-w/2,y-h/2,20,h);	
+		setBounds(x-w/2,y-h/2,w,h);	
 		
 		g.drawString(networkAddress,0,h);
 	}
