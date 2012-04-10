@@ -30,8 +30,10 @@ public class CirclePanel extends JPanel {
 		}
 		long longNode = bAtoLong(node);
 		
-		int x = new Double(Math.cos(longNode*winkel)*RADIUS).intValue();
-		int y = new Double(Math.sin(longNode*winkel)*RADIUS).intValue();
+		double cos = Math.cos(longNode*winkel);
+		double sin = Math.sin(longNode*winkel);
+		int x = new Double(cos*RADIUS).intValue();
+		int y = new Double(sin*RADIUS).intValue();
 		
 		System.out.println("x: "+x+" y: "+y);
 		NodePanel np = new NodePanel(x+RADIUS+50, y+RADIUS+50); 
