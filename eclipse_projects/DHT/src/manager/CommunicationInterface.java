@@ -17,6 +17,7 @@ public interface CommunicationInterface {
 	/*public void shutdown();
 	*/
 	
-	//DEBUG stuff
+	//TODO remove DEBUG stuff
 	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger);
+	public void fireKeepAliveEvent(NodeID key,String networkAddress);
 }

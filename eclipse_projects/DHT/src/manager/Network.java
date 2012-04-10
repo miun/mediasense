@@ -14,6 +14,7 @@ import manager.dht.Node;
 import manager.dht.NodeID;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.FingerChangeListener;
+import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 
@@ -25,6 +26,7 @@ public class Network {
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
 	private Set<FingerChangeListener> fingerChangeListener;
 	private Set<NodeListener> nodeListener;
+	private Set<KeepAliveListener> keepAliveListener;
 
 	//Client list
 	private TreeMap<String,Communication> clients;
@@ -37,6 +39,7 @@ public class Network {
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
 		nodeListener = new HashSet<NodeListener>();
+		keepAliveListener = new HashSet<KeepAliveListener>();
 	}
 	
 	public static Network getInstance() {
@@ -316,25 +319,77 @@ public class Network {
 	public void removeNodeListener(NodeListener nl) {
 		nodeListener.remove(nl);
 	}
+	
+	public void addKeepAliveListener(KeepAliveListener listener) {
+		keepAliveListener.add(listener);
+	}
 		
-	public double calculateHealthOfDTH() {
+	public void removeKeepAliveListener(KeepAliveListener listener) {
+		keepAliveListener.remove(listener);
+	}
+	
+	public void fireKeepAliveEvent(NodeID key,String networkAddress) {
+		//Call each handler
+		for(KeepAliveListener kal: keepAliveListener) {
+			kal.OnKeepAliveEvent(new Date(), key, networkAddress);
+		}
+	}
+
+	public double calculateHealthOfDHT() {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
+		TreeMap<FingerEntry,FingerEntry> DHT;
+		
+		FingerEntry currentSuccessor;
 		FingerEntry bestSuccessor;
-		//FingerEntry currentSuccessor;
+		NodeID hash_finger;
+		NodeID hash_log2;
+		int log2floor;
+		
 		double qual = 0;
 		
-		//Check to quality of each client's finger table
+		//Copy DHT into a map accessible through the NodeID  
+		DHT = new TreeMap<FingerEntry,FingerEntry>();
+
+		for(Communication client: clients.values()) {
+			FingerEntry newFinger;
+			newFinger = new FingerEntry(client.getNodeID(),client.getLocalIp());
+			DHT.put(newFinger,newFinger);
+		}
+		
+		//Check the quality of each client's finger table
 		for(Communication client: clients.values()) {
 			//Get finger table
 			fingerTable = client.getNode().getFingerTable();
 			
 			//Check each finger
-			for(FingerEntry currentSuccessor: fingerTable.keySet()) {
-//				bestSuccessor = clients.
+			for(int i = 0; i < NodeID.ADDRESS_SIZE * 8; i++) {
+				//Get current finger, if any, of the DHT region specified by log2 
+				hash_log2 = NodeID.powerOfTwo(i);
+				
+				currentSuccessor = getSuccessor(fingerTable,hash_log2);
+				bestSuccessor = getSuccessor(DHT,hash_log2);
+				
+				//Compare
 			}
 		}
 		
 		
 		return 0;
+	}
+
+	public FingerEntry getSuccessor(TreeMap<FingerEntry,FingerEntry> table,NodeID nodeID) {
+		FingerEntry hash = new FingerEntry(nodeID,null);
+		FingerEntry result;
+
+		synchronized(this) {
+			//Get successor of us
+			result = table.higherKey(hash);
+			if(result == null) { 
+				//There is no higher key in the finger tree
+				result = table.firstKey();
+			}
+		}
+		
+		return result;
 	}
 }
