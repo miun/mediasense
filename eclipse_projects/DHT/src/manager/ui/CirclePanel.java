@@ -3,13 +3,15 @@ package manager.ui;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.JPanel;
 
 import manager.Communication;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
 
 @SuppressWarnings("serial")
@@ -21,33 +23,32 @@ public class CirclePanel extends JPanel {
 	
 	private HashMap<NodeID, NodePanel> nodes;
 	
+	private String lastKeepAliveInitiation;
+	private List<Arrow> changedFingersSinceLastKeepAlive;
+	
 	private NodePanel activeNode;
 	
 	private double circumference;
 	
 	public CirclePanel() {
 		nodes = new HashMap<NodeID, NodePanel>();
+		changedFingersSinceLastKeepAlive = new ArrayList<Arrow>();
 		circumference = 2*Math.PI/bAtoLong(MAXNUMBER);
 		this.setLayout(null);
 	}
 	
 	public void addNode(Communication com) {
-		//Get the most valuable bytes of the hash of the joining node			
-		long longNode = getNodeIDAsLong(com.getNodeID());
+		//Get Point on the circle and add border and radius
+		Point p = getPosOnCircle(com.getNodeID(), RADIUSNUMBER);
+		int x = (int) (p.getX());
+		int y = (int) (p.getY());
+		NumberPanel nb = new NumberPanel(com.getLocalIp(), x, y);
 		
-		//Determine cos and sin regarding to the circle
-		double cos = -Math.cos(longNode*circumference);
-		double sin = Math.sin(longNode*circumference);
-		
-		//Calculate X and Y values
-		int numberX = new Double(sin*(RADIUSNUMBER)).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-		int numberY =  new Double(cos*(RADIUSNUMBER)).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-		int circleX = new Double(sin*RADIUS).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-		int circleY = new Double(cos*RADIUS).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-		
-		NumberPanel nb = new NumberPanel(com.getLocalIp(), numberX, numberY);
-		
-		NodePanel np = new NodePanel(nb, circleX, circleY,this);
+		//Get Point on the circle and add border and radius
+		p = getPosOnCircle(com.getNodeID(), RADIUS);
+		x = (int) (p.getX()+BORDER+RADIUS);
+		y = (int) (p.getY()+BORDER+RADIUS);
+		NodePanel np = new NodePanel(nb, x, y, this);
 		np.setToolTipText(com.getLocalIp());
 		
 		//Add the panels as childs of this panel
@@ -77,18 +78,29 @@ public class CirclePanel extends JPanel {
 		return result;
 	}
 	
-	private long getNodeIDAsLong(NodeID nodeID){
+	private Point getPosOnCircle(NodeID nodeID, int radius) {
+		//Get the most valuable bytes of the hash
 		byte[] hash = nodeID.getID();
 		byte[] node = new byte[MAXNUMBER.length];
 		for(int i=0;i<node.length;i++) {
 			node[i] = hash[i];
 		}
-		return bAtoLong(node);
+		//Get long value
+		long longNode = bAtoLong(node);
+		
+		//Determine cos and sin regarding to the circle
+		double cos = -Math.cos(longNode*circumference);
+		double sin = Math.sin(longNode*circumference);
+		
+		int x = new Double(sin*radius).intValue()+BORDER+radius;
+		int y = new Double(cos*radius).intValue()+BORDER+radius;
+		return new Point(x, y);
 	}
 	
 	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent( g );
+		g.drawString(lastKeepAliveInitiation, 10, 25);
 		g.setColor(Color.CYAN);
 		g.drawOval(BORDER, BORDER, RADIUS*2, RADIUS*2);
 		g.setColor(Color.BLACK);
@@ -97,31 +109,53 @@ public class CirclePanel extends JPanel {
 				g.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
 			}
 		}
+		for(Arrow a: changedFingersSinceLastKeepAlive) {
+			a.draw(g);
+		}
 	}
 	
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
 		NodePanel np = nodes.get(node);
 		if(np==null) return;
+		
+		//Get the relevant points on the circle
+		Point pf = getPosOnCircle(finger, RADIUS);
+		Point pn = getPosOnCircle(node, RADIUS);
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			//Get the most valuable bytes of the hash of the new finger as long			
-			long longNode = getNodeIDAsLong(finger);
+						
 			
-			//Determine cos and sin regarding to the circle
-			double cos = -Math.cos(longNode*circumference);
-			double sin = Math.sin(longNode*circumference);
-			
-			int x = new Double(sin*RADIUS).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-			int y = new Double(cos*RADIUS).intValue()+CirclePanel.BORDER+CirclePanel.RADIUS;
-			
+			int x = (int) (pf.getX());
+			int y = (int) (pf.getY());
+						
 			np.addFinger(finger, x, y);
-		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
+			
+			
+			//Add KeepAlive Arrow
+			synchronized (changedFingersSinceLastKeepAlive) {
+				changedFingersSinceLastKeepAlive.add(new Arrow(pn, pf, Arrow.ADD));
+			}
+		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {		
 			np.removeFinger(finger);
+			
+			//Addb Keepalive arrow
+			synchronized (changedFingersSinceLastKeepAlive) {
+				changedFingersSinceLastKeepAlive.add(new Arrow(pn, pf, Arrow.REMOVE));
+			}
 		}
+		
+		this.repaint();
 	}
 	
 	public void setActiveNode(NodePanel np) {
 		activeNode = np;
 		repaint();
+	}
+	
+	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
+		synchronized (changedFingersSinceLastKeepAlive) {
+			changedFingersSinceLastKeepAlive.clear();
+		}
+		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
 	}
 		
 }
