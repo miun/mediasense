@@ -188,10 +188,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
-				System.out.println(identity.getNetworkAddress() + "BB - " + bcast_msg.extractMessage().getType());
-
 				//Forward broadcast
-				//bcast_msg.fromIp = identity.getNetworkAddress();
 				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				
 				//Process broadcast
@@ -199,8 +196,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			case Message.KEEPALIVE:
 				KeepAliveMessage keep_alive_msg = (KeepAliveMessage)message;
-				
-				System.out.println(identity.getNetworkAddress() + "KA");
 				
 				//Reset timer
 				resetKeepAliveTimer();
@@ -450,7 +445,7 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	private void resetKeepAliveTimer() {
 		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
-		System.out.println(identity.getNetworkAddress() + " - " + time);
+		//System.out.println("identity.getNetworkAddress() + " - " + time);
 		
 		//Cancel and reschedule timer
 		if(keepAliveTimer != null) keepAliveTimer.cancel();

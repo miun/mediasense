@@ -47,7 +47,7 @@ public class Network {
 		Communication receiver = null;
 		receiver = clients.get(m.getToIp());
 		
-		//Send the message to the receiver
+		//Send the messagse to the receiver
 		if(receiver != null) {
 			receiver.handleMessage(m);
 		}
@@ -59,7 +59,6 @@ public class Network {
 		if (messageType == Message.BROADCAST) {
 			//Extract the broadcast message
 			messageType = ((BroadcastMessage)m).extractMessage().getType();
-			System.out.println("NETWORK: " + messageType + "\n");
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message
