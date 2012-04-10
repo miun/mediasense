@@ -315,4 +315,25 @@ public class Network {
 	public void removeNodeListener(NodeListener nl) {
 		nodeListener.remove(nl);
 	}
+		
+	public double calculateHealthOfDTH() {
+		TreeMap<FingerEntry,FingerEntry> fingerTable;
+		FingerEntry bestSuccessor;
+		//FingerEntry currentSuccessor;
+		double qual = 0;
+		
+		//Check to quality of each client's finger table
+		for(Communication client: clients.values()) {
+			//Get finger table
+			fingerTable = client.getNode().getFingerTable();
+			
+			//Check each finger
+			for(FingerEntry currentSuccessor: fingerTable.keySet()) {
+//				bestSuccessor = clients.
+			}
+		}
+		
+		
+		return 0;
+	}
 }
