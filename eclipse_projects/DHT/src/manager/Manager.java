@@ -2,6 +2,7 @@ package manager;
 
 import manager.dht.Node;
 import manager.listener.FingerChangeListener;
+import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.CircleGUI;
@@ -127,5 +128,15 @@ public final class Manager {
 	
 	public void showCircleGui() {
 		new CircleGUI(this.getInstance());
+	}
+	
+	public void addKeepAliveListener(KeepAliveListener listener) {
+		//Forward
+		network.addKeepAliveListener(listener);
+	}
+	
+	public void removeKeepAliveListener(KeepAliveListener listener) {
+		//Forward
+		network.removeKeepAliveListener(listener);
 	}
 }

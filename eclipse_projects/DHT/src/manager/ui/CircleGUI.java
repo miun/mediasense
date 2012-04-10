@@ -40,6 +40,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener {
 		for(Communication com: Network.getInstance().getClients()) 
 			circlePanel.addNode(com);
 		
+		
 		//Show the Frame
 		this.setVisible(true);
 	}

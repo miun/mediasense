@@ -141,4 +141,10 @@ public class Communication extends Thread implements CommunicationInterface {
 			}
 		}
 	}
+
+	@Override
+	public void fireKeepAliveEvent(NodeID key, String networkAddress) {
+		//Forward event
+		network.fireKeepAliveEvent(key, networkAddress);
+	}
 }

@@ -465,6 +465,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	private void triggerKeepAliveTimer() {
 		KeepAliveBroadcastMessage msg;
 		
+		//Fire event at network layer
+		//TODO remove! only for debugging
+		communication.fireKeepAliveEvent(identity.getNodeID(),identity.getNetworkAddress());
+		
 		//Send broadcast
 		msg = new KeepAliveBroadcastMessage(null,null,null,null,identity.getNodeID(),identity.getNetworkAddress());
 		sendBroadcast(msg, identity.getNodeID(),identity.getNodeID().sub(1));

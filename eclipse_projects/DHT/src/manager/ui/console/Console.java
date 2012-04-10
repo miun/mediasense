@@ -10,14 +10,18 @@ import java.util.Date;
 import manager.Manager;
 import manager.Message;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
+import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.CircleGUI;
 import manager.ui.NodeInfo;
 
-public class Console implements NodeMessageListener,FingerChangeListener {
+public class Console implements NodeMessageListener,FingerChangeListener,KeepAliveListener {
 	private Manager manager;
+	
+	//Watch switches
+	private boolean watchKeepAlive = false;
+	private boolean watchFingerChange = false;
 	
 	public Console(Manager manager) {
 		//Set objects
@@ -106,8 +110,16 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 				}
 				else if(cmd.cmd.toLowerCase().equals("finger_watch")) {
 					//Listen to finger changes
-					manager.addFingerChangeListener(this);
-					System.out.println("Watching finger now!");
+					watchFingerChange = !watchFingerChange;
+					
+					if(watchFingerChange) {
+						manager.addFingerChangeListener(this);
+					}
+					else {
+						manager.removeFingerChangeListener(this);
+					}
+					
+					System.out.println("Watching FINGER-CHANGE: " + (watchFingerChange ? "ON" : "OFF"));
 				}
 				else if(cmd.cmd.toLowerCase().equals("finger")) {
 					//List all fingers
@@ -192,6 +204,23 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 					}
 					System.out.println(answer.toString());
 				}
+				else if(cmd.cmd.toLowerCase().equals("ka_watch")) {
+					//Check parameters
+					if(cmd.param != null) throw new InvalidParamAmountException();
+					
+					//Toggle keep-alive watching
+					watchKeepAlive = !watchKeepAlive;
+					
+					if(watchKeepAlive) {
+						manager.addKeepAliveListener(this);
+					}
+					else {
+						manager.removeKeepAliveListener(this);
+					}
+					
+					//Print status
+					System.out.println("Watching KEEP-ALIVE: " + (watchKeepAlive ? "ON" : "OFF"));
+				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
 				}
@@ -254,5 +283,10 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 		
 		result = result + finger.toString() + "} @NODE: {" + node.toString() + "}";
 		System.out.println(result);
+	}
+
+	@Override
+	public void OnKeepAliveEvent(Date date, NodeID key,String networkAddress) {
+		System.out.println(new SimpleDateFormat().format(date) + " | Node:{" + key.toString() + "} Addr:{" + networkAddress + "} initiated KEEP-ALIVE");
 	}
 }
