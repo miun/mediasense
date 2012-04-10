@@ -6,14 +6,6 @@ public class NodeID implements Comparable<NodeID> {
 	public static final int ADDRESS_SIZE = 20;
 	private byte[] id = new byte[ADDRESS_SIZE];
 	
-	public static NodeID getMaxNodeID() {
-		byte[] maxNodeID = new byte[ADDRESS_SIZE];
-		for(int i=0;i<ADDRESS_SIZE;i++) {
-			maxNodeID[i] = Byte.MAX_VALUE;
-		}
-		return new NodeID(maxNodeID);
-	}
-	
 	public NodeID(byte[] id) {
 		this.id = id;
 	}
