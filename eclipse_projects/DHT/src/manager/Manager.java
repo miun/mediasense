@@ -1,9 +1,8 @@
 package manager;
 
 import manager.dht.Node;
-import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
+import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.CircleGUI;
 import manager.ui.console.Console;
@@ -21,8 +20,6 @@ public final class Manager {
 	//To create nodes in ascending order
 	private int newNodeCounter = -1;
 	
-	private CircleGUI circle;
-	
 	public static void main(String[] args) {
 		new Manager();
 	}
@@ -33,8 +30,6 @@ public final class Manager {
 	
 	//Singleton class
 	private Manager() {
-		circle = new CircleGUI();
-		
 		//Set own class as instance
 		instance = this;
 		
@@ -43,7 +38,6 @@ public final class Manager {
 
 		//Create UI classes
 		console = new Console(this.getInstance());
-		//gui = new GUI(this.getInstance());
 		
 		console.run();
 		System.out.println("Good bye!");
@@ -71,13 +65,10 @@ public final class Manager {
 		comm = new Communication(network,new Integer(++newNodeCounter).toString());
 		node = new Node(comm,bootstrapAddress);
 		
-		circle.addPoint(new Integer(newNodeCounter).toString());
-		//Give control to the network
-		network.addNode(comm);
-		
-		//Start
+		//Give control to the network //Also starts the communication
 		//TODO allow to create nodes with delayed starting capability
-		comm.start(node);
+		network.addNode(comm,node);
+		
 		return newNodeCounter;
 	}
 	
@@ -123,5 +114,18 @@ public final class Manager {
 	
 	public String showFinger(String nodeAddress) {
 		return network.showFinger(nodeAddress);
+	}
+	
+	public void addNodeListener(NodeListener nl) {
+		//forward to network
+		network.addNodeListener(nl);
+	}
+	
+	public void removeNodeListener(NodeListener nl) {
+		network.removeNodeListener(nl);
+	}
+	
+	public void showCircleGui() {
+		new CircleGUI(this.getInstance());
 	}
 }

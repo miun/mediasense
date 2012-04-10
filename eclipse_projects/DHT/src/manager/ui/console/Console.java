@@ -13,6 +13,7 @@ import manager.dht.NodeID;
 import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
+import manager.ui.CircleGUI;
 import manager.ui.NodeInfo;
 
 public class Console implements NodeMessageListener,FingerChangeListener {
@@ -61,6 +62,9 @@ public class Console implements NodeMessageListener,FingerChangeListener {
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_del")) {
 					
+				}
+				else if(cmd.cmd.toLowerCase().equals("g")) {
+					new CircleGUI(manager);
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
 					if(cmd.param == null) {

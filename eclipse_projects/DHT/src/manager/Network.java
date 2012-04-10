@@ -1,6 +1,7 @@
 package manager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,9 +10,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import manager.dht.FingerEntry;
+import manager.dht.Node;
 import manager.dht.NodeID;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.FingerChangeListener;
+import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 
 public class Network {
@@ -21,6 +24,7 @@ public class Network {
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
 	private Set<FingerChangeListener> fingerChangeListener;
+	private Set<NodeListener> nodeListener;
 
 	//Client list
 	private TreeMap<String,Communication> clients;
@@ -32,12 +36,17 @@ public class Network {
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
+		nodeListener = new HashSet<NodeListener>();
 	}
 	
 	public static Network getInstance() {
 		//Return singleton object
 		if(instance == null) instance = new Network();
 		return instance;
+	}
+	
+	public Collection<Communication> getClients() {
+		return this.clients.values();
 	}
 	
 	public void sendMessage(Message m) {
@@ -69,17 +78,23 @@ public class Network {
 		}
 	}
 
-	public boolean addNode(Communication comm) {
+	public boolean addNode(Communication comm, Node node) {
 		//Add node to list
 		if(!clients.containsKey(comm.getLocalIp())) {
 			clients.put(comm.getLocalIp(), comm);
+			//start the Communication object
+			comm.start(node);
+			//Inform listeners
+			for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
 			return true;
 		} else 
 			return false;
 	}
 	
 	public void removeNode(String networkAddress) {
-		clients.remove(networkAddress);
+		Communication com = clients.remove(networkAddress);
+		//Inform listeners
+		for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
 	}
 	
 	public void addNodeMessageListener(int msgType,NodeMessageListener listener) {
@@ -258,7 +273,6 @@ public class Network {
 		TreeMap<Integer,FingerEntry> localTable;
 		
 		FingerEntry finger;
-		FingerEntry identity;
 		
 		Communication client;
 		String result = "";
@@ -292,5 +306,13 @@ public class Network {
 		}
 		
 		return result;
+	}
+	
+	public void addNodeListener(NodeListener nl) {
+		nodeListener.add(nl);
+	}
+	
+	public void removeNodeListener(NodeListener nl) {
+		nodeListener.remove(nl);
 	}
 }
