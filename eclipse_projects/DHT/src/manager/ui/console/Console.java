@@ -221,6 +221,10 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Print status
 					System.out.println("Watching KEEP-ALIVE: " + (watchKeepAlive ? "ON" : "OFF"));
 				}
+				else if(cmd.cmd.toLowerCase().equals("health")) {
+					//Print health
+					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100 + "%");
+				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
 				}

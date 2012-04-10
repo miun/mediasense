@@ -139,4 +139,8 @@ public final class Manager {
 		//Forward
 		network.removeKeepAliveListener(listener);
 	}
+	
+	public double calculateHealthOfDHT() {
+		return network.calculateHealthOfDHT();
+	}
 }

@@ -345,7 +345,8 @@ public class Network {
 		NodeID hash_log2;
 		int log2floor;
 		
-		double qual = 0;
+		int count_max = 0;
+		int count_ok = 0;
 		
 		//Copy DHT into a map accessible through the NodeID  
 		DHT = new TreeMap<FingerEntry,FingerEntry>();
@@ -364,17 +365,33 @@ public class Network {
 			//Check each finger
 			for(int i = 0; i < NodeID.ADDRESS_SIZE * 8; i++) {
 				//Get current finger, if any, of the DHT region specified by log2 
-				hash_log2 = NodeID.powerOfTwo(i);
-				
+				hash_log2 = NodeID.powerOfTwo(i).add(client.getNodeID());
 				currentSuccessor = getSuccessor(fingerTable,hash_log2);
 				bestSuccessor = getSuccessor(DHT,hash_log2);
 				
 				//Compare
+				if(!bestSuccessor.equals(client.getNodeID())) {
+					//If a node exists there must be finger
+					count_max++;
+				
+					if(currentSuccessor.equals(bestSuccessor)) {
+						//Current successor is best successor
+						count_ok++;
+					}
+
+					//Set new log2 to skip unnecessary ranges
+					i = NodeID.logTwoFloor(bestSuccessor.getNodeID().sub(client.getNodeID())) + 1;
+				}
+				else {
+					//Finished all nodes
+					break;
+				}
 			}
 		}
 		
-		
-		return 0;
+		//Return rate of DHT health#
+		//If there is only one node there can't be a finger, therefore the DHT is ok
+		return count_max > 0 ? count_ok / count_max : 1.0;
 	}
 
 	public FingerEntry getSuccessor(TreeMap<FingerEntry,FingerEntry> table,NodeID nodeID) {
