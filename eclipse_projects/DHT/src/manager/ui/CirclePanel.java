@@ -17,24 +17,27 @@ import manager.listener.FingerChangeListener;
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
 	public static final byte[] MAXNUMBER = {-1,-1,-1,-1};
-	public static final int RADIUS = 360;
-	public static final int RADIUSNUMBER = 380;
-	public static final int BORDER = 50;
+	public static final int RADIUS = 250;
+	public static final int RADIUSNUMBER = 270;
+	public static final int BORDER = 60;
 	
 	private HashMap<NodeID, NodePanel> nodes;
 	
+	/*Timestamp with Message and List of Arrows representing all fingers changed during the
+	last keep Alive initiation*/
 	private String lastKeepAliveInitiation;
 	private List<Arrow> changedFingersSinceLastKeepAlive;
 	
 	private NodePanel activeNode;
 	
-	private double circumference;
+	//That defines how far two nodes can be away from each other
+	private double rangeOnCircle;
 	
 	public CirclePanel() {
-		lastKeepAliveInitiation = "";
+		lastKeepAliveInitiation = "Did not receive Keepalive yet";
 		nodes = new HashMap<NodeID, NodePanel>();
 		changedFingersSinceLastKeepAlive = new ArrayList<Arrow>();
-		circumference = 2*Math.PI/bAtoLong(MAXNUMBER);
+		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
 		this.setLayout(null);
 	}
 	
@@ -90,29 +93,32 @@ public class CirclePanel extends JPanel {
 		long longNode = bAtoLong(node);
 		
 		//Determine cos and sin regarding to the circle
-		double cos = -Math.cos(longNode*circumference);
-		double sin = Math.sin(longNode*circumference);
+		double cos = -Math.cos(longNode*rangeOnCircle);
+		double sin = Math.sin(longNode*rangeOnCircle);
 		
-		int x = new Double(sin*radius).intValue()+BORDER+radius;
-		int y = new Double(cos*radius).intValue()+BORDER+radius;
+		int x = new Double(sin*radius).intValue()+BORDER+RADIUS;
+		int y = new Double(cos*radius).intValue()+BORDER+RADIUS;
 		return new Point(x, y);
 	}
 	
 	@Override
 	protected void paintComponent( Graphics g ) {
-		super.paintComponent( g );
-		g.drawString(lastKeepAliveInitiation, 10, 25);
-		g.setColor(Color.CYAN);
-		g.drawOval(BORDER, BORDER, RADIUS*2, RADIUS*2);
-		g.setColor(Color.BLACK);
+		super.paintComponent(g);
+		Graphics gLocal = g.create();
+		gLocal.drawString(lastKeepAliveInitiation, 10, 25);
+		gLocal.setColor(Color.CYAN);
+		gLocal.drawOval(BORDER, BORDER, RADIUS*2, RADIUS*2);
+		gLocal.setColor(Color.BLACK);
 		if(activeNode!=null){
 			for(Point p: activeNode.getFingers()) {
-				g.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
+				gLocal.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
 			}
 		}
-		for(Arrow a: changedFingersSinceLastKeepAlive) {
-			a.draw(g);
-		}
+		/*synchronized (changedFingersSinceLastKeepAlive) {
+			for(Arrow a: changedFingersSinceLastKeepAlive) {
+				a.paint(gLocal);
+			}
+		}*/
 	}
 	
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
@@ -130,21 +136,27 @@ public class CirclePanel extends JPanel {
 						
 			np.addFinger(finger, x, y);
 			
-			
+			Arrow a = new Arrow(pn, pf, Arrow.ADD);
 			//Add KeepAlive Arrow
 			synchronized (changedFingersSinceLastKeepAlive) {
-				changedFingersSinceLastKeepAlive.add(new Arrow(pn, pf, Arrow.ADD));
+				changedFingersSinceLastKeepAlive.add(a);
 			}
+			//Add also to this
+			this.add(a);
 		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {		
 			np.removeFinger(finger);
 			
+			Arrow a = new Arrow(pn, pf, Arrow.REMOVE);
 			//Addb Keepalive arrow
 			synchronized (changedFingersSinceLastKeepAlive) {
-				changedFingersSinceLastKeepAlive.add(new Arrow(pn, pf, Arrow.REMOVE));
+				changedFingersSinceLastKeepAlive.add(a);
 			}
+			//Add also to this
+			this.add(a);
 		}
 		
-		this.repaint();
+		this.validate();
+		//this.repaint();
 	}
 	
 	public void setActiveNode(NodePanel np) {
@@ -154,9 +166,13 @@ public class CirclePanel extends JPanel {
 	
 	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
 		synchronized (changedFingersSinceLastKeepAlive) {
-			changedFingersSinceLastKeepAlive.clear();
+			for(Arrow a: changedFingersSinceLastKeepAlive) {
+				this.remove(a);
+			}
 		}
 		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
+		this.validate();
+		//this.repaint();
 	}
 		
 }
