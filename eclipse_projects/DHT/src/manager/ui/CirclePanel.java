@@ -31,6 +31,7 @@ public class CirclePanel extends JPanel {
 	private double circumference;
 	
 	public CirclePanel() {
+		lastKeepAliveInitiation = "";
 		nodes = new HashMap<NodeID, NodePanel>();
 		changedFingersSinceLastKeepAlive = new ArrayList<Arrow>();
 		circumference = 2*Math.PI/bAtoLong(MAXNUMBER);
@@ -39,16 +40,16 @@ public class CirclePanel extends JPanel {
 	
 	public void addNode(Communication com) {
 		//Get Point on the circle and add border and radius
-		Point p = getPosOnCircle(com.getNodeID(), RADIUSNUMBER);
-		int x = (int) (p.getX());
-		int y = (int) (p.getY());
-		NumberPanel nb = new NumberPanel(com.getLocalIp(), x, y);
+		Point pNum = getPosOnCircle(com.getNodeID(), RADIUSNUMBER);
+		int xNum = (int) (pNum.getX());
+		int yNum = (int) (pNum.getY());
+		NumberPanel nb = new NumberPanel(com.getLocalIp(), xNum, yNum);
 		
 		//Get Point on the circle and add border and radius
-		p = getPosOnCircle(com.getNodeID(), RADIUS);
-		x = (int) (p.getX()+BORDER+RADIUS);
-		y = (int) (p.getY()+BORDER+RADIUS);
-		NodePanel np = new NodePanel(nb, x, y, this);
+		Point pCir = getPosOnCircle(com.getNodeID(), RADIUS);
+		int xCir = (int) (pCir.getX());
+		int yCir = (int) (pCir.getY());
+		NodePanel np = new NodePanel(nb, xCir, yCir, this);
 		np.setToolTipText(com.getLocalIp());
 		
 		//Add the panels as childs of this panel
