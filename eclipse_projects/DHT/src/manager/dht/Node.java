@@ -88,16 +88,12 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void handleMessage(Message message) {
 		//Don't process message if it was not for us!!
-		//TODO probably not necessary 
-		//TODO check message for null ?!?!?!?!
 		if(!message.getToIp().equals(identity.getNetworkAddress())) {
 			System.out.println("!!!!! Message from THIS node !!!");
 			return;
 		}
-		
-		//Safe performance for node
-		//if(finger.))
-		
+
+		//Analyse message
 		switch (message.getType()) {
 			//react on a Join message
 			case Message.JOIN:
@@ -286,25 +282,27 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	public FingerEntry getSuccessor(NodeID nodeID) {
-		//Add identity and successor to the fingertable - IMPORTANT: remove them before return
-		finger.put(identity, identity);
-		finger.put(successor, successor);
+		synchronized(this) {
+			//Add identity and successor to the fingertable - IMPORTANT: remove them before return
+			finger.put(identity, identity);
+			finger.put(successor, successor);
+			
+			FingerEntry hash = new FingerEntry(nodeID,null);
+			FingerEntry result;
+			
+			//Get successor of us
+			result = finger.higherKey(hash);
+			if(result == null) { 
+				//There is no higher key in the finger tree
+				result = finger.firstKey();
+			}
+			
+			//Remove identity and successor from the finger-table
+			finger.remove(identity);
+			finger.remove(successor);
 		
-		FingerEntry hash = new FingerEntry(nodeID,null);
-		FingerEntry result;
-		
-		//Get successor of us
-		result = finger.higherKey(hash);
-		if(result == null) { 
-			//There is no higher key in the finger tree
-			result = finger.firstKey();
+			return result;
 		}
-		
-		//Remove identity and successor from the finger-table
-		finger.remove(identity);
-		finger.remove(successor);
-		
-		return result;
 	}
 	
 	private void setIdentity(byte[] hash) {
@@ -331,7 +329,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		if(finger.containsKey(newFinger)) return;
 		
 		//1 - Rotate hash to the "origin"
-		//2 - Then get the logarithm of base 2, rounded up
+		//2 - Then get the logarithm of base 2, rounded down (floor)
 		//3 - Calculate the new hash
 		
 		hash_finger = newFinger.getNodeID().sub(identity.getNodeID());
