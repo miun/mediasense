@@ -2,6 +2,7 @@ package manager.ui;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,6 +31,8 @@ public class CirclePanel extends JPanel {
 	
 	private NodePanel activeNode;
 	
+	private Graphics2D g2D;
+	
 	//That defines how far two nodes can be away from each other
 	private double rangeOnCircle;
 	
@@ -39,6 +42,7 @@ public class CirclePanel extends JPanel {
 		changedFingersSinceLastKeepAlive = new ArrayList<Arrow>();
 		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
 		this.setLayout(null);
+		this.setVisible(true);
 	}
 	
 	public void addNode(Communication com) {
@@ -104,6 +108,7 @@ public class CirclePanel extends JPanel {
 	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent(g);
+		this.g2D = (Graphics2D) g.create();
 		Graphics gLocal = g.create();
 		gLocal.drawString(lastKeepAliveInitiation, 10, 25);
 		gLocal.setColor(Color.CYAN);
@@ -128,6 +133,8 @@ public class CirclePanel extends JPanel {
 		//Get the relevant points on the circle
 		Point pf = getPosOnCircle(finger, RADIUS);
 		Point pn = getPosOnCircle(node, RADIUS);
+		
+		Arrow a = null;
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
 						
 			
@@ -136,27 +143,19 @@ public class CirclePanel extends JPanel {
 						
 			np.addFinger(finger, x, y);
 			
-			Arrow a = new Arrow(pn, pf, Arrow.ADD);
-			//Add KeepAlive Arrow
-			synchronized (changedFingersSinceLastKeepAlive) {
-				changedFingersSinceLastKeepAlive.add(a);
-			}
-			//Add also to this
-			this.add(a);
+			a = new Arrow(pn, pf, Arrow.ADD);
 		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {		
 			np.removeFinger(finger);
-			
-			Arrow a = new Arrow(pn, pf, Arrow.REMOVE);
-			//Addb Keepalive arrow
-			synchronized (changedFingersSinceLastKeepAlive) {
-				changedFingersSinceLastKeepAlive.add(a);
-			}
-			//Add also to this
-			this.add(a);
+			a = new Arrow(pn, pf, Arrow.REMOVE);
 		}
-		
+		//Add KeepAlive Arrow
+		synchronized (changedFingersSinceLastKeepAlive) {
+			changedFingersSinceLastKeepAlive.add(a);
+		}
+		//Add also to this
+		this.add(a);
 		this.validate();
-		//this.repaint();
+		this.repaint();
 	}
 	
 	public void setActiveNode(NodePanel np) {

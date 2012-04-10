@@ -25,6 +25,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	 * Create the frame.
 	 */
 	public CircleGUI(Manager manager) {
+		super();
 		//initiate manager object
 		this.manager = manager;
 		

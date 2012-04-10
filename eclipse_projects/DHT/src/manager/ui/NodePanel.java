@@ -6,7 +6,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -19,6 +18,7 @@ public class NodePanel extends JPanel implements MouseListener {
 	private NumberPanel numberPanel;
 	private CirclePanel cp;
 	private HashMap<NodeID, Point> fingers;
+	
 	public NodePanel(NumberPanel numberPanel, int x, int y, CirclePanel cp){
 		//Initialize objects
 		this.numberPanel = numberPanel;
