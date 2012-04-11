@@ -1,25 +1,29 @@
 package manager.ui;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
 
 import javax.swing.JPanel;
 
+import manager.dht.NodeID;
+
 @SuppressWarnings("serial")
 public class NodePanel extends JPanel implements MouseListener {
-	private NumberPanel numberPanel;
-	private HashSet<JPanel> fingers;
-	public NodePanel(NumberPanel numberPanel, int x, int y){
-		this.numberPanel = numberPanel;
+
+	public NodePanel(String tooltip, Point p){
+		this.setToolTipText(tooltip);
+		//Set Dimension and Color
+		int x = (int) p.getX();
+		int y = (int) p.getY();
 		this.setBounds(x-2,y-2,5,5);
 		this.setBackground(Color.BLACK);
+		
+		//Listen to Mouse Events
 		this.addMouseListener(this);
-	}
-	
-	public NumberPanel getNumberPanel() {
-		return numberPanel;
 	}
 	
 	@Override
