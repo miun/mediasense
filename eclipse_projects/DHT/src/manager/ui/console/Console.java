@@ -68,7 +68,17 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("g")) {
-					new CircleGUI(manager);
+					if(cmd.param == null) { 
+						new CircleGUI(manager,0);
+					}
+					else {
+						try {
+							int radius = Integer.valueOf(cmd.param[0]);
+							new CircleGUI(manager, radius);
+						} catch(NumberFormatException e){
+							new CircleGUI(manager,0);
+						}					
+					}
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
 					if(cmd.param == null) {

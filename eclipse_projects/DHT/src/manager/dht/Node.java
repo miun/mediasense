@@ -371,7 +371,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_BETTER, identity.getNodeID(), newFinger.getNodeID());
 		}
 		//Check if the new finger is smaller than the successor
 		else if(hash_finger.compareTo(hash_suc) < 0) {
@@ -381,7 +381,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 
 			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_BETTER, identity.getNodeID(), newFinger.getNodeID());
 			
 			//...but also check if the successor was the old successor
 			//and, if so, remove it

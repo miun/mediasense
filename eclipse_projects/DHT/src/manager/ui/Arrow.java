@@ -10,8 +10,6 @@ import javax.swing.JComponent;
 @SuppressWarnings("serial")
 public class Arrow extends JComponent {
 	private final int ARR_SIZE = 4;
-	public static final Color ADD = Color.GREEN;
-	public static final Color REMOVE = Color.RED;
 	
 	//Coordinates
 	private int x1;
@@ -29,7 +27,7 @@ public class Arrow extends JComponent {
 		this.x2 = (int) end.getX();
 		this.y2 = (int) end.getY();
 		
-		this.setBounds(0,0,CirclePanel.RADIUS*2+CirclePanel.BORDER,CirclePanel.RADIUS*2+CirclePanel.BORDER);
+		this.setBounds(x1,y1,x2,y2);
 		this.color = color;
 		setOpaque(false);
 		//this.setVisible(true);
@@ -39,7 +37,7 @@ public class Arrow extends JComponent {
 	protected void paintComponent(Graphics g) {
 		Graphics2D gLocal = (Graphics2D) g.create();
 		gLocal.setColor(color);
-		gLocal.drawLine(x1, y1, x2, y2);
+		gLocal.drawLine(0, 0, x2-x1, y2-y1);
 	}
 
 }

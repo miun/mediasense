@@ -1,6 +1,7 @@
 package manager.ui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -18,75 +19,64 @@ import manager.listener.FingerChangeListener;
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
 	public static final byte[] MAXNUMBER = {-1,-1,-1,-1};
-	public static final int RADIUS = 250;
-	public static final int RADIUSNUMBER = 270;
-	public static final int BORDER = 60;
 	
-	private HashMap<NodeID, NodePanel> nodes;
-	
-	/*Timestamp with Message and List of Arrows representing all fingers changed during the
-	last keep Alive initiation*/
-	private String lastKeepAliveInitiation;
-	private List<Arrow> changedFingersSinceLastKeepAlive;
-	
-	private NodePanel activeNode;
+	private int circleRadius;
+	private int border;
+	Color color;
 	
 	private Graphics2D g2D;
 	
 	//That defines how far two nodes can be away from each other
 	private double rangeOnCircle;
 	
-	public CirclePanel() {
-		lastKeepAliveInitiation = "Did not receive Keepalive yet";
-		nodes = new HashMap<NodeID, NodePanel>();
-		changedFingersSinceLastKeepAlive = new ArrayList<Arrow>();
+	public CirclePanel(int circleRadius, int border, Color c) {
+		//init
+		this.circleRadius = circleRadius;
+		this.border = border;
+		this.color = c;
+		
+		//Calculation stuff
 		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
+		
+		//Gui stuff
 		this.setLayout(null);
-		this.setVisible(true);
-	}
-	
-	public void addNode(Communication com) {
-		//Get Point on the circle and add border and radius
-		Point pNum = getPosOnCircle(com.getNodeID(), RADIUSNUMBER);
-		int xNum = (int) (pNum.getX());
-		int yNum = (int) (pNum.getY());
-		NumberPanel nb = new NumberPanel(com.getLocalIp(), xNum, yNum);
+		Dimension d = new Dimension((circleRadius+border)*2, (circleRadius+border)*2);
+		this.setBounds(border, border, d.width, d.height);
+		setSize(d);
+		setPreferredSize(d);
+		setMinimumSize(d);
 		
-		//Get Point on the circle and add border and radius
-		Point pCir = getPosOnCircle(com.getNodeID(), RADIUS);
-		int xCir = (int) (pCir.getX());
-		int yCir = (int) (pCir.getY());
-		NodePanel np = new NodePanel(nb, xCir, yCir, this);
-		np.setToolTipText(com.getLocalIp());
+		//Make Elements behind this visible
+		setOpaque(false);
+	}
+	
+	@Override
+	protected void paintComponent( Graphics g ) {
+		super.paintComponent(g);
 		
-		//Add the panels as childs of this panel
-		this.add(nb);
-		this.add(np);
-		this.repaint();
+		//color = null means dont draw additional stuff
+		if(color == null) return;
 		
-		//Add it to the list with nodes
-		nodes.put(com.getNodeID(), np);
+		//draw the circle
+		this.g2D = (Graphics2D) g.create();
+		Graphics gLocal = g.create();
+		//gLocal.drawString(lastKeepAliveInitiation, 10, 25);
+		gLocal.setColor(color);
+		gLocal.drawOval(border, border, circleRadius*2, circleRadius*2);
+		/*
+		if(activeNode!=null){
+			for(Point p: activeNode.getFingers()) {
+				gLocal.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
+			}
+		}*/
+		/*synchronized (changedFingersSinceLastKeepAlive) {
+			for(Arrow a: changedFingersSinceLastKeepAlive) {
+				a.paint(gLocal);
+			}
+		}*/
 	}
 	
-	public void removeNode(Communication com) {
-		//Remove from the HashMap and from the panel
-		NodePanel toRemove = nodes.remove(com.getNodeID());
-		if(toRemove != null)
-			remove(toRemove.getNumberPanel());
-			remove(toRemove);
-		//Repaint the P
-		this.repaint();
-	}
-	
-	public static long bAtoLong(byte[] bytes) {
-		long result = 0;
-		for (int i = 0; i < bytes.length; i++){
-			result = (result << 8) + (bytes[i] & 0xff);
-		}
-		return result;
-	}
-	
-	private Point getPosOnCircle(NodeID nodeID, int radius) {
+	public Point getPosOnCircle(NodeID nodeID) {
 		//Get the most valuable bytes of the hash
 		byte[] hash = nodeID.getID();
 		byte[] node = new byte[MAXNUMBER.length];
@@ -100,39 +90,40 @@ public class CirclePanel extends JPanel {
 		double cos = -Math.cos(longNode*rangeOnCircle);
 		double sin = Math.sin(longNode*rangeOnCircle);
 		
-		int x = new Double(sin*radius).intValue()+BORDER+RADIUS;
-		int y = new Double(cos*radius).intValue()+BORDER+RADIUS;
+		int x = new Double(sin*circleRadius).intValue()+border+circleRadius;
+		int y = new Double(cos*circleRadius).intValue()+border+circleRadius;
 		return new Point(x, y);
 	}
 	
-	@Override
-	protected void paintComponent( Graphics g ) {
-		super.paintComponent(g);
-		this.g2D = (Graphics2D) g.create();
-		Graphics gLocal = g.create();
-		gLocal.drawString(lastKeepAliveInitiation, 10, 25);
-		gLocal.setColor(Color.CYAN);
-		gLocal.drawOval(BORDER, BORDER, RADIUS*2, RADIUS*2);
-		gLocal.setColor(Color.BLACK);
-		if(activeNode!=null){
-			for(Point p: activeNode.getFingers()) {
-				gLocal.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
-			}
+	private static long bAtoLong(byte[] bytes) {
+		long result = 0;
+		for (int i = 0; i < bytes.length; i++){
+			result = (result << 8) + (bytes[i] & 0xff);
 		}
-		/*synchronized (changedFingersSinceLastKeepAlive) {
-			for(Arrow a: changedFingersSinceLastKeepAlive) {
-				a.paint(gLocal);
-			}
-		}*/
+		return result;
 	}
+	/*
+	public void removeNode(Communication com) {
+		//Remove from the HashMap and from the panel
+		NodePanel toRemove = nodes.remove(com.getNodeID());
+		if(toRemove != null)
+			remove(toRemove.getNumberPanel());
+			remove(toRemove);
+		//Repaint the P
+		this.repaint();
+	}
+	
+	
+	
+	
 	
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
 		NodePanel np = nodes.get(node);
 		if(np==null) return;
 		
 		//Get the relevant points on the circle
-		Point pf = getPosOnCircle(finger, RADIUS);
-		Point pn = getPosOnCircle(node, RADIUS);
+		Point pf = getPosOnCircle(finger, circleRadius);
+		Point pn = getPosOnCircle(node, circleRadius);
 		
 		Arrow a = null;
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
@@ -173,6 +164,6 @@ public class CirclePanel extends JPanel {
 		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
 		this.validate();
 		this.repaint();
-	}
+	}*/
 		
 }
