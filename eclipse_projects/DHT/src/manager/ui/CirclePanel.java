@@ -42,10 +42,6 @@ public class CirclePanel extends JPanel {
 		this.setLayout(null);
 		Dimension d = new Dimension((circleRadius+border)*2, (circleRadius+border)*2);
 		this.setBounds(border, border, d.width, d.height);
-		setSize(d);
-		setPreferredSize(d);
-		setMinimumSize(d);
-		
 		//Make Elements behind this visible
 		setOpaque(false);
 	}

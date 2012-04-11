@@ -73,9 +73,10 @@ public class NodeID implements Comparable<NodeID> {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		//if (getClass() != obj.getClass())
+		//	return false;
 		NodeID other = (NodeID) obj;
+		assert other != null;
 		if (id == null) {
 			if (other.id != null)
 				return false;
