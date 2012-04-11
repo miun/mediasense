@@ -148,8 +148,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				else {
 					//Forward to the best fitting predecessor
-					//message.fromIp = identity.getNetworkAddress();
-					//message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
 					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
 					communication.sendMessage(answer);
 				}
