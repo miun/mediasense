@@ -347,16 +347,8 @@ public class Network {
 		int count_max = 0;
 		int count_ok = 0;
 
-		for(Communication client: clients.values()) {
-			count_ok += client.getNode().getFingerTable().size() + 1;
-		}
-		
-		System.out.println(clients.size() + " - " + count_ok * );
-		return 0;
-		
-		
 		//Copy DHT into a map accessible through the NodeID  
-/*		DHT = new TreeMap<FingerEntry,FingerEntry>();
+		DHT = new TreeMap<FingerEntry,FingerEntry>();
 
 		for(Communication client: clients.values()) {
 			FingerEntry newFinger;
@@ -397,9 +389,8 @@ public class Network {
 		}
 		
 		//Return rate of DHT health#
-		//If there is only one node there can't be a finger, therefore the DHT is ok
+		//If there is only one node there can't be a finger, therefore the DHT is OK
 		return count_max > 0 ? count_ok / count_max : 1.0;
-		*/
 	}
 
 	public FingerEntry getSuccessor(TreeMap<FingerEntry,FingerEntry> table,NodeID nodeID) {
