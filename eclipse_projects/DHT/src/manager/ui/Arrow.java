@@ -29,10 +29,10 @@ public class Arrow extends JComponent {
 		this.x2 = (int) end.getX();
 		this.y2 = (int) end.getY();
 		
-		this.setBounds(0,0,600,600);
+		this.setBounds(0,0,CirclePanel.RADIUS*2+CirclePanel.BORDER,CirclePanel.RADIUS*2+CirclePanel.BORDER);
 		this.color = color;
 		setOpaque(false);
-		this.setVisible(true);
+		//this.setVisible(true);
 	}
 	
 	@Override

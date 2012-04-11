@@ -168,10 +168,11 @@ public class CirclePanel extends JPanel {
 			for(Arrow a: changedFingersSinceLastKeepAlive) {
 				this.remove(a);
 			}
+			changedFingersSinceLastKeepAlive.clear();
 		}
 		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
 		this.validate();
-		//this.repaint();
+		this.repaint();
 	}
 		
 }
