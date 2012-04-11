@@ -119,7 +119,6 @@ public class Arrow extends JComponent {
 		}
 		
 		
-		System.out.println("Line Bounds: "+ bx1 +" "+ + by1 +" " + bx2 + " " + by2);
 		this.setBounds(bx1,by1,bx2-bx1,by2-by1);
 		this.color = color;
 		setOpaque(false);

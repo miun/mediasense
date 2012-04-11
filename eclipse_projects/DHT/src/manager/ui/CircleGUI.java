@@ -2,6 +2,7 @@ package manager.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -58,7 +59,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.setLayout(new BorderLayout());
 		
 		if(circleRadius <= 0) circleRadius = 250;
-		this.setBounds(100, 100, 2*circleRadius+2*BORDER, 2*circleRadius+2*BORDER);
+		//this.setBounds(100, 100, 2*circleRadius+2*BORDER, 2*circleRadius+2*BORDER);
 		
 		//Register for NodeEvents, FingerEvents, KeepAliveEvents
 		manager.addNodeListener(this);
@@ -78,7 +79,10 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		
 		//Create the painting surface which holds the graphical elements
 		paintingSurface = new JPanel(null);
-		paintingSurface.setSize((circleRadius+BORDER)*2,(circleRadius+BORDER)*2);
+		Dimension d = new Dimension((circleRadius+BORDER+20)*2,(circleRadius+BORDER+20)*2);
+		paintingSurface.setSize(d);
+		paintingSurface.setPreferredSize(d);
+		paintingSurface.setMinimumSize(d);
 		getContentPane().add(paintingSurface, BorderLayout.CENTER);
 		
 		//Add the circle for nodes
@@ -95,7 +99,8 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		
 		
 		//Show the Frame
-		//this.pack();
+		this.pack();
+		
 		this.setVisible(true);
 	}
 	
@@ -173,15 +178,14 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		if(changeType==FINGER_CHANGE_ADD) {
 			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.BLUE);
 		}
-		else if(changeType==FINGER_CHANGE_BETTER) {
+		else if(changeType==FINGER_CHANGE_ADD_BETTER) {
 			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.GREEN);
 		}
-		else if(changeType==FINGER_CHANGE_REMOVE) {
+		else if(changeType==FINGER_CHANGE_REMOVE_WORSE) {
 			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.RED);
 		}
 		//Shouldnt happen - unknown finger event
 		if(a==null) return;
-		System.out.println("Finger change");
 		//Put to the list
 		synchronized (changedFingersSinceLastKeepAlive) {
 			changedFingersSinceLastKeepAlive.add(a);
@@ -202,7 +206,6 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 			for(Arrow a: changedFingersSinceLastKeepAlive)
 				circleForNodes.remove(a);
 			changedFingersSinceLastKeepAlive.clear();
-			System.out.println("keepalive erase finger");
 		}
 		circleForNodes.validate();
 		circleForNodes.repaint();

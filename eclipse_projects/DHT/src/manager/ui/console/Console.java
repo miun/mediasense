@@ -45,6 +45,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			
 			//Get line
+			if(in == null) break;
 			cmd = extractCmd(in);
 			
 			//Analyse input
@@ -286,10 +287,16 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		
 		//Which action???
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			result = "ADDED finger: {";
+			result = "ADD-NEW finger: {";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
-			result = "REMOVED finger: {";
+			result = "REMOVE-OLD finger: {";
+		}
+		else if(changeType == FingerChangeListener.FINGER_CHANGE_ADD_BETTER) {
+			result = "ADD-BETTER finger: {";
+		}
+		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE) {
+			result = "REMOVE-WORSE finger: {";
 		}
 		else {
 			result = "UNKNOWN CHANGE TYPE! ";
