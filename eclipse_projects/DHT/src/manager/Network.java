@@ -347,7 +347,7 @@ public class Network {
 		
 		int count_max = 0;
 		int count_ok = 0;
-		
+
 		//Copy DHT into a map accessible through the NodeID  
 		DHT = new TreeMap<FingerEntry,FingerEntry>();
 
@@ -390,7 +390,7 @@ public class Network {
 		}
 		
 		//Return rate of DHT health#
-		//If there is only one node there can't be a finger, therefore the DHT is ok
+		//If there is only one node there can't be a finger, therefore the DHT is OK
 		return count_max > 0 ? count_ok / count_max : 1.0;
 	}
 

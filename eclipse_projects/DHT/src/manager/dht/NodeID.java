@@ -1,53 +1,69 @@
 package manager.dht;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public class NodeID implements Comparable<NodeID> {
+	//This is the address size, 160 bytes for SHA1
 	public static final int ADDRESS_SIZE = 20;
-	private byte[] id = new byte[ADDRESS_SIZE];
+	
+	//Calculation constants
+	private static final BigInteger bigModulo = BigInteger.ONE.shiftLeft(ADDRESS_SIZE * 8);
+
+	//private byte[] id = new byte[ADDRESS_SIZE];
+	private BigInteger id;
+	
+	private NodeID(BigInteger bigInt) {
+		//Test that!!!
+		assert bigInt.signum() >= 0;
+		id = bigInt;
+	}
 	
 	public NodeID(byte[] id) {
-		this.id = id;
+		//Do modulo, so the number is never bigger than the address size
+		this.id = new BigInteger(1,id).mod(bigModulo);
+		
+		byte[] ar = BigIntToHashArray(this.id);
+		assert id.equals(ar);
 	}
 	
 	public byte[] getID() {
-		return id;
+		//Return hash array
+		return BigIntToHashArray(id);
 	}
 	
 	public String toString() {
-		//Long version
-		//return SHA1Generator.convertToHex(id);
-
 		//Shorter version
-		String result = SHA1Generator.convertToHex(id);
+		String result = SHA1Generator.convertToHex(getID());
 		return result.substring(0,4) + "..." + result.substring(36,40); 
 	}
 
 	@Override
 	public int compareTo(NodeID comp) {
 		//Its us!
-		if(comp == this) return 0;
+		//if(comp == this) return 0;
+		return id.compareTo(comp.id); 
 		
-		for(int i = 0; i < ADDRESS_SIZE; i++) {
+/*		for(int i = 0; i < ADDRESS_SIZE; i++) {
 			if((comp.id[i] < 0 ? comp.id[i] + 256 : comp.id[i]) > (id[i] < 0 ? id[i] + 256 : id[i])) return -1;
 			else if((comp.id[i] < 0 ? comp.id[i] + 256 : comp.id[i]) < (id[i] < 0 ? id[i] + 256 : id[i])) return 1;
-		}
+		}*/
 
 		//Equal
-		return 0;
+//		return 0;
 	}
 	
-	
-	
-	//-----
-	//Static math functions
-	//-----
+	//Add two node hash values
+	public NodeID add(NodeID hash) {
+		//Add value and make sure to keep it in the range!
+		return new NodeID(id.add(hash.id).mod(bigModulo));
+	}
 	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(id);
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		return result;
 	}
 
@@ -60,90 +76,42 @@ public class NodeID implements Comparable<NodeID> {
 		if (getClass() != obj.getClass())
 			return false;
 		NodeID other = (NodeID) obj;
-		if (!Arrays.equals(id, other.id))
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
 			return false;
 		return true;
 	}
 
-	//Add two node hash values
-	public NodeID add(NodeID hash) {
-		int immediate;
-		int carry = 0;
-		byte[] temp = new byte[ADDRESS_SIZE];
-		
-		for(int i = ADDRESS_SIZE - 1; i >= 0; i--) {
-			immediate = id[i] + hash.id[i] + carry;
-			temp[i] = (byte)(immediate % 255); 
-			if(immediate < -128 || immediate > 127) carry = 1;
-		}
-		
-		return new NodeID(temp);
-	}
-	
 	public static NodeID powerOfTwo(int n) {
-		byte[] hash = new byte[ADDRESS_SIZE];
-		if(n >= 0 && n < ADDRESS_SIZE * 8) {
-			hash[(NodeID.ADDRESS_SIZE - 1) - (n / 8)] = (byte)(1 << (n % 8));
-		}
-		return new NodeID(hash);
+		//Return 2^n modulo 2^ADDRESS_SIZE;
+		return new NodeID(BigInteger.ONE.shiftLeft(n).mod(bigModulo));
 	}
 
 	//Subtract two node hash values
 	public NodeID sub(NodeID hash) {
-		int immediate;
-		int carry = 0;
-		byte[] temp = new byte[ADDRESS_SIZE];
+		BigInteger result = id.subtract(hash.id);
 		
-		for(int i = ADDRESS_SIZE - 1; i >= 0; i--) {
-			immediate = id[i] - hash.id[i] - carry;
-			temp[i] = (byte)(immediate % 255);
-			if(immediate < -128 || immediate > 127) carry = 1;
-			//carry = immediate >> 8;
-		}
-		
-		return new NodeID(temp);
+		//Test for underflow, correct and return
+		if(result.signum() < 0) result = result.add(bigModulo);
+		return new NodeID(result);
 	}
 	
 	//Subtract integers
 	public NodeID sub(int n) {
-		byte hash[] = new byte[ADDRESS_SIZE];
+		BigInteger result = id.subtract(BigInteger.valueOf(n));
 		
-		for(int i = 0; i < ADDRESS_SIZE; i++) {
-			hash[ADDRESS_SIZE - i - 1] = (byte)(n % 256);
-			n = n >> 8;
-		}
-		
-		return sub(new NodeID(hash));
+		//Test for underflow, correct and return
+		if(result.signum() < 0) result = result.add(bigModulo);
+		return new NodeID(result);
 	}
 
 	//TODO figure out if this works!!!
 	public static int logTwoFloor(NodeID nodeID) {
-		int temp;
-		
-		//For each byte
-		for(int i = 0; i < NodeID.ADDRESS_SIZE; i++) {
-			if(nodeID.id[i] != 0) {
-				temp = nodeID.id[i];
-				
-				//For each bit
-				for(int j = 0; j < 8; j++) {
-					temp = temp << 1;
-					if(temp > 255 || temp < 0) {
-						//Return found position
-						return (NodeID.ADDRESS_SIZE * 8 - 1) - (i * 8) - j;
-					}
-				}
-			}
-		}
-		
-		return 0;
+		return nodeID.id.bitLength() - 1;
 	}
-	
-	public static int logTwoCeil(NodeID nodeID) {
-		//Easy as that :-)
-		return logTwoFloor(nodeID) + 1;
-	}
-	
+
 	public boolean between(NodeID start,NodeID end) {
 		//Check if THIS node is in [start,end]
 		if(start.compareTo(end) < 0) {
@@ -165,5 +133,22 @@ public class NodeID implements Comparable<NodeID> {
 			}
 		}
 		else return false;
+	}
+	
+	private static byte[] BigIntToHashArray(BigInteger bigInt) {
+		byte[] temp = bigInt.toByteArray();
+		byte[] result = new byte[ADDRESS_SIZE];
+		
+		//Length is fine!
+		if(temp.length == ADDRESS_SIZE) return temp;
+		
+		//Correct length
+		if(temp.length != ADDRESS_SIZE) {
+			for(int i = 0; i < (temp.length > 20 ? 20 : temp.length); i++) {
+				result[result.length - i - 1] = temp[temp.length - i - 1];
+			}
+		}
+		
+		return result;
 	}
 }
