@@ -1,6 +1,10 @@
 package manager;
 
+import java.math.BigInteger;
+import java.util.Random;
+
 import manager.dht.Node;
+import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -31,6 +35,39 @@ public final class Manager {
 	
 	//Singleton class
 	private Manager() {
+		BigInteger bi1,bi2,bi_res;
+		byte[] bytes1 = new byte[NodeID.ADDRESS_SIZE];
+		byte[] bytes2 = new byte[NodeID.ADDRESS_SIZE];
+		NodeID op1,op2,res;
+		Random R = new Random();
+		
+		for(int i = 0; i < 100; i++) {
+			//Add with NodeID's
+			R.nextBytes(bytes1);
+			op1 = new NodeID(bytes1);
+			bi1 = new BigInteger(bytes1);
+			
+			R.nextBytes(bytes2);
+			op2 = new NodeID(bytes2);
+			bi2 = new BigInteger(bytes2);
+			
+			System.out.println(bi1.bitLength());
+			System.out.println(bi2.bitLength());
+			
+			//Add with BigInteger's
+			res = op1.add(op2);
+			bi_res = bi1.add(bi2);
+			System.out.println(bi_res.bitLength() + "\n");
+			
+			//Check result
+			bytes1 = res.getID();
+			bytes2 = bi_res.toByteArray();
+			
+			if(!bytes1.equals(bytes2)) {
+				System.out.println("Calculation mistake!");
+			}
+		}
+
 		//Set own class as instance
 		instance = this;
 		
