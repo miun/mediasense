@@ -45,6 +45,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			
 			//Get line
+			if(in == null) break;
 			cmd = extractCmd(in);
 			
 			//Analyse input
@@ -68,7 +69,17 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					
 				}
 				else if(cmd.cmd.toLowerCase().equals("g")) {
-					new CircleGUI(manager);
+					if(cmd.param == null) { 
+						new CircleGUI(manager,0);
+					}
+					else {
+						try {
+							int radius = Integer.valueOf(cmd.param[0]);
+							new CircleGUI(manager, radius);
+						} catch(NumberFormatException e){
+							new CircleGUI(manager,0);
+						}					
+					}
 				}
 				else if(cmd.cmd.toLowerCase().equals("node_info")) {
 					if(cmd.param == null) {
@@ -223,7 +234,28 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("health")) {
 					//Print health
-					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100 + "%");
+					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100.0 + "%");
+				}
+				else if(cmd.cmd.toLowerCase().equals("wait")) {
+					//Wait for the specified time in ms
+					if(cmd.param != null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					
+					//Wait
+					long wait = Long.parseLong(cmd.param[0]);
+					if(wait > 0) {
+						System.out.println("Wait for " + wait + " ms...");
+						
+						try {
+							Thread.sleep(wait);
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							break;
+						}
+
+						System.out.println("Wait done");
+					}
+					
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
@@ -276,10 +308,16 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		
 		//Which action???
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			result = "ADDED finger: {";
+			result = "ADD-NEW finger: {";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
-			result = "REMOVED finger: {";
+			result = "REMOVE-OLD finger: {";
+		}
+		else if(changeType == FingerChangeListener.FINGER_CHANGE_ADD_BETTER) {
+			result = "ADD-BETTER finger: {";
+		}
+		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE) {
+			result = "REMOVE-WORSE finger: {";
 		}
 		else {
 			result = "UNKNOWN CHANGE TYPE! ";

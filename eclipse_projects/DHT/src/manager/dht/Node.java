@@ -89,6 +89,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	public void handleMessage(Message message) {
 		//Don't process message if it was not for us!!
 		if(!message.getToIp().equals(identity.getNetworkAddress())) {
+			//TODO Remove sysout
 			System.out.println("!!!!! Message from THIS node !!!");
 			return;
 		}
@@ -138,6 +139,7 @@ public class Node extends Thread implements LookupServiceInterface {
 							successor = newFingerEntry;
 						}
 						
+						//Check if we can use the old successor as finger
 						updateFingerTableEntry(old_successor);
 
 						//Repair finger count
@@ -146,8 +148,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				else {
 					//Forward to the best fitting predecessor
-					//message.fromIp = identity.getNetworkAddress();
-					//message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
 					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
 					communication.sendMessage(answer);
 				}
@@ -160,7 +160,10 @@ public class Node extends Thread implements LookupServiceInterface {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
-						successor = newFingerEntry;
+						synchronized (finger) {
+							successor = newFingerEntry;
+						}
+						
 						bConnected = true;
 						
 						//Check
@@ -369,9 +372,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				finger.put(newFinger,newFinger);
 			}
 
-			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
-			
 			//...but also check if the successor was the old successor
 			//and, if so, remove it
 			//Old successor means, that it is between [log2floor,log2floor + 1)
@@ -380,8 +380,13 @@ public class Node extends Thread implements LookupServiceInterface {
 					finger.remove(suc);
 				}
 				
-				//Fire remove event
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity.getNodeID(), suc.getNodeID());
+				//Fire events
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), suc.getNodeID());
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), newFinger.getNodeID());
+			}
+			else {
+				//Only fire ADD event, because nothing was removed in change
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
 			}
 		}
 	}
@@ -457,6 +462,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		//We need to clone the map and synchronize this operation!
 		synchronized(finger) {
 			newMap = new TreeMap<FingerEntry,FingerEntry>(finger);
+			newMap.put(successor, successor);
+			newMap.put(identity,identity);
 		}
 		
 		return newMap;

@@ -56,6 +56,10 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 				console.setText("Last change (added finger " + finger.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			} else if(changeType == FINGER_CHANGE_REMOVE) {
 				console.setText("Last change (removed finger " + finger.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
+			} else if(changeType == FINGER_CHANGE_ADD_BETTER) {
+			console.setText("Last change (added BETTER finger " + finger.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
+			} else if(changeType == FINGER_CHANGE_REMOVE_WORSE) {
+				console.setText("Last change (removed WORSE finger " + finger.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			}
 		}
 	}

@@ -163,10 +163,6 @@ public final class Manager {
 		network.removeNodeListener(nl);
 	}
 	
-	public void showCircleGui() {
-		new CircleGUI(this.getInstance());
-	}
-	
 	public void addKeepAliveListener(KeepAliveListener listener) {
 		//Forward
 		network.addKeepAliveListener(listener);
