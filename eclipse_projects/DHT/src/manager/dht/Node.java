@@ -457,6 +457,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		//We need to clone the map and synchronize this operation!
 		synchronized(finger) {
 			newMap = new TreeMap<FingerEntry,FingerEntry>(finger);
+			newMap.put(successor, successor);
+			newMap.put(identity,identity);
 		}
 		
 		return newMap;

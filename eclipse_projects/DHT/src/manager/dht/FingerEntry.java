@@ -39,9 +39,10 @@ public class FingerEntry implements Comparable<FingerEntry> {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
+//		if (getClass() != obj.getClass())
+//			return false;
 		FingerEntry other = (FingerEntry) obj;
+		assert other != null;
 		if (nodeID == null) {
 			if (other.nodeID != null)
 				return false;
