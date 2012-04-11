@@ -43,6 +43,9 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private CirclePanel circleForNodes;
 	private CirclePanel circleForIds;
 	
+	//WEST control Panel
+	private JPanel controlPanel;
+	
 	private HashMap<Communication, JComponent[]> nodeObjects;
 	
 	private Collection<Arrow> changedFingersSinceLastKeepAlive;
