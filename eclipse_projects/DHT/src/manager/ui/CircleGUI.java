@@ -60,6 +60,8 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	
 	//EAST control Panel
 	private JPanel controlPanel;
+	private JButton addButton;
+	private JButton deleteFinger;
 	
 	private JCheckBox clearOnKeepalive;
 	
@@ -108,11 +110,11 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		getContentPane().add(paintingSurface, BorderLayout.CENTER);
 		
 		//Add the circle for nodes
-		circleForNodes = new CirclePanel(circleRadius,BORDER, Color.cyan);
+		circleForNodes = new CirclePanel(circleRadius,BORDER, Color.cyan, null);
 		paintingSurface.add(circleForNodes);
 		
 		//And the one for the identification
-		circleForIds = new CirclePanel(circleRadius+20,BORDER-10, null);
+		circleForIds = new CirclePanel(circleRadius+20,BORDER-10, null, Color.cyan);
 		paintingSurface.add(circleForIds);
 		
 		//Add all Nodes that are already existing in the network
@@ -120,7 +122,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 			addNode(com);
 		
 		//A circlePanel which holds all fingerchanges since the last keepAlive initiation
-		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null);
+		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
 		paintingSurface.add(changedFingersSinceLastKeepalive);
 		
 		//EAST controlPanel
@@ -131,10 +133,13 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		clearOnKeepalive = new JCheckBox("clear on KA");
 		controlPanel.add(clearOnKeepalive);
 		
-		JButton addButton = new JButton("add Node");
+		addButton = new JButton("add Node");
 		addButton.addActionListener(this);
 		controlPanel.add(addButton);
 		
+		deleteFinger = new JButton("delete Lines");
+		deleteFinger.addActionListener(this);
+		controlPanel.add(deleteFinger);
 		
 		
 		//Show the Frame
@@ -248,7 +253,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.infoLabel.setText("Last KeepAlive initiated by: {" + networkAddress + "} " + key + " on: " + date);
 		if(clearOnKeepalive.isSelected()){
 			paintingSurface.remove(changedFingersSinceLastKeepalive);
-			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null);
+			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
 			paintingSurface.add(changedFingersSinceLastKeepalive);
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
@@ -259,7 +264,16 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		manager.addNode(String.valueOf(0));		
+		if(e.getSource().equals(addButton)) {
+			manager.addNode(String.valueOf(0));
+		} 
+		else if (e.getSource().equals(deleteFinger)){
+			paintingSurface.remove(changedFingersSinceLastKeepalive);
+			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
+			paintingSurface.add(changedFingersSinceLastKeepalive);
+			changedFingersSinceLastKeepalive.validate();
+			changedFingersSinceLastKeepalive.repaint();
+		}
 	}
 	
 }
