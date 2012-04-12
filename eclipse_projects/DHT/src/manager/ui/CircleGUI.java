@@ -4,7 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -47,7 +49,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private JLabel healthLabel;
 	
 	//CENTER Painting Surface
-	private JPanel paintingSurface;
+	private PaintingSurface paintingSurface;
 	private CirclePanel circleForNodes;
 	private CirclePanel circleForIds;
 	
@@ -100,7 +102,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.nodeObjects = new HashMap<String, JComponent[]>();
 		
 		//Create the painting surface which holds the graphical elements
-		paintingSurface = new JPanel(null);
+		paintingSurface = new PaintingSurface();
 		paintingSurface.setBackground(Color.BLACK);
 		Dimension d = new Dimension((circleRadius+BORDER+20)*2,(circleRadius+BORDER+20)*2);
 		paintingSurface.setSize(d);
@@ -139,7 +141,6 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		deleteFinger = new JButton("delete Lines");
 		deleteFinger.addActionListener(this);
 		controlPanel.add(deleteFinger);
-		
 		
 		//Show the Frame
 		this.pack();
