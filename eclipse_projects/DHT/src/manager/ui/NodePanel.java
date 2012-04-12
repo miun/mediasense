@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.HashMap;
 
 import javax.swing.JPanel;
 
@@ -16,10 +17,15 @@ public class NodePanel extends JPanel implements MouseListener {
 	private Communication com;
 	
 	private CirclePanel myFingers;
+	private HashMap<FingerEntry,Arrow> fingerData;
+	
+	private CircleGUI cg;
 
-	public NodePanel(Communication com, Point p, CirclePanel myFingers){
+	public NodePanel(Communication com, Point p, CirclePanel myFingers, CircleGUI cg){
 		this.com = com;
 		this.myFingers = myFingers;
+		this.fingerData = new HashMap<FingerEntry, Arrow>();
+		this.cg = cg;
 		
 		this.setToolTipText("{" + com.getNodeID() +"}" + " (" + com.getLocalIp() +")");
 		
@@ -34,10 +40,24 @@ public class NodePanel extends JPanel implements MouseListener {
 	}
 	
 	public void addFinger(FingerEntry finger) {
-		myFingers.add(new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
-						myFingers.getPosOnCircle(finger.getNodeID()), 
-						(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
-						Color.GRAY));
+		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
+				myFingers.getPosOnCircle(finger.getNodeID()), 
+				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
+				Color.GRAY);
+		myFingers.add(a);
+		fingerData.put(finger, a);
+		
+		myFingers.validate();
+		myFingers.repaint();
+	}
+	
+	public void removeFinger(FingerEntry finger) {
+		Arrow a = fingerData.get(finger);
+		if(a!=null) {
+			myFingers.remove(a);
+		}
+		myFingers.validate();
+		myFingers.repaint();
 	}
 	
 	@Override
@@ -51,11 +71,13 @@ public class NodePanel extends JPanel implements MouseListener {
 	@Override
 	public void mouseExited(MouseEvent e) {
 		setBackground(Color.WHITE);
+		cg.hideFingers(myFingers);
 	}
 	
 	@Override
 	public void mouseEntered(MouseEvent e) {
 		setBackground(Color.RED);
+		cg.showFingers(myFingers);
 	}
 	
 	@Override
