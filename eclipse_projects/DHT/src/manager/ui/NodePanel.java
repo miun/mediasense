@@ -4,18 +4,25 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.Collection;
-import java.util.HashMap;
 
 import javax.swing.JPanel;
 
-import manager.dht.NodeID;
+import manager.Communication;
+import manager.dht.FingerEntry;
 
 @SuppressWarnings("serial")
 public class NodePanel extends JPanel implements MouseListener {
+	
+	private Communication com;
+	
+	private CirclePanel myFingers;
 
-	public NodePanel(String tooltip, Point p){
-		this.setToolTipText(tooltip);
+	public NodePanel(Communication com, Point p, CirclePanel myFingers){
+		this.com = com;
+		this.myFingers = myFingers;
+		
+		this.setToolTipText("{" + com.getNodeID() +"}" + " (" + com.getLocalIp() +")");
+		
 		//Set Dimension and Color
 		int x = (int) p.getX();
 		int y = (int) p.getY();
@@ -24,6 +31,13 @@ public class NodePanel extends JPanel implements MouseListener {
 		
 		//Listen to Mouse Events
 		this.addMouseListener(this);
+	}
+	
+	public void addFinger(FingerEntry finger) {
+		myFingers.add(new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
+						myFingers.getPosOnCircle(finger.getNodeID()), 
+						(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
+						Color.GRAY));
 	}
 	
 	@Override

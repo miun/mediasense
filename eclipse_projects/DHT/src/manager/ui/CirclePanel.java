@@ -97,6 +97,10 @@ public class CirclePanel extends JPanel {
 		return new Point(x, y);
 	}
 	
+	public int getCircleRadius() {
+		return circleRadius;
+	}
+	
 	private static long bAtoLong(byte[] bytes) {
 		long result = 0;
 		for (int i = 0; i < bytes.length; i++){

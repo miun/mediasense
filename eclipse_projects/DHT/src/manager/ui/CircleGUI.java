@@ -155,7 +155,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		Point pIden = circleForIds.getPosOnCircle(nodeID);
 		
 		//Create the objects
-		NodePanel node = new NodePanel(com.getLocalIp(),pNode);
+		NodePanel node = new NodePanel(com,pNode, new CirclePanel(circleRadius, BORDER, null, null));
 		
 		NumberPanel id = new NumberPanel(com.getLocalIp(),pIden);
 		
