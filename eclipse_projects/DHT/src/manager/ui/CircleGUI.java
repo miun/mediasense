@@ -9,11 +9,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.beans.PropertyChangeListener;
 import java.util.Date;
 import java.util.HashMap;
 
-import javax.swing.Action;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -25,6 +23,7 @@ import javax.swing.JPanel;
 import manager.Communication;
 import manager.Manager;
 import manager.Network;
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
@@ -220,22 +219,22 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	public void windowOpened(WindowEvent e) {}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		Arrow a = null;
 		//Filter the event type
 		if(changeType==FINGER_CHANGE_ADD) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.YELLOW);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.YELLOW);
 		}
 		else if(changeType==FINGER_CHANGE_ADD_BETTER) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.GREEN);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.GREEN);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE_WORSE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.RED);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.RED);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.ORANGE);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.ORANGE);
 		}
-		//Shouldnt happen - unknown finger event
+		//Shouldn't happen - unknown finger event
 		if(a==null) return;
 		
 		//Put the arrow to its container

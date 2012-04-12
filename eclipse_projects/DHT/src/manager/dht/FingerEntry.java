@@ -62,4 +62,9 @@ public class FingerEntry implements Comparable<FingerEntry> {
 	public String getNetworkAddress() {
 		return networkAddress;
 	}
+	
+	public String toString() {
+		//Prepend network address
+		return "(" + networkAddress + ")-" + nodeID.toString();
+	}
 }

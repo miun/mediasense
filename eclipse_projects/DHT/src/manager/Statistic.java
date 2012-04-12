@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import manager.dht.NodeID;
+import manager.dht.FingerEntry;
 import manager.listener.FingerChangeListener;
 import manager.listener.NodeMessageListener;
 
@@ -93,7 +93,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		//Increment finger changes
 		fingerChanges += 1;
 	}

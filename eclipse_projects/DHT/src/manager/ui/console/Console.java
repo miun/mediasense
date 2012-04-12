@@ -9,6 +9,7 @@ import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
@@ -308,32 +309,32 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 	}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		String result;
 		
 		//Which action???
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			result = "ADD-NEW finger: {";
+			result = "ADD-NEW finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
-			result = "REMOVE-OLD finger: {";
+			result = "REMOVE-OLD finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_ADD_BETTER) {
-			result = "ADD-BETTER finger: {";
+			result = "ADD-BETTER finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE) {
-			result = "REMOVE-WORSE finger: {";
+			result = "REMOVE-WORSE finger: ";
 		}
 		else {
 			result = "UNKNOWN CHANGE TYPE! ";
 		}
 		
-		result = result + finger.toString() + "} @NODE: {" + node.toString() + "}";
+		result = result + finger.toString() + " @NODE: " + node.toString() + "";
 		System.out.println(result);
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key,String networkAddress) {
-		System.out.println(new SimpleDateFormat().format(date) + " | Node:{" + key.toString() + "} Addr:{" + networkAddress + "} initiated KEEP-ALIVE");
+		System.out.println(new SimpleDateFormat().format(date) + " | Node: " + key.toString() + " Addr: " + networkAddress + " initiated KEEP-ALIVE");
 	}
 }

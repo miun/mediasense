@@ -36,7 +36,7 @@ public class NodePanel extends JPanel implements MouseListener {
 	
 	@Override
 	public void mouseExited(MouseEvent e) {
-		setBackground(Color.BLACK);
+		setBackground(Color.WHITE);
 	}
 	
 	@Override

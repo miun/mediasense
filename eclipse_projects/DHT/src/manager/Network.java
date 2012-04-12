@@ -266,7 +266,7 @@ public class Network {
 		fingerChangeListener.remove(listener);
 	}
 	
-	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		//Inform all listener
 		for(FingerChangeListener l: fingerChangeListener) 
 			l.OnFingerChange(eventType, node, finger);

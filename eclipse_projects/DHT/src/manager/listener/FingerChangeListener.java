@@ -1,6 +1,6 @@
 package manager.listener;
 
-import manager.dht.NodeID;
+import manager.dht.FingerEntry;
 
 public interface FingerChangeListener {
 
@@ -9,5 +9,5 @@ public interface FingerChangeListener {
 	public static final int FINGER_CHANGE_ADD_BETTER = 3;
 	public static final int FINGER_CHANGE_REMOVE_WORSE = 4;
 
-	public void OnFingerChange(int changeType,NodeID node,NodeID finger);	
+	public void OnFingerChange(int changeType,FingerEntry node,FingerEntry finger);	
 }
