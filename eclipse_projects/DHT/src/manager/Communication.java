@@ -3,6 +3,7 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
 
@@ -117,7 +118,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	}
 	
 	@Override
-	public void fireFingerChangeEvent(int eventType, NodeID node,NodeID finger) {
+	public void fireFingerChangeEvent(int eventType, FingerEntry node,FingerEntry finger) {
 		network.fireFingerChangeEvent(eventType, node, finger);
 	}
 	

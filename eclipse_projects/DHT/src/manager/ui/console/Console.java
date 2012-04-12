@@ -9,6 +9,7 @@ import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
@@ -234,7 +235,33 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("health")) {
 					//Print health
-					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100.0 + "%");
+					if(cmd.param != null && cmd.param[0].toLowerCase().equals("m")) {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(true) * 100.0 + "%");
+					}
+					else {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(false) * 100.0 + "%");
+					}
+				}
+				else if(cmd.cmd.toLowerCase().equals("wait")) {
+					//Wait for the specified time in ms
+					if(cmd.param != null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					
+					//Wait
+					long wait = Long.parseLong(cmd.param[0]);
+					if(wait > 0) {
+						System.out.println("Wait for " + wait + " ms...");
+						
+						try {
+							Thread.sleep(wait);
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							break;
+						}
+
+						System.out.println("Wait done");
+					}
+					
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
@@ -282,32 +309,32 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 	}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		String result;
 		
 		//Which action???
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			result = "ADD-NEW finger: {";
+			result = "ADD-NEW finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
-			result = "REMOVE-OLD finger: {";
+			result = "REMOVE-OLD finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_ADD_BETTER) {
-			result = "ADD-BETTER finger: {";
+			result = "ADD-BETTER finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE) {
-			result = "REMOVE-WORSE finger: {";
+			result = "REMOVE-WORSE finger: ";
 		}
 		else {
 			result = "UNKNOWN CHANGE TYPE! ";
 		}
 		
-		result = result + finger.toString() + "} @NODE: {" + node.toString() + "}";
+		result = result + finger.toString() + " @NODE: " + node.toString() + "";
 		System.out.println(result);
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key,String networkAddress) {
-		System.out.println(new SimpleDateFormat().format(date) + " | Node:{" + key.toString() + "} Addr:{" + networkAddress + "} initiated KEEP-ALIVE");
+		System.out.println(new SimpleDateFormat().format(date) + " | Node: " + key.toString() + " Addr: " + networkAddress + " initiated KEEP-ALIVE");
 	}
 }

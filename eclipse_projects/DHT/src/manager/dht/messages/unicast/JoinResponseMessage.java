@@ -23,7 +23,7 @@ public class JoinResponseMessage extends Message {
 	}
 
 	public String toString() {
-		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey:{" + joinKey.toString() + "} suc:{" + successor.toString() + "} pre :{" + predecessor.toString() + "}";
+		return super.toString("MSG-JOIN-RESPONSE") + " | joinKey: " + joinKey.toString() + " suc: " + successor.toString() + " pre : " + predecessor.toString();
 	}
 	
 	public NodeID getJoinKey() {

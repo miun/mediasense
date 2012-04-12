@@ -141,11 +141,11 @@ public class Node extends Thread implements LookupServiceInterface {
 						
 						//TODO REMOVE
 						if(!old_successor.equals(identity)) {
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), old_successor.getNodeID());
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), successor.getNodeID());
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, old_successor);
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, successor);
 						}
 						else {
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
 						}
 						//Check if we can use the old successor as finger
 						updateFingerTableEntry(old_successor);
@@ -156,8 +156,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				else {
 					//Forward to the best fitting predecessor
-					//message.fromIp = identity.getNetworkAddress();
-					//message.toIp = getPredecessor(join_msg.getKey()).getNetworkAddress();
 					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
 					communication.sendMessage(answer);
 				}
@@ -175,7 +173,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 						
 						//TODO remove
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());						
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
 						
 						bConnected = true;
 						
@@ -376,7 +374,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 		}
 		//Check if the new finger is smaller than the successor
 		else if(hash_finger.compareTo(hash_suc) < 0) {
@@ -394,12 +392,12 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				
 				//Fire events
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), suc.getNodeID());
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), newFinger.getNodeID());
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, suc);
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newFinger);
 			}
 			else {
 				//Only fire ADD event, because nothing was removed in change
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 			}
 		}
 	}
@@ -463,7 +461,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	//TODO for DEBUG
-	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+	private void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		communication.fireFingerChangeEvent(eventType,node,finger);
 	}
 	
@@ -509,7 +507,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			@Override
 			public void run() {
 				//Trigger keep alive
-				triggerKeepAliveTimer();
+				//triggerKeepAliveTimer();
 			}
 		}, time);
 	}
