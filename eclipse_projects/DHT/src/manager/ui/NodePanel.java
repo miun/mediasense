@@ -43,7 +43,7 @@ public class NodePanel extends JPanel implements MouseListener {
 		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
 				myFingers.getPosOnCircle(finger.getNodeID()), 
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
-				Color.MAGENTA);
+				Arrow.PREVIEW);
 		myFingers.add(a);
 		fingerData.put(finger, a);
 		

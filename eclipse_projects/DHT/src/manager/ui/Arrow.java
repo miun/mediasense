@@ -1,137 +1,73 @@
 package manager.ui;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Shape;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
 
 import javax.swing.JComponent;
 
 @SuppressWarnings("serial")
 public class Arrow extends JComponent {
-		
+	public static final int ADD = 0;
+	public static final int ADD_BETTER = 1;
+	public static final int REMOVE = 2;
+	public static final int REMOVE_WORSE = 3;
+	public static final int PREVIEW = 4;
+	
 	//Coordinates
 	private int x1;
 	private int y1;
 	private int x2;
 	private int y2;
 	
-	//Color
-	Color color;
+	//Color and dash
+	private Color color;
+	private float dash[];
 	
-	public Arrow(Point start, Point end, int bounds,Color color) {
-		//super(); //NEVER CALL THE SUPER CONSTRUCTOR BECAUSE THEN WE HAVE A NULL PARENTNTNTNTNTNTN....night
-		/*int sx = (int) start.getX();
-		int sy = (int) start.getY();
-		int ex = (int) end.getX();
-		int ey = (int) end.getY();
-		
-		int bx1,by1,bx2,by2;
-		
-		if(sx<ex && sy<ey) {
-			//line from up left to down right
-			bx1 = sx;
-			by1 = sy;
-			bx2 = ex;
-			by2 = ey;
-			this.x1 = 0;
-			this.y1 = 0;
-			this.x2 = bx2-bx1;
-			this.y2 = by2-by1;
-		}
-		else if(sx<ex && sy>ey) {
-			//line from down left to up right
-			bx1 = sx;
-			by1 = ey;
-			bx2 = ex;
-			by2 = sy;
-			this.x1 = 0;
-			this.y1 = by2-by1;
-			this.x2 = bx2-bx1;
-			this.y2 = 0;
-		}
-		else if(sx>ex && sy<ey) {
-			//line from up right to down left
-			bx1 = ex;
-			by1 = sy;
-			bx2 = sx;
-			by2 = ey;
-			this.x1 = bx2-bx1;
-			this.y1 = 0;
-			this.x2 = 0;
-			this.y2 = by2-by1;
-		}
-		else if(sx>ex && sy>ey) {
-			//line from down right to up left
-			bx1 = ex;
-			by1 = ey;
-			bx2 = sx;
-			by2 = sy;
-			this.x1 = bx2-bx1;
-			this.y1 = by2-by1;
-			this.x2 = 0;
-			this.y2 = 0;
-		}
-		else if(sx<ex && sy==ey) {
-			//horizontal line from left to right
-			bx1 = sx;
-			by1 = sy;
-			bx2 = ex;
-			by2 = ey;
-			this.x1 = 0;
-			this.y1 = 0;
-			this.x2 = bx2-bx1;
-			this.y2 = 0;
-		}
-		else if(sx>ex && sy==ey) {
-			//horizontal line from right to left
-			bx1 = ex;
-			by1 = sy;
-			bx2 = sx;
-			by2 = ey;
-			this.x1 = bx2-bx1;
-			this.y1 = 0;
-			this.x2 = 0;
-			this.y2 = 0;
-		}
-		else if(sx==ex && sy<ey) {
-			//vertical line up to down
-			bx1 = sx;
-			by1 = sy;
-			bx2 = ex;
-			by2 = ey;
-			this.x1 = 0;
-			this.y1 = 0;
-			this.x2 = 0;
-			this.y2 = by2-by1;
-		}
-		else {
-			//vertical down to up
-			bx1 = sx;
-			by1 = ey;
-			bx2 = ex;
-			by2 = sy;
-			this.x1 = 0;
-			this.y1 = by2-by1;
-			this.x2 = 0;
-			this.y2 = 0;
-		}
-		*/
-		
-		//this.setBounds(bx1,by1,bx2-bx1+1,by2-by1+1);
-		this.setBounds(0, 0, bounds, bounds);
+	
+	public Arrow(Point start, Point end, int bounds,int type) {
 		this.x1 = (int) start.getX();
 		this.y1 = (int) start.getY();
 		this.x2 = (int) end.getX();
 		this.y2 = (int) end.getY();
-		this.color = color;
+		
+		this.setBounds(0, 0, bounds, bounds);
+				
+		switch(type) {
+			case ADD:
+				this.color = Color.YELLOW;
+				this.dash = new float[1];
+				dash[0] = 2.0f;
+				break;
+			case ADD_BETTER:
+				this.color = Color.GREEN;
+				this.dash = new float[1];
+				dash[0] = 2.0f;
+				break;
+			case REMOVE:
+				this.color = Color.ORANGE;
+				this.dash = new float[1];
+				dash[0] = 2.0f;
+				break;
+			case REMOVE_WORSE:
+				this.color = Color.RED;
+				this.dash = new float[1];
+				dash[0] = 2.0f;
+				break;
+			case PREVIEW:
+				this.color = Color.MAGENTA;
+				this.dash = null;
+				break;
+			default:
+				this.color = Color.LIGHT_GRAY;
+				this.dash = null;
+				break;
+		}
+		
 		this.setOpaque(false);
-		//this.setVisible(true);
 	}
 	
 	@Override
@@ -142,6 +78,11 @@ public class Arrow extends JComponent {
 		gLocal.drawOval(x2-5, y2-5, 10, 10);
 		gLocal.fillOval(x2-5, y2-5, 10, 10);
 		
+		if(dash!=null) {
+		    BasicStroke dashed = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+		                        10.0f, dash, 0.0f);
+			gLocal.setStroke(dashed);
+		}
 		// create new QuadCurve2D.Float
 		QuadCurve2D q = new QuadCurve2D.Float();
 		// draw QuadCurve2D.Float with set coordinates
