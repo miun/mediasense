@@ -172,7 +172,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	}
 	
 	public void showFingers(CirclePanel cp) {
-		this.paintingSurface.add(cp);
+		this.paintingSurface.add(cp,0);
 		this.paintingSurface.validate();
 		this.paintingSurface.repaint();
 	}
