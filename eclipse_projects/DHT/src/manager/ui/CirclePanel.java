@@ -69,7 +69,8 @@ public class CirclePanel extends JPanel {
 				//get the caption
 				String posText = Integer.toString(i, 16);
 				//draw the string
-				gLocal.drawString(posText, p.x, p.y);
+				int h = gLocal.getFontMetrics().getHeight()/2;
+				gLocal.drawString(posText, p.x, p.y+h);
 				
 				//Next position
 				pos_current = pos_current.add(pos_1);
