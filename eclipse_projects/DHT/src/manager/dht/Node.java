@@ -5,8 +5,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
-import javax.swing.text.html.HTMLDocument.BlockElement;
-
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;

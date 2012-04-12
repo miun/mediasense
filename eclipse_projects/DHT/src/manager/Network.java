@@ -56,17 +56,14 @@ public class Network {
 		return this.clients.values();
 	}
 	
-	public void sendMessage(Message m) {
+	public void sendMessage(Message m, int senderDelay) {
 		
-		//Get sender and receiver of the message
-		Communication sender = null;
-		sender = clients.get(m.getFromIp());
 		Communication receiver = null;
 		receiver = clients.get(m.getToIp());
 		
 		//Send the message to the receiver
 		if(receiver != null) {
-			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+sender.getMessageDelay()+receiver.getMessageDelay());
+			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");

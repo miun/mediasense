@@ -52,7 +52,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 */
 	public void sendMessage(Message m) {
 		//Foward to network
-		network.sendMessage(m);
+		network.sendMessage(m,messageDelay);
 	}
 	
 	/**
