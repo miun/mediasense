@@ -65,6 +65,6 @@ public abstract class Message {
 	
 	protected String toString(String msgType) {
 		//Return message info
-		return "MSG: type: " + msgType + " - from: " + fromIp + ") - to: (" + toIp + ")"; 
+		return "MSG: type: " + msgType + " - from: (" + fromIp + ") - to: (" + toIp + ")"; 
 	}
 }
