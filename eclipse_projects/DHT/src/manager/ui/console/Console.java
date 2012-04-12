@@ -147,11 +147,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						//Only one parameter, check for ! or all
 						if(cmd.param[0].equals("!")) {
 							//remove all
-							types = new String[]{"!join","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+							types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
 						}
 						else if(cmd.param[0].equals("all")) {
 							//add all
-							types = new String[]{"join","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+							types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
 						}
 						else if(cmd.param[0].equals("!broadcast")) {
 							types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
@@ -186,8 +186,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 							msgType = Message.JOIN;
 						} else if(type.equals("join_response")) {
 							msgType = Message.JOIN_RESPONSE;
-						} 
-						else if(type.equals("duplicate")) {
+						} else if(type.equals("join_ack")) {
+							msgType = Message.JOIN_ACK;
+						} else if(type.equals("join_busy")) {
+							msgType = Message.JOIN_BUSY;
+						} else if(type.equals("duplicate")) {
 							msgType = Message.DUPLICATE_NODE_ID;
 						} else if(type.equals("predecessor")) {
 							msgType = Message.FIND_PREDECESSOR;
