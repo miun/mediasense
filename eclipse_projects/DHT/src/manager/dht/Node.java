@@ -507,7 +507,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			@Override
 			public void run() {
 				//Trigger keep alive
-				triggerKeepAliveTimer();
+				//triggerKeepAliveTimer();
 			}
 		}, time);
 	}

@@ -335,7 +335,7 @@ public class Network {
 		}
 	}
 
-	public double calculateHealthOfDHT() {
+	public double calculateHealthOfDHT(boolean listMissingFinger) {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
 		TreeMap<FingerEntry,FingerEntry> DHT;
 		
@@ -347,6 +347,9 @@ public class Network {
 		
 		int count_max = 0;
 		int count_ok = 0;
+		
+		//Print caption
+		if(listMissingFinger) System.out.println("Printing missing finger list...");
 
 		//Copy DHT into a map accessible through the NodeID  
 		DHT = new TreeMap<FingerEntry,FingerEntry>();
@@ -377,6 +380,12 @@ public class Network {
 					if(currentSuccessor.equals(bestSuccessor)) {
 						//Current successor is best successor
 						count_ok++;
+					}
+					else {
+						if(listMissingFinger) {
+							//Show missing finger
+							System.out.println("Node: (" + client.getLocalIp() + ") MISSING: (" + bestSuccessor.getNetworkAddress() + ")" );
+						}
 					}
 
 					//Set new log2 to skip unnecessary ranges

@@ -234,7 +234,12 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("health")) {
 					//Print health
-					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100.0 + "%");
+					if(cmd.param != null && cmd.param[0].toLowerCase().equals("m")) {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(true) * 100.0 + "%");
+					}
+					else {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(false) * 100.0 + "%");
+					}
 				}
 				else if(cmd.cmd.toLowerCase().equals("wait")) {
 					//Wait for the specified time in ms

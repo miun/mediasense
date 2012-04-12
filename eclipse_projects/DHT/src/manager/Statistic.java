@@ -121,7 +121,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		//Write one data set to file
 		try {
 			//TODO add other data
-			fileBufferedWriter.write(secondCounter + "\t" + manager.calculateHealthOfDHT() + "\n");
+			fileBufferedWriter.write(secondCounter + "\t" + manager.calculateHealthOfDHT(false) + "\n");
 		}
 		catch (IOException e) {
 			//Forward

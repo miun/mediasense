@@ -92,7 +92,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.infoLabel = new JLabel("No KeepAlive received yet");
 		northPanel.add(infoLabel);
 		
-		this.healthLabel = new JLabel("Health: "+manager.calculateHealthOfDHT());
+		this.healthLabel = new JLabel("Health: "+manager.calculateHealthOfDHT(false));
 		northPanel.add(healthLabel);
 		
 		//CENTER Painting surface things
@@ -172,7 +172,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	public void onNodeAdd(Communication com) {
 		addNode(com);
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 	}
 
 	@Override
@@ -185,7 +185,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		circleForNodes.remove(arr[0]);
 		circleForNodes.remove(arr[1]);
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 	}
 
 	@Override
@@ -240,7 +240,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		changedFingersSinceLastKeepalive.validate();
 		changedFingersSinceLastKeepalive.repaint();
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 	}
 
 	@Override
@@ -253,7 +253,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
 			
-			healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
+			healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 		}
 	}
 
