@@ -5,6 +5,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
+import javax.swing.text.html.HTMLDocument.BlockElement;
+
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
 import manager.Message;
@@ -209,9 +211,8 @@ public class Node extends Thread implements LookupServiceInterface {
 						
 						//TODO remove
 						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
-						
 						connected = true;
-						
+
 						//Inform the node that we got the message
 						communication.sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
 						
