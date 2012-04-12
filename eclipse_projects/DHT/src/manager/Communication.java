@@ -52,7 +52,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 */
 	public void sendMessage(Message m) {
 		//Foward to network
-		network.sendMessage(m);
+		network.sendMessage(m,delay);
 	}
 	
 	/**
@@ -124,21 +124,15 @@ public class Communication extends Thread implements CommunicationInterface {
 	
 	@Override
 	public void run() {
-		Message msg;
-		
 		while(true) {
 			try {
-				//Receive messages and forward them
-				msg = queue.take();
-				//Simulate the time that the message takes over the network
-				int totalDelay = Network.msg_delay + delay;
-				if(totalDelay>0) Thread.sleep(totalDelay);
+				//Get message from the queue
+				Message msg = queue.take();
+				//handle it
 				node.handleMessage(msg);
-			}
-			catch (InterruptedException e) {
-				//Aborted!! => delete queue and abort thread
-				queue.clear();
-				break;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

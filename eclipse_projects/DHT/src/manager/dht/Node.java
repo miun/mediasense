@@ -150,7 +150,6 @@ public class Node extends Thread implements LookupServiceInterface {
 							communication.sendMessage(answer);
 							
 							blockJoinFor = newFingerEntry;
-	
 						}
 					}
 				}
@@ -541,7 +540,6 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	private void resetKeepAliveTimer() {
 		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
-		//System.out.println("identity.getNetworkAddress() + " - " + time);
 		
 		//Cancel and reschedule timer
 		if(keepAliveTimer != null) keepAliveTimer.cancel();

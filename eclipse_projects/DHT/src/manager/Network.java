@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
 import java.util.TreeMap;
 
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
-import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -20,7 +20,9 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static int msg_delay = 250; 
+	public static int msg_delay = 250;
+	
+	private Timer timer;
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
@@ -35,6 +37,8 @@ public class Network {
 		//Singleton class
 		instance = this;
 		clients = new TreeMap<String,Communication>();
+		
+		this.timer = new Timer();
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
@@ -52,32 +56,18 @@ public class Network {
 		return this.clients.values();
 	}
 	
-	public void sendMessage(Message m) {
-		int messageType = m.getType();
-
+	public void sendMessage(Message m, int extraDelay) {
+		
 		//Get the receiver of the message
 		Communication receiver = null;
 		receiver = clients.get(m.getToIp());
 		
-		//Send the messagse to the receiver
+		//Send the message to the receiver
 		if(receiver != null) {
-			receiver.handleMessage(m);
+			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+extraDelay);
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
-		}
-		
-		//Check whether it is a Broadcast message
-		if (messageType == Message.BROADCAST) {
-			//Extract the broadcast message
-			messageType = ((BroadcastMessage)m).extractMessage().getType();
-		}
-		
-		//Inform all NodeMessageListeners listening to that type of message
-		if(nodeMessageListener.containsKey(messageType)) {
-			for(NodeMessageListener nml: nodeMessageListener.get(messageType)) {
-				nml.OnNodeMessage(new Date(),m);
-			}
 		}
 	}
 
@@ -341,9 +331,7 @@ public class Network {
 		
 		FingerEntry currentSuccessor;
 		FingerEntry bestSuccessor;
-		NodeID hash_finger;
 		NodeID hash_log2;
-		int log2floor;
 		
 		int count_max = 0;
 		int count_ok = 0;
