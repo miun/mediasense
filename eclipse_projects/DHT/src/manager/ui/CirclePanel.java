@@ -5,16 +5,10 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 import javax.swing.JPanel;
 
-import manager.Communication;
 import manager.dht.NodeID;
-import manager.listener.FingerChangeListener;
 
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
