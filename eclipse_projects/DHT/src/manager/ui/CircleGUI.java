@@ -37,6 +37,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private Manager manager;
 	
 	//NORTH information Label
+	private JPanel northPanel;
 	private JLabel infoLabel;
 	
 	//CENTER Painting Surface
