@@ -3,14 +3,20 @@ package manager.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.Collection;
+import java.beans.PropertyChangeListener;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -31,7 +37,7 @@ import manager.listener.NodeListener;
  *
  */
 @SuppressWarnings("serial")
-public class CircleGUI extends JFrame implements NodeListener, WindowListener, FingerChangeListener, KeepAliveListener {
+public class CircleGUI extends JFrame implements NodeListener, WindowListener, FingerChangeListener, KeepAliveListener, ActionListener {
 	public static final int BORDER = 30;
 	
 	private Manager manager;
@@ -39,6 +45,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	//NORTH information Label
 	private JPanel northPanel;
 	private JLabel infoLabel;
+	private JLabel healthLabel;
 	
 	//CENTER Painting Surface
 	private JPanel paintingSurface;
@@ -52,7 +59,9 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	//private Collection<Arrow> changedFingersSinceLastKeepAlive;
 	
 	//EAST control Panel
-	private ControlPanel controlPanel;
+	private JPanel controlPanel;
+	
+	private JCheckBox clearOnKeepalive;
 	
 	/**
 	 * Create the frame.
@@ -77,11 +86,18 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		//this.addWindowListener(this);
 		
 		//NORTH
+		this.northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,20,10));
+		getContentPane().add(northPanel,BorderLayout.NORTH);
+		
 		this.infoLabel = new JLabel("No KeepAlive received yet");
-		getContentPane().add(infoLabel,BorderLayout.NORTH);
+		northPanel.add(infoLabel);
+		
+		this.healthLabel = new JLabel("Health: "+manager.calculateHealthOfDHT());
+		northPanel.add(healthLabel);
 		
 		//CENTER Painting surface things
 		this.nodeObjects = new HashMap<Communication, JComponent[]>();
+		
 		//Create the painting surface which holds the graphical elements
 		paintingSurface = new JPanel(null);
 		paintingSurface.setBackground(Color.BLACK);
@@ -108,9 +124,16 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		paintingSurface.add(changedFingersSinceLastKeepalive);
 		
 		//EAST controlPanel
-		this.controlPanel = new ControlPanel();
-		this.getContentPane().add(controlPanel,BorderLayout.EAST);
+		this.controlPanel = new JPanel();
+		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+		getContentPane().add(controlPanel,BorderLayout.EAST);
 		
+		clearOnKeepalive = new JCheckBox("clear on KA");
+		controlPanel.add(clearOnKeepalive);
+		
+		JButton addButton = new JButton("add Node");
+		addButton.addActionListener(this);
+		controlPanel.add(addButton);
 		
 		
 		
@@ -141,13 +164,15 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		//After validation repaint the painting surface
 		paintingSurface.validate();
 		paintingSurface.repaint();
-		
+				
 	}
 	
 	
 	@Override
 	public void onNodeAdd(Communication com) {
 		addNode(com);
+		
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
 	}
 
 	@Override
@@ -159,6 +184,8 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		
 		circleForNodes.remove(arr[0]);
 		circleForNodes.remove(arr[1]);
+		
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
 	}
 
 	@Override
@@ -212,18 +239,27 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		//refresh the circle
 		changedFingersSinceLastKeepalive.validate();
 		changedFingersSinceLastKeepalive.repaint();
+		
+		healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
 		this.infoLabel.setText("Last KeepAlive initiated by: {" + networkAddress + "} " + key + " on: " + date);
-		if(controlPanel.isClearOnKeepalive()){
+		if(clearOnKeepalive.isSelected()){
 			paintingSurface.remove(changedFingersSinceLastKeepalive);
 			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null);
 			paintingSurface.add(changedFingersSinceLastKeepalive);
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
+			
+			healthLabel.setText("Health: "+manager.calculateHealthOfDHT());
 		}
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		manager.addNode(String.valueOf(0));		
 	}
 	
 }
