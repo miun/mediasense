@@ -20,7 +20,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	private Node node = null;
 	private BlockingQueue<Message> queue;
 	private String networkAddress;
-	private int delay = 1;
+	private int messageDelay = 1;
 	
 	/**
 	 * Creates the Communication object.
@@ -52,7 +52,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 */
 	public void sendMessage(Message m) {
 		//Foward to network
-		network.sendMessage(m,delay);
+		network.sendMessage(m);
 	}
 	
 	/**
@@ -70,7 +70,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 * @param delay in milliseconds
 	 */
 	public void setMessageDelay(Integer delay) {
-		this.delay = delay;
+		this.messageDelay = delay;
 	}
 	
 	/**
@@ -141,5 +141,9 @@ public class Communication extends Thread implements CommunicationInterface {
 	public void fireKeepAliveEvent(NodeID key, String networkAddress) {
 		//Forward event
 		network.fireKeepAliveEvent(key, networkAddress);
+	}
+	
+	public int getMessageDelay() {
+		return messageDelay;
 	}
 }
