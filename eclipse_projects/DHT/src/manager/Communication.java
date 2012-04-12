@@ -3,6 +3,7 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
 
@@ -19,7 +20,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	private Node node = null;
 	private BlockingQueue<Message> queue;
 	private String networkAddress;
-	private int delay = 1;
+	private int messageDelay = 1;
 	
 	/**
 	 * Creates the Communication object.
@@ -51,7 +52,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 */
 	public void sendMessage(Message m) {
 		//Foward to network
-		network.sendMessage(m);
+		network.sendMessage(m,messageDelay);
 	}
 	
 	/**
@@ -69,7 +70,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 * @param delay in milliseconds
 	 */
 	public void setMessageDelay(Integer delay) {
-		this.delay = delay;
+		this.messageDelay = delay;
 	}
 	
 	/**
@@ -117,27 +118,21 @@ public class Communication extends Thread implements CommunicationInterface {
 	}
 	
 	@Override
-	public void fireFingerChangeEvent(int eventType, NodeID node,NodeID finger) {
+	public void fireFingerChangeEvent(int eventType, FingerEntry node,FingerEntry finger) {
 		network.fireFingerChangeEvent(eventType, node, finger);
 	}
 	
 	@Override
 	public void run() {
-		Message msg;
-		
 		while(true) {
 			try {
-				//Receive messages and forward them
-				msg = queue.take();
-				//Simulate the time that the message takes over the network
-				int totalDelay = Network.msg_delay + delay;
-				if(totalDelay>0) Thread.sleep(totalDelay);
+				//Get message from the queue
+				Message msg = queue.take();
+				//handle it
 				node.handleMessage(msg);
-			}
-			catch (InterruptedException e) {
-				//Aborted!! => delete queue and abort thread
-				queue.clear();
-				break;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -146,5 +141,9 @@ public class Communication extends Thread implements CommunicationInterface {
 	public void fireKeepAliveEvent(NodeID key, String networkAddress) {
 		//Forward event
 		network.fireKeepAliveEvent(key, networkAddress);
+	}
+	
+	public int getMessageDelay() {
+		return messageDelay;
 	}
 }

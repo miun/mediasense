@@ -5,16 +5,11 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.math.BigInteger;
 
 import javax.swing.JPanel;
 
-import manager.Communication;
 import manager.dht.NodeID;
-import manager.listener.FingerChangeListener;
 
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
@@ -23,17 +18,19 @@ public class CirclePanel extends JPanel {
 	private int circleRadius;
 	private int border;
 	Color color;
+	Color scale;
 	
 	private Graphics2D g2D;
 	
 	//That defines how far two nodes can be away from each other
 	private double rangeOnCircle;
 	
-	public CirclePanel(int circleRadius, int border, Color c) {
+	public CirclePanel(int circleRadius, int border, Color circle, Color scale) {
 		//init
 		this.circleRadius = circleRadius;
 		this.border = border;
-		this.color = c;
+		this.color = circle;
+		this.scale = scale;
 		
 		//Calculation stuff
 		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
@@ -49,27 +46,36 @@ public class CirclePanel extends JPanel {
 	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent(g);
-		
-		//color = null means dont draw additional stuff
-		if(color == null) return;
-		
-		//draw the circle
 		this.g2D = (Graphics2D) g.create();
 		Graphics gLocal = g.create();
-		//gLocal.drawString(lastKeepAliveInitiation, 10, 25);
-		gLocal.setColor(color);
-		gLocal.drawOval(border, border, circleRadius*2, circleRadius*2);
-		/*
-		if(activeNode!=null){
-			for(Point p: activeNode.getFingers()) {
-				gLocal.drawLine(activeNode.getX(), activeNode.getY(), p.x, p.y);
+		//color = null means dont draw additional stuff
+		if(color != null) {		
+			//draw the circle
+			
+			gLocal.setColor(color);
+			gLocal.drawOval(border, border, circleRadius*2, circleRadius*2);
+		}
+		
+		if(scale != null) {
+			gLocal.setColor(scale);
+			
+			//init positions
+			NodeID pos_current = new NodeID(BigInteger.ZERO.toByteArray());
+			NodeID pos_1 = new NodeID(BigInteger.ONE.shiftLeft(156).toByteArray());
+			
+			for(int i = 0; i < 16; i++) {
+				//get point on the circle
+				Point p = getPosOnCircle(pos_current);
+				//get the caption
+				String posText = Integer.toString(i, 16);
+				//draw the string
+				gLocal.drawString(posText, p.x, p.y);
+				
+				//Next position
+				pos_current = pos_current.add(pos_1);
 			}
-		}*/
-		/*synchronized (changedFingersSinceLastKeepAlive) {
-			for(Arrow a: changedFingersSinceLastKeepAlive) {
-				a.paint(gLocal);
-			}
-		}*/
+		}
+	
 	}
 	
 	public Point getPosOnCircle(NodeID nodeID) {
@@ -89,6 +95,10 @@ public class CirclePanel extends JPanel {
 		int x = new Double(sin*circleRadius).intValue()+border+circleRadius;
 		int y = new Double(cos*circleRadius).intValue()+border+circleRadius;
 		return new Point(x, y);
+	}
+	
+	public int getCircleRadius() {
+		return circleRadius;
 	}
 	
 	private static long bAtoLong(byte[] bytes) {

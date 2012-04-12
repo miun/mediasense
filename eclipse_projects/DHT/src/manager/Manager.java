@@ -140,7 +140,7 @@ public final class Manager {
 		network.removeKeepAliveListener(listener);
 	}
 	
-	public double calculateHealthOfDHT() {
-		return network.calculateHealthOfDHT();
+	public double calculateHealthOfDHT(boolean listMissingFinger) {
+		return network.calculateHealthOfDHT(listMissingFinger);
 	}
 }

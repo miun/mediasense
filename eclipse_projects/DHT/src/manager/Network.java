@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
 import java.util.TreeMap;
 
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
-import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -20,7 +20,9 @@ import manager.listener.NodeMessageListener;
 
 public class Network {
 	private static Network instance = null;
-	public static int msg_delay = 250; 
+	public static int msg_delay = 250;
+	
+	private Timer timer;
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
@@ -35,6 +37,8 @@ public class Network {
 		//Singleton class
 		instance = this;
 		clients = new TreeMap<String,Communication>();
+		
+		this.timer = new Timer();
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
@@ -52,32 +56,17 @@ public class Network {
 		return this.clients.values();
 	}
 	
-	public void sendMessage(Message m) {
-		int messageType = m.getType();
-
-		//Get the receiver of the message
+	public void sendMessage(Message m, int senderDelay) {
+		
 		Communication receiver = null;
 		receiver = clients.get(m.getToIp());
 		
-		//Send the messagse to the receiver
+		//Send the message to the receiver
 		if(receiver != null) {
-			receiver.handleMessage(m);
+			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
-		}
-		
-		//Check whether it is a Broadcast message
-		if (messageType == Message.BROADCAST) {
-			//Extract the broadcast message
-			messageType = ((BroadcastMessage)m).extractMessage().getType();
-		}
-		
-		//Inform all NodeMessageListeners listening to that type of message
-		if(nodeMessageListener.containsKey(messageType)) {
-			for(NodeMessageListener nml: nodeMessageListener.get(messageType)) {
-				nml.OnNodeMessage(new Date(),m);
-			}
 		}
 	}
 
@@ -266,7 +255,7 @@ public class Network {
 		fingerChangeListener.remove(listener);
 	}
 	
-	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		//Inform all listener
 		for(FingerChangeListener l: fingerChangeListener) 
 			l.OnFingerChange(eventType, node, finger);
@@ -335,18 +324,19 @@ public class Network {
 		}
 	}
 
-	public double calculateHealthOfDHT() {
+	public double calculateHealthOfDHT(boolean listMissingFinger) {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
 		TreeMap<FingerEntry,FingerEntry> DHT;
 		
 		FingerEntry currentSuccessor;
 		FingerEntry bestSuccessor;
-		NodeID hash_finger;
 		NodeID hash_log2;
-		int log2floor;
 		
 		int count_max = 0;
 		int count_ok = 0;
+		
+		//Print caption
+		if(listMissingFinger) System.out.println("Printing missing finger list...");
 
 		//Copy DHT into a map accessible through the NodeID  
 		DHT = new TreeMap<FingerEntry,FingerEntry>();
@@ -377,6 +367,12 @@ public class Network {
 					if(currentSuccessor.equals(bestSuccessor)) {
 						//Current successor is best successor
 						count_ok++;
+					}
+					else {
+						if(listMissingFinger) {
+							//Show missing finger
+							System.out.println("Node: (" + client.getLocalIp() + ") MISSING: (" + bestSuccessor.getNetworkAddress() + ")" );
+						}
 					}
 
 					//Set new log2 to skip unnecessary ranges

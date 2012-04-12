@@ -35,22 +35,13 @@ public class NodeID implements Comparable<NodeID> {
 	public String toString() {
 		//Shorter version
 		String result = SHA1Generator.convertToHex(getID());
-		return result.substring(0,4) + "..." + result.substring(36,40); 
+		return "{" + result.substring(0,4) + "...}"; // + result.substring(36,40); 
 	}
 
 	@Override
 	public int compareTo(NodeID comp) {
 		//Its us!
-		//if(comp == this) return 0;
 		return id.compareTo(comp.id); 
-		
-/*		for(int i = 0; i < ADDRESS_SIZE; i++) {
-			if((comp.id[i] < 0 ? comp.id[i] + 256 : comp.id[i]) > (id[i] < 0 ? id[i] + 256 : id[i])) return -1;
-			else if((comp.id[i] < 0 ? comp.id[i] + 256 : comp.id[i]) < (id[i] < 0 ? id[i] + 256 : id[i])) return 1;
-		}*/
-
-		//Equal
-//		return 0;
 	}
 	
 	//Add two node hash values

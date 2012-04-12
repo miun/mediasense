@@ -23,6 +23,8 @@ public abstract class Message {
 	
 	public final static int JOIN = 11;
 	public final static int JOIN_RESPONSE = 12;
+	public final static int JOIN_ACK = 22;
+	public final static int JOIN_BUSY = 23;
 	public final static int DUPLICATE_NODE_ID = 16;
 	
 	public final static int KEEPALIVE = 13;
@@ -65,6 +67,6 @@ public abstract class Message {
 	
 	protected String toString(String msgType) {
 		//Return message info
-		return "MSG: type:{" + msgType + "} - from:{" + fromIp + "} - to:{" + toIp + "}"; 
+		return "MSG: type: " + msgType + " - from: (" + fromIp + ") - to: (" + toIp + ")"; 
 	}
 }

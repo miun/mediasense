@@ -9,6 +9,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import manager.Manager;
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.dht.SHA1Generator;
 import manager.listener.FingerChangeListener;
@@ -49,7 +50,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		//Only change if the change occurred on the finger we are responsible for
 		if(nodeID.equals(node)) {
 			if(changeType == FINGER_CHANGE_ADD) {

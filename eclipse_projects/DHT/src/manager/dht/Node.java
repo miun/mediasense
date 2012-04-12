@@ -12,6 +12,8 @@ import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.dht.messages.broadcast.KeepAliveBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
+import manager.dht.messages.unicast.JoinAckMessage;
+import manager.dht.messages.unicast.JoinBusyMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.KeepAliveMessage;
@@ -35,7 +37,9 @@ public class Node extends Thread implements LookupServiceInterface {
 	Timer keepAliveTimer = null;
 	
 	//Connection state
-	private boolean bConnected = false;
+	private boolean connected = false;
+	private FingerEntry blockJoinFor = null;
+	
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -57,7 +61,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//we are always connected !!
 		if(bootstrapAddress == null || bootstrapAddress.equals(communication.getLocalIp())) {
 			//We are connected and we are our own successor
-			bConnected = true;
+			connected = true;
 		}
 		else {
 			this.bootstrapAddress = bootstrapAddress;
@@ -98,6 +102,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		switch (message.getType()) {
 			//react on a Join message
 			case Message.JOIN:
+				//No action if not connected
+				if(!connected) break;
+				
 				JoinMessage join_msg = (JoinMessage) message;
 				Message answer = null;
 
@@ -108,11 +115,17 @@ public class Node extends Thread implements LookupServiceInterface {
 					//It's us => reply on JOIN
 
 					//Check if it exists
-					FingerEntry newFingerEntry = new FingerEntry(new NodeID(join_msg.getKey().getID()),join_msg.getOriginatorAddress());
+					FingerEntry newFingerEntry = new FingerEntry(join_msg.getKey(),join_msg.getOriginatorAddress());
 					FingerEntry tempFinger;
 					
 					synchronized(finger) {
-						tempFinger = finger.get(newFingerEntry);
+						//Find finger
+						if(successor.equals(newFingerEntry)) {
+							tempFinger = successor;
+						}
+						else {
+							tempFinger = finger.get(newFingerEntry);
+						}
 					}
 					
 					//If another node tried to enter the DHT with the same key, send duplicate message
@@ -124,34 +137,18 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 					}
 					else {
-						//Prepare answer
-						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
-						communication.sendMessage(answer);
-
-						//Notify everybody of the new node
-						sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,join_msg.getOriginatorAddress(),join_msg.getKey()),identity.getNodeID(),identity.getNodeID().sub(1));
-						
-						//Set successor to new node and update finger-table with old successor
-						FingerEntry old_successor;
-						
-						synchronized(finger) {
-							old_successor = successor;
-							successor = newFingerEntry;
-						}
-						
-						//TODO REMOVE
-						if(!old_successor.equals(identity)) {
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), old_successor.getNodeID());
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), successor.getNodeID());
+						if(blockJoinFor != null) {
+							//Send busy message
+							answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
+							communication.sendMessage(answer);
 						}
 						else {
-							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());
+							//Prepare answer
+							answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
+							communication.sendMessage(answer);
+							
+							blockJoinFor = newFingerEntry;
 						}
-						//Check if we can use the old successor as finger
-						updateFingerTableEntry(old_successor);
-
-						//Repair finger count
-						// checkFingerTable();
 					}
 				}
 				else {
@@ -160,11 +157,49 @@ public class Node extends Thread implements LookupServiceInterface {
 					communication.sendMessage(answer);
 				}
 				break;
+			case Message.JOIN_ACK:
+				JoinAckMessage jam = (JoinAckMessage)message;
+				
+				//Skip if not blocked or it is a faked message
+				if(blockJoinFor != null && jam.getJoinKey().equals(blockJoinFor.getNodeID())) {
+					//Notify everybody of the new node
+					sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
+					
+					//Set successor to new node and update finger-table with old successor
+					FingerEntry old_successor;
+					
+					synchronized(finger) {
+						old_successor = successor;
+						successor = blockJoinFor;
+					}
+					
+					//TODO REMOVE
+					if(!old_successor.equals(identity)) {
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, old_successor);
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, successor);
+					}
+					else {
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
+					}
+					//Check if we can use the old successor as finger
+					updateFingerTableEntry(old_successor);
+	
+					//Repair finger count
+					// checkFingerTable();
+					
+					//unblock
+					blockJoinFor = null;
+				}
+				
+				break;
+			case Message.JOIN_BUSY:
+				//TODO react on this !?
+				break;
 			case Message.JOIN_RESPONSE:
 				JoinResponseMessage jrm = (JoinResponseMessage) message;
 
 				//Ignore JOIN_RESPONSE message if the node is already connected!
-				if(!bConnected) {
+				if(!connected) {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
 						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
@@ -173,9 +208,12 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 						
 						//TODO remove
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());						
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
 						
-						bConnected = true;
+						connected = true;
+						
+						//Inform the node that we got the message
+						communication.sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
 						
 						//Check
 						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
@@ -193,12 +231,15 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			case Message.DUPLICATE_NODE_ID:
 				DuplicateNodeIdMessage dupMsg = (DuplicateNodeIdMessage)message;
-				
-				//If the node is not connected allow the change of the identity
-				//Check the duplicate id also
-				if(!bConnected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
-					//TODO what shall we do here?????
-					assert(true);
+				if(dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
+					//it is okay, a join what I send before has reached my predecessor
+				} else {
+					//If the node is not connected allow the change of the identity
+					//Check the duplicate id also
+					if(!connected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
+						//TODO what shall we do here?????
+						assert(false);
+					}
 				}
 
 				break;
@@ -246,7 +287,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void run() {
 		//Connect DHT node
-		while(bConnected == false) {
+		while(connected == false) {
 			//Try to connect to DHT
 			communication.sendMessage(new JoinMessage(identity.getNetworkAddress(),bootstrapAddress,identity.getNetworkAddress(),identity.getNodeID()));
 			
@@ -374,7 +415,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 		}
 		//Check if the new finger is smaller than the successor
 		else if(hash_finger.compareTo(hash_suc) < 0) {
@@ -392,12 +433,12 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				
 				//Fire events
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), suc.getNodeID());
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), newFinger.getNodeID());
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, suc);
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newFinger);
 			}
 			else {
 				//Only fire ADD event, because nothing was removed in change
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), newFinger.getNodeID());
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 			}
 		}
 	}
@@ -421,7 +462,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		BroadcastMessage new_bcast_msg;
 		
 		//Don't do...
-		if(!bConnected) {
+		if(!connected) {
 			System.out.println("NOT CONNECTED " + identity.getNetworkAddress());
 			return;
 		}
@@ -461,7 +502,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	//TODO for DEBUG
-	private void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger) {
+	private void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		communication.fireFingerChangeEvent(eventType,node,finger);
 	}
 	
@@ -497,7 +538,6 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	private void resetKeepAliveTimer() {
 		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
-		//System.out.println("identity.getNetworkAddress() + " - " + time);
 		
 		//Cancel and reschedule timer
 		if(keepAliveTimer != null) keepAliveTimer.cancel();
@@ -507,7 +547,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			@Override
 			public void run() {
 				//Trigger keep alive
-				triggerKeepAliveTimer();
+				//triggerKeepAliveTimer();
 			}
 		}, time);
 	}

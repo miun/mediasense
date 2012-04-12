@@ -15,7 +15,7 @@ public class DuplicateNodeIdMessage extends Message{
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-DUPLICATE-NODE-ID")+ " | joinKey:{" + duplicateKey.toString() + "}"; 
+		return super.toString("MSG-DUPLICATE-NODE-ID")+ " | joinKey: " + duplicateKey.toString(); 
 	}
 	
 	public NodeID getDuplicateKey() {

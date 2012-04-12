@@ -1,5 +1,6 @@
 package manager;
 
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 
 public interface CommunicationInterface {
@@ -18,6 +19,6 @@ public interface CommunicationInterface {
 	*/
 	
 	//TODO remove DEBUG stuff
-	public void fireFingerChangeEvent(int eventType,NodeID node,NodeID finger);
+	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger);
 	public void fireKeepAliveEvent(NodeID key,String networkAddress);
 }

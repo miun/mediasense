@@ -9,6 +9,7 @@ import java.util.Date;
 
 import manager.Manager;
 import manager.Message;
+import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
@@ -146,11 +147,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						//Only one parameter, check for ! or all
 						if(cmd.param[0].equals("!")) {
 							//remove all
-							types = new String[]{"!join","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+							types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
 						}
 						else if(cmd.param[0].equals("all")) {
 							//add all
-							types = new String[]{"join","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+							types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
 						}
 						else if(cmd.param[0].equals("!broadcast")) {
 							types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
@@ -185,8 +186,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 							msgType = Message.JOIN;
 						} else if(type.equals("join_response")) {
 							msgType = Message.JOIN_RESPONSE;
-						} 
-						else if(type.equals("duplicate")) {
+						} else if(type.equals("join_ack")) {
+							msgType = Message.JOIN_ACK;
+						} else if(type.equals("join_busy")) {
+							msgType = Message.JOIN_BUSY;
+						} else if(type.equals("duplicate")) {
 							msgType = Message.DUPLICATE_NODE_ID;
 						} else if(type.equals("predecessor")) {
 							msgType = Message.FIND_PREDECESSOR;
@@ -234,7 +238,12 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("health")) {
 					//Print health
-					System.out.println("DHT health: " + manager.calculateHealthOfDHT() * 100.0 + "%");
+					if(cmd.param != null && cmd.param[0].toLowerCase().equals("m")) {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(true) * 100.0 + "%");
+					}
+					else {
+						System.out.println("DHT health: " + manager.calculateHealthOfDHT(false) * 100.0 + "%");
+					}
 				}
 				else if(cmd.cmd.toLowerCase().equals("wait")) {
 					//Wait for the specified time in ms
@@ -303,32 +312,32 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 	}
 
 	@Override
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
+	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		String result;
 		
 		//Which action???
 		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-			result = "ADD-NEW finger: {";
+			result = "ADD-NEW finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {
-			result = "REMOVE-OLD finger: {";
+			result = "REMOVE-OLD finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_ADD_BETTER) {
-			result = "ADD-BETTER finger: {";
+			result = "ADD-BETTER finger: ";
 		}
 		else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE) {
-			result = "REMOVE-WORSE finger: {";
+			result = "REMOVE-WORSE finger: ";
 		}
 		else {
 			result = "UNKNOWN CHANGE TYPE! ";
 		}
 		
-		result = result + finger.toString() + "} @NODE: {" + node.toString() + "}";
+		result = result + finger.toString() + " @NODE: " + node.toString() + "";
 		System.out.println(result);
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key,String networkAddress) {
-		System.out.println(new SimpleDateFormat().format(date) + " | Node:{" + key.toString() + "} Addr:{" + networkAddress + "} initiated KEEP-ALIVE");
+		System.out.println(new SimpleDateFormat().format(date) + " | Node: " + key.toString() + " Addr: " + networkAddress + " initiated KEEP-ALIVE");
 	}
 }
