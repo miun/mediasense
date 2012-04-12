@@ -250,13 +250,13 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.RED);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
-				n.addFinger(finger);
+				n.removeFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE) {
 			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.ORANGE);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
-				n.addFinger(finger);
+				n.removeFinger(finger);
 		}
 		//Shouldn't happen - unknown finger event
 		if(a==null) return;

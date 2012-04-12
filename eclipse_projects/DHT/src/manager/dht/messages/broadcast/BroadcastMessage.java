@@ -28,7 +28,7 @@ public abstract class BroadcastMessage extends Message {
 	}
 
 	protected String toString(String text) {
-		return "BROADCAST: " + startKey.toString() + " -> " + endKey.toString() + " | " + extractMessage().toString();
+		return "BROADCAST:" + startKey.toString() + " -> " + endKey.toString() + " | " + extractMessage().toString();
 	}
 	
 	//Extract unicast message

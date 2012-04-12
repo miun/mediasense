@@ -27,7 +27,7 @@ public class NodePanel extends JPanel implements MouseListener {
 		this.fingerData = new HashMap<FingerEntry, Arrow>();
 		this.cg = cg;
 		
-		this.setToolTipText("{" + com.getNodeID() +"}" + " (" + com.getLocalIp() +")");
+		this.setToolTipText(com.getNodeID() + " (" + com.getLocalIp() +")");
 		
 		//Set Dimension and Color
 		int x = (int) p.getX();
@@ -43,7 +43,7 @@ public class NodePanel extends JPanel implements MouseListener {
 		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
 				myFingers.getPosOnCircle(finger.getNodeID()), 
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
-				Color.GRAY);
+				Color.MAGENTA);
 		myFingers.add(a);
 		fingerData.put(finger, a);
 		
