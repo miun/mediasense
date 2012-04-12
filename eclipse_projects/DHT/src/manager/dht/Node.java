@@ -139,6 +139,14 @@ public class Node extends Thread implements LookupServiceInterface {
 							successor = newFingerEntry;
 						}
 						
+						//TODO REMOVE
+						if(!old_successor.equals(identity)) {
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity.getNodeID(), old_successor.getNodeID());
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity.getNodeID(), successor.getNodeID());
+						}
+						else {
+							fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());
+						}
 						//Check if we can use the old successor as finger
 						updateFingerTableEntry(old_successor);
 
@@ -163,6 +171,9 @@ public class Node extends Thread implements LookupServiceInterface {
 						synchronized (finger) {
 							successor = newFingerEntry;
 						}
+						
+						//TODO remove
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity.getNodeID(), successor.getNodeID());						
 						
 						bConnected = true;
 						

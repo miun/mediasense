@@ -44,9 +44,14 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private CirclePanel circleForNodes;
 	private CirclePanel circleForIds;
 	
-	private HashMap<Communication, JComponent[]> nodeObjects;
+	private CirclePanel changedFingersSinceLastKeepalive;
 	
-	private Collection<Arrow> changedFingersSinceLastKeepAlive;
+	private int circleRadius;
+	private HashMap<Communication, JComponent[]> nodeObjects;
+	//private Collection<Arrow> changedFingersSinceLastKeepAlive;
+	
+	//EAST control Panel
+	private ControlPanel controlPanel;
 	
 	/**
 	 * Create the frame.
@@ -59,6 +64,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.setLayout(new BorderLayout());
 		
 		if(circleRadius <= 0) circleRadius = 250;
+		this.circleRadius = circleRadius;
 		//this.setBounds(100, 100, 2*circleRadius+2*BORDER, 2*circleRadius+2*BORDER);
 		
 		//Register for NodeEvents, FingerEvents, KeepAliveEvents
@@ -75,10 +81,9 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		
 		//CENTER Painting surface things
 		this.nodeObjects = new HashMap<Communication, JComponent[]>();
-		this.changedFingersSinceLastKeepAlive = new HashSet<Arrow>();
-		
 		//Create the painting surface which holds the graphical elements
 		paintingSurface = new JPanel(null);
+		paintingSurface.setBackground(Color.BLACK);
 		Dimension d = new Dimension((circleRadius+BORDER+20)*2,(circleRadius+BORDER+20)*2);
 		paintingSurface.setSize(d);
 		paintingSurface.setPreferredSize(d);
@@ -96,6 +101,16 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		//Add all Nodes that are already existing in the network
 		for(Communication com: Network.getInstance().getClients()) 
 			addNode(com);
+		
+		//A circlePanel which holds all fingerchanges since the last keepAlive initiation
+		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null);
+		paintingSurface.add(changedFingersSinceLastKeepalive);
+		
+		//EAST controlPanel
+		this.controlPanel = new ControlPanel();
+		this.getContentPane().add(controlPanel,BorderLayout.EAST);
+		
+		
 		
 		
 		//Show the Frame
@@ -176,39 +191,38 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		Arrow a = null;
 		//Filter the event type
 		if(changeType==FINGER_CHANGE_ADD) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.BLUE);
+			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.YELLOW);
 		}
 		else if(changeType==FINGER_CHANGE_ADD_BETTER) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.GREEN);
+			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.GREEN);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE_WORSE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), Color.RED);
+			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.RED);
+		}
+		else if(changeType==FINGER_CHANGE_REMOVE) {
+			a = new Arrow(circleForNodes.getPosOnCircle(node), circleForNodes.getPosOnCircle(finger), (circleRadius+BORDER)*2, Color.ORANGE);
 		}
 		//Shouldnt happen - unknown finger event
 		if(a==null) return;
-		//Put to the list
-		synchronized (changedFingersSinceLastKeepAlive) {
-			changedFingersSinceLastKeepAlive.add(a);
-		}
 		
-		//Add on the circle
-		circleForNodes.add(a);
+		//Put the arrow to its container
+		changedFingersSinceLastKeepalive.add(a);
 		
 		//refresh the circle
-		circleForNodes.validate();
-		circleForNodes.repaint();
+		changedFingersSinceLastKeepalive.validate();
+		changedFingersSinceLastKeepalive.repaint();
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
 		this.infoLabel.setText("Last KeepAlive initiated by: {" + networkAddress + "} " + key + " on: " + date);
-		synchronized (changedFingersSinceLastKeepAlive) {
-			for(Arrow a: changedFingersSinceLastKeepAlive)
-				circleForNodes.remove(a);
-			changedFingersSinceLastKeepAlive.clear();
+		if(controlPanel.isClearOnKeepalive()){
+			paintingSurface.remove(changedFingersSinceLastKeepalive);
+			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null);
+			paintingSurface.add(changedFingersSinceLastKeepalive);
+			changedFingersSinceLastKeepalive.validate();
+			changedFingersSinceLastKeepalive.repaint();
 		}
-		circleForNodes.validate();
-		circleForNodes.repaint();
 	}
 	
 }

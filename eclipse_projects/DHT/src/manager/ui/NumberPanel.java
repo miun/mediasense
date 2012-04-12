@@ -20,7 +20,9 @@ public class NumberPanel extends JPanel {
 	
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent( g );
-		int h = g.getFontMetrics().getHeight();
-		g.drawString(networkAddress,0,h);
+		Graphics gLocal = g.create();
+		gLocal.setColor(Color.white);
+		int h = gLocal.getFontMetrics().getHeight();
+		gLocal.drawString(networkAddress,0,h);
 	}
 }

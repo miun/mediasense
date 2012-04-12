@@ -20,7 +20,7 @@ public class NodePanel extends JPanel implements MouseListener {
 		int x = (int) p.getX();
 		int y = (int) p.getY();
 		this.setBounds(x-2,y-2,5,5);
-		this.setBackground(Color.BLACK);
+		this.setBackground(Color.WHITE);
 		
 		//Listen to Mouse Events
 		this.addMouseListener(this);
