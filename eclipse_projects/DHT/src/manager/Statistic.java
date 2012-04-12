@@ -1,10 +1,12 @@
 package manager;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
@@ -12,14 +14,19 @@ import manager.listener.NodeMessageListener;
 
 public class Statistic implements FingerChangeListener,NodeMessageListener {
 
+	private static final int TIMER_PERIOD = 1000;
+	
 	private Manager manager;
-	private File file;
-	private FileOutputStream fileOutputStream;
+	private FileWriter fileWriter;
+	private BufferedWriter fileBufferedWriter;
 	
 	//Statistic data
+	long secondCounter = 0;
 	long txData = 0;
-	long txPkt = 0;
 	long fingerChanges = 0;
+	
+	//Timer, as you can see
+	Timer timer;
 	
 	//Detailed packet statistic
 	HashMap<Integer,Long> txPktDetail;
@@ -29,8 +36,8 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		
 		//Open/create file
 		try {
-			file = new File(filename);
-			fileOutputStream = new FileOutputStream(file);
+			fileWriter = new FileWriter(filename);
+			fileBufferedWriter = new BufferedWriter(fileWriter);
 		}
 		catch (IOException e) {
 			//TODO what shall happen here
@@ -52,6 +59,26 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		manager.addNodeMessageListener(Message.NODE_LEAVE_NOTIFY, this);
 	}
 	
+	public void start() {
+		//Start the Timer!
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				triggerEvent();
+			}
+			
+		}, 1000, 1000);
+	}
+	
+	public void stop() {
+		//Stop all tasks
+		timer.cancel();
+		timer.purge();
+		timer = null;
+	}
+	
 	@Override
 	public void OnNodeMessage(Date timeStamp, Message msg) {
 		Long count;
@@ -69,5 +96,36 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
 		//Increment finger changes
 		fingerChanges += 1;
+	}
+	
+	private void triggerEvent() {
+		//TODO try to find out if the task is to slow!!!
+		
+		synchronized(this) {
+			try {
+				//Write...
+				writeDataSet();
+				
+				//...and reset counter
+				txData = 0;
+				fingerChanges = 0;
+				txPktDetail = new HashMap<Integer,Long>();
+			}
+			catch (IOException e) {
+				System.out.println("ERROR WRITING STATISTIC !!!");
+			}
+		}
+	}
+	
+	private void writeDataSet() throws IOException {
+		//Write one data set to file
+		try {
+			//TODO add other data
+			fileBufferedWriter.write(secondCounter + "\t" + manager.calculateHealthOfDHT() + "\n");
+		}
+		catch (IOException e) {
+			//Forward
+			throw e;
+		}
 	}
 }
