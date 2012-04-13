@@ -13,7 +13,6 @@ import manager.dht.FingerEntry;
 
 @SuppressWarnings("serial")
 public class NodePanel extends JPanel implements MouseListener {
-	
 	//Communication object that belongs to me!
 	private Communication com;
 	
@@ -21,10 +20,15 @@ public class NodePanel extends JPanel implements MouseListener {
 	private CirclePanel myFingers;
 	private HashMap<FingerEntry,Arrow> fingerData;
 	
+	private NumberPanel myNumber;
+	
 	private CircleGUI cg;
 
 	public NodePanel(Communication com, Point p, CirclePanel myFingers, CircleGUI cg){
 		this.com = com;
+		
+		this.myNumber = new NumberPanel(com.getLocalIp(), myFingers.getPosOnCircle(com.getNodeID(), 20),20);
+		
 		this.myFingers = myFingers;
 		this.fingerData = new HashMap<FingerEntry, Arrow>();
 		this.cg = cg;
@@ -39,11 +43,13 @@ public class NodePanel extends JPanel implements MouseListener {
 		
 		//Listen to Mouse Events
 		this.addMouseListener(this);
+		
 	}
 	
 	public void addFinger(FingerEntry finger) {
 		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID(),0),
 				myFingers.getPosOnCircle(finger.getNodeID(),0), 
+				myFingers.getPosOnCircle(finger.getNodeID(),0), 0,
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
 				Arrow.PREVIEW);
 		myFingers.add(a);
@@ -60,6 +66,14 @@ public class NodePanel extends JPanel implements MouseListener {
 		}
 		myFingers.validate();
 		myFingers.repaint();
+	}
+	
+	public CirclePanel getMyFingers() {
+		return myFingers;
+	}
+	
+	public NumberPanel getMyNumber() {
+		return myNumber;
 	}
 	
 	@Override

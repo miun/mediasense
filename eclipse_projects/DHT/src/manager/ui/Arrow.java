@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
 import java.awt.geom.QuadCurve2D;
 
 import javax.swing.JComponent;
@@ -23,16 +25,26 @@ public class Arrow extends JComponent {
 	private int x2;
 	private int y2;
 	
+	private int x3;
+	private int y3;
+	
+	private int radiusDifferenceMarker;
+	
 	//Color and dash
 	private Color color;
 	private float dash[];
 	
 	
-	public Arrow(Point start, Point end, int bounds,int type) {
+	public Arrow(Point start, Point end, Point marker , int radiusDifferenceMarker, int bounds,int type) {
 		this.x1 = (int) start.getX();
 		this.y1 = (int) start.getY();
 		this.x2 = (int) end.getX();
 		this.y2 = (int) end.getY();
+		
+		this.x3 = (int) marker.getX();
+		this.y3 = (int) marker.getY();
+		
+		this.radiusDifferenceMarker = radiusDifferenceMarker;
 		
 		this.setBounds(0, 0, bounds, bounds);
 				
@@ -40,22 +52,22 @@ public class Arrow extends JComponent {
 			case ADD:
 				this.color = Color.YELLOW;
 				this.dash = new float[1];
-				dash[0] = 2.0f;
+				dash[0] = 5.0f;
 				break;
 			case ADD_BETTER:
 				this.color = Color.GREEN;
 				this.dash = new float[1];
-				dash[0] = 2.0f;
+				dash[0] = 7.0f;
 				break;
 			case REMOVE:
 				this.color = Color.ORANGE;
 				this.dash = new float[1];
-				dash[0] = 2.0f;
+				dash[0] = 11.0f;
 				break;
 			case REMOVE_WORSE:
 				this.color = Color.RED;
 				this.dash = new float[1];
-				dash[0] = 2.0f;
+				dash[0] = 13.0f;
 				break;
 			case PREVIEW:
 				this.color = Color.MAGENTA;
@@ -75,8 +87,8 @@ public class Arrow extends JComponent {
 		Graphics2D gLocal = (Graphics2D) g.create();
 		gLocal.setColor(color);
 		//gLocal.drawLine(x1, y1, x2, y2);
-		gLocal.drawOval(x2-5, y2-5, 10, 10);
-		gLocal.fillOval(x2-5, y2-5, 10, 10);
+		gLocal.drawOval(x3-5+radiusDifferenceMarker, y3-5+radiusDifferenceMarker, 10, 10);
+		gLocal.fillOval(x3-5+radiusDifferenceMarker, y3-5+radiusDifferenceMarker, 10, 10);
 		
 		if(dash!=null) {
 		    BasicStroke dashed = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
@@ -89,6 +101,7 @@ public class Arrow extends JComponent {
 		
 		q.setCurve(x1, y1, getBounds().getCenterX(), getBounds().getCenterY(), x2, y2);
 		gLocal.draw(q);
+
 		/*
 		//gLocal.draw(createArrowShape(new Point(x1,y1), new Point(x2,y2)));
 		AffineTransform tx = new AffineTransform();

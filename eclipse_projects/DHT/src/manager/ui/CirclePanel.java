@@ -3,7 +3,6 @@ package manager.ui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.math.BigInteger;
 
@@ -21,10 +20,6 @@ public class CirclePanel extends JPanel {
 	private int border;
 	Color color;
 	Color scale;
-	
-	private Graphics2D g2D;
-	
-	
 	
 	public CirclePanel(int circleRadius, int border, Color circle, Color scale) {
 		//init
@@ -44,7 +39,6 @@ public class CirclePanel extends JPanel {
 	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent(g);
-		this.g2D = (Graphics2D) g.create();
 		Graphics gLocal = g.create();
 		//color = null means dont draw additional stuff
 		if(color != null) {		
@@ -63,12 +57,12 @@ public class CirclePanel extends JPanel {
 			
 			for(int i = 0; i < 16; i++) {
 				//get point on the circle
-				Point p = getPosOnCircle(pos_current,0);
+				Point p = getPosOnCircle(pos_current,-15);
 				//get the caption
 				String posText = Integer.toString(i, 16);
 				//draw the string
 				int h = gLocal.getFontMetrics().getHeight()/2;
-				gLocal.drawString(posText, p.x, p.y+h);
+				gLocal.drawString(posText, p.x+border/2, p.y+h+border/2);
 				
 				//Next position
 				pos_current = pos_current.add(pos_1);
@@ -78,6 +72,7 @@ public class CirclePanel extends JPanel {
 	}
 	
 	public Point getPosOnCircle(NodeID nodeID, int extraRadius) {
+		int radius = circleRadius+extraRadius;
 		//Get the most valuable bytes of the hash
 		byte[] hash = nodeID.getID();
 		byte[] node = new byte[MAXNUMBER.length];
@@ -91,8 +86,8 @@ public class CirclePanel extends JPanel {
 		double cos = -Math.cos(longNode*rangeOnCircle);
 		double sin = Math.sin(longNode*rangeOnCircle);
 		
-		int x = new Double(sin*circleRadius).intValue()+border+circleRadius;
-		int y = new Double(cos*circleRadius).intValue()+border+circleRadius;
+		int x = new Double(sin*radius).intValue()+border+radius;
+		int y = new Double(cos*radius).intValue()+border+radius;
 		return new Point(x, y);
 	}
 	

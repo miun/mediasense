@@ -8,14 +8,20 @@ import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
 public class NumberPanel extends JPanel {
+	private static final int LABELHEIGHT = 15;
 	private String networkAddress;
 	
-	public NumberPanel(String networkAddress, Point p) {
+	private int labelLength;
+	
+	public NumberPanel(String networkAddress, Point p, int radiusDifference) {
 		this.networkAddress = networkAddress;
 		int x = (int) p.getX();
 		int y = (int) p.getY();
-		this.setBounds(x-10,y-10,8*networkAddress.length(),20);
-		this.setOpaque(false);
+		//this.setBounds(x-10,y-10,8*networkAddress.length(),20);
+		this.labelLength = 8*networkAddress.length();
+		this.setBounds(x-radiusDifference-labelLength/2,y-LABELHEIGHT/2-radiusDifference,labelLength,LABELHEIGHT);
+		this.setBackground(Color.BLACK);
+		this.setOpaque(true);
 	}
 	
 	@Override
