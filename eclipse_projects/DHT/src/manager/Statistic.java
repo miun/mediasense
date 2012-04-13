@@ -63,22 +63,26 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	
 	public void start() {
 		//Start the Timer!
-		timer = new Timer();
-		timer.schedule(new TimerTask() {
-
-			@Override
-			public void run() {
-				triggerEvent();
-			}
-			
-		}, 1000, 1000);
+		synchronized(this) {
+			timer = new Timer();
+			timer.schedule(new TimerTask() {
+	
+				@Override
+				public void run() {
+					triggerEvent();
+				}
+				
+			}, 1000, 1000);
+		}
 	}
 	
 	public void stop() {
-		//Stop all tasks
-		timer.cancel();
-		timer.purge();
-		timer = null;
+		synchronized(this) {
+			//Stop all tasks
+			timer.cancel();
+			timer.purge();
+			timer = null;
+		}
 	}
 	
 	@Override
@@ -86,9 +90,11 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		Long count;
 		
 		//Increment packet count and put
-		count = txPktDetail.get(msg.getType());
-		if(count == null) count = 0L;
-		txPktDetail.put(msg.getType(), count + 1);
+		synchronized (this) {
+			count = txPktDetail.get(msg.getType());
+			if(count == null) count = 0L;
+			txPktDetail.put(msg.getType(), count + 1);
+		}
 		
 		//Increment data counter
 		//TODO later
@@ -97,7 +103,9 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	@Override
 	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		//Increment finger changes
-		fingerChanges += 1;
+		synchronized (this) {
+			fingerChanges += 1;
+		}
 	}
 	
 	private void triggerEvent() {
@@ -109,9 +117,12 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 				writeDataSet();
 				
 				//...and reset counter
-				txData = 0;
-				fingerChanges = 0;
-				txPktDetail = new HashMap<Integer,Long>();
+				synchronized(this) {
+					txData = 0;
+					fingerChanges = 0;
+					secondCounter++;
+					txPktDetail.clear();
+				}
 			}
 			catch (IOException e) {
 				System.out.println("ERROR WRITING STATISTIC !!!");
@@ -123,12 +134,14 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		//Write one data set to file
 		try {
 			//TODO add other data
-			fileBufferedWriter.write(
-					secondCounter + "\t" +
-					manager.calculateHealthOfDHT(false) + "\n");
+			synchronized(this) {
+				fileBufferedWriter.write(
+						secondCounter + "\t" +
+						manager.calculateHealthOfDHT(false) + "\n");
 			
-			//Flush buffer immediately
-			fileBufferedWriter.flush();
+				//Flush buffer immediately
+				fileBufferedWriter.flush();
+			}
 		}
 		catch (IOException e) {
 			//Forward

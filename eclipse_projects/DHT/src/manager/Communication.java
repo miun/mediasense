@@ -146,4 +146,12 @@ public class Communication extends Thread implements CommunicationInterface {
 	public int getMessageDelay() {
 		return messageDelay;
 	}
+
+	@Override
+	public void shutdown() {
+		// TODO Auto-generated method stub
+		//The object will probably last longer than this function call!!!
+		
+		
+	}
 }
