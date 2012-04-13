@@ -1,23 +1,26 @@
 package manager;
 
-import java.math.BigInteger;
-import java.util.Random;
+import java.io.IOException;
 
 import manager.dht.Node;
-import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
-import manager.ui.CircleGUI;
 import manager.ui.console.Console;
+import manager.ui.log.Log;
 
 
 public final class Manager {
+	private static final String LOG_FILE = "/home/timo/media_sense.log";
+	
 	private static Manager instance;
 	
 	//Classes for handling nodes at let them communicate with each other
 	private Network network;
+	
+	//Logging facility
+	Log log;
 	
 	//UI classes
 	private Console console;
@@ -40,6 +43,14 @@ public final class Manager {
 		
 		//Create objects for node communication
 		network = Network.getInstance();
+		
+		//Create log file
+		try {
+			log = new Log(getInstance(),LOG_FILE);
+		}
+		catch (IOException e) {
+			System.out.println("Cannot open log file " + e.getMessage());
+		}
 
 		//Create UI classes
 		console = new Console(this.getInstance());

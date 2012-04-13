@@ -550,4 +550,14 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}, time);
 	}
+	
+	//TODO remove debug function
+	public boolean getStateConnected() {
+		return connected;
+	}
+
+	//TODO remove debug function
+	public FingerEntry getStateBlockJoinFor() {
+		return blockJoinFor;
+	}
 }

@@ -1,6 +1,7 @@
 package manager.ui.console;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,8 +15,9 @@ import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
-import manager.ui.CircleGUI;
-import manager.ui.NodeInfo;
+import manager.ui.gfx.CircleGUI;
+import manager.ui.gfx.NodeInfo;
+import manager.ui.log.Log;
 
 public class Console implements NodeMessageListener,FingerChangeListener,KeepAliveListener {
 	private Manager manager;
@@ -28,12 +30,12 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		//Set objects
 		this.manager = manager;
 	}
-		
+	
 	public void run() {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		String in;
 		Command cmd;
-
+		
 		while(true) {
 			//Read line
 			try {
@@ -45,7 +47,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				break;
 			}
 			
-			//Get line
+			//Get,log, extract line
 			if(in == null) break;
 			cmd = extractCmd(in);
 			

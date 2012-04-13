@@ -1,4 +1,4 @@
-package manager.ui;
+package manager.ui.gfx;
 
 import java.awt.Color;
 import java.awt.Graphics;
