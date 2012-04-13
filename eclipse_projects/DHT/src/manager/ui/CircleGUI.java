@@ -15,7 +15,6 @@ import java.util.HashMap;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -57,6 +56,8 @@ KeepAliveListener, ActionListener {
 	
 	private int circleRadius;
 	private HashMap<String, NodePanel> nodeObjects;
+	
+	private NodePanel activeNode;
 	
 	//EAST control Panel
 	private JPanel controlPanel;
@@ -172,18 +173,44 @@ KeepAliveListener, ActionListener {
 		return node;
 	}
 	
-	public void showFingers(CirclePanel cp) {
-		this.paintingSurface.add(cp,0);
+	//--------------------------------------//
+	//this methods are called from NodePanel objects on clicks.
+	//TODO can also be realized as Listener
+	public void showFingers(NodePanel node) {
+		this.paintingSurface.add(node.getMyFingers(),0);
 		this.paintingSurface.validate();
 		this.paintingSurface.repaint();
 	}
 	
-	public void hideFingers(CirclePanel cp) {
-		this.paintingSurface.remove(cp);
+	public void hideFingers(NodePanel node) {
+		//Do not hide the fingers if the node is the active one
+		if(activeNode!=null && activeNode.equals(node)) return;
+		
+		this.paintingSurface.remove(node.getMyFingers());
 		this.paintingSurface.validate();
 		this.paintingSurface.repaint();
 	}
 	
+	public void setActiveNode(NodePanel node) {
+		//Hide fingers from old activenode if there is one
+		if(activeNode==null) {
+			//Set the new active node
+			this.activeNode = node;
+		} else {
+			//If that node was already the active node, make it inactive
+			if(activeNode.equals(node)) {
+				activeNode = null;
+				return;
+			} else {
+				//Set the new active node
+				NodePanel oldActive = activeNode;
+				this.activeNode = node;
+				//Hide Lines from the old active node
+				hideFingers(oldActive);
+			}
+		}
+	}
+	//----------------------------------------//
 	
 	@Override
 	public void onNodeAdd(Communication com) {

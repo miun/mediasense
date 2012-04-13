@@ -87,17 +87,18 @@ public class NodePanel extends JPanel implements MouseListener {
 	@Override
 	public void mouseExited(MouseEvent e) {
 		setBackground(Color.WHITE);
-		cg.hideFingers(myFingers);
+		cg.hideFingers(this);
 	}
 	
 	@Override
 	public void mouseEntered(MouseEvent e) {
 		setBackground(Color.RED);
-		cg.showFingers(myFingers);
+		cg.showFingers(this);
 	}
 	
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		cg.setActiveNode(this);
 	}
 		
 	
