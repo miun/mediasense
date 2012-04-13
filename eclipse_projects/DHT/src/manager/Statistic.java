@@ -34,7 +34,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	public Statistic(Manager manager,String filename) throws IOException {
 		this.manager = manager;
 		
-		//Open/create file
+		//Open / create file
 		try {
 			fileWriter = new FileWriter(filename);
 			fileBufferedWriter = new BufferedWriter(fileWriter);
@@ -57,6 +57,8 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		manager.addNodeMessageListener(Message.FIND_PREDECESSOR_RESPONSE, this);
 		manager.addNodeMessageListener(Message.NODE_JOIN_NOTIFY, this);
 		manager.addNodeMessageListener(Message.NODE_LEAVE_NOTIFY, this);
+		
+		System.out.println("Statistic started for " + filename);
 	}
 	
 	public void start() {
@@ -121,7 +123,12 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		//Write one data set to file
 		try {
 			//TODO add other data
-			fileBufferedWriter.write(secondCounter + "\t" + manager.calculateHealthOfDHT(false) + "\n");
+			fileBufferedWriter.write(
+					secondCounter + "\t" +
+					manager.calculateHealthOfDHT(false) + "\n");
+			
+			//Flush buffer immediately
+			fileBufferedWriter.flush();
 		}
 		catch (IOException e) {
 			//Forward

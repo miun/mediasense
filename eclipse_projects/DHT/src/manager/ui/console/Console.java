@@ -249,7 +249,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("wait")) {
 					//Wait for the specified time in ms
-					if(cmd.param != null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
 					
 					//Wait
 					long wait = Long.parseLong(cmd.param[0]);
@@ -267,6 +267,21 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						System.out.println("Wait done");
 					}
 					
+				}
+				else if(cmd.cmd.toLowerCase().equals("stat")) {
+					String filename = "";
+					
+					if(cmd.param == null) {
+						//Stop statistic
+						manager.stopStatistic();
+					}
+					else {
+						//Combine params to filename, as it can contain ","
+						for(String s: cmd.param) filename += s;
+
+						//Start new one
+						manager.startStatistic(filename);
+					}
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");

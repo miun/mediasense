@@ -130,4 +130,16 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 		result = result + finger.toString() + " @NODE: " + node.toString() + "";
 		write(result);
 	}
+	
+	public void close() {
+		//Close file
+		try {
+			bufferedWriter.close();
+			fileWriter.close();
+		}
+		catch (IOException e) {
+			//We don't care. Just report
+			System.out.println("ERROR closing log " + e.getMessage());
+		}
+	}
 }

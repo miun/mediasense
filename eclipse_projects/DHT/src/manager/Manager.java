@@ -16,11 +16,14 @@ public final class Manager {
 	
 	private static Manager instance;
 	
-	//Classes for handling nodes at let them communicate with each other
+	//Classes for handling nodes, and letting them communicate with each other
 	private Network network;
 	
 	//Logging facility
 	Log log;
+	
+	//Statistic object
+	Statistic statistic = null;
 	
 	//UI classes
 	private Console console;
@@ -50,16 +53,22 @@ public final class Manager {
 		}
 		catch (IOException e) {
 			System.out.println("Cannot open log file " + e.getMessage());
+			log = null;
 		}
 
 		//Create UI classes
 		console = new Console(this.getInstance());
-		
 		console.run();
-		System.out.println("Good bye!");
+		
+		//the famous last words...
+		System.out.println("May the hash be with you!");
 	}
 	
 	public void stopManager() {
+		//Stop everything
+		if(log != null) log.close();
+		stopStatistic();
+		
 		//Stop everything
 		console.notifyExit();
 	}
@@ -153,5 +162,29 @@ public final class Manager {
 	
 	public double calculateHealthOfDHT(boolean listMissingFinger) {
 		return network.calculateHealthOfDHT(listMissingFinger);
+	}
+	
+	public void startStatistic(String filename) {
+		//Always stop before
+		stopStatistic();
+		
+		//Start new one
+		try {
+			statistic = new Statistic(getInstance(),filename);
+			statistic.start();
+		}
+		catch (IOException e) {
+			// :-(
+			System.out.println("ERROR starting statistic " + e.getMessage());
+			statistic = null;
+		}
+	}
+	
+	public void stopStatistic() {
+		//Stop statistic if there is one
+		if(statistic != null) {
+			statistic.stop();
+			statistic = null;
+		}
 	}
 }
