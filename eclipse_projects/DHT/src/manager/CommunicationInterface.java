@@ -15,8 +15,8 @@ public interface CommunicationInterface {
 	
 	public String getLocalIp();
 	
-	/*public void shutdown();
-	*/
+	public void shutdown();
+	
 	
 	//TODO remove DEBUG stuff
 	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger);

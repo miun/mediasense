@@ -1,4 +1,4 @@
-package manager.ui;
+package manager.ui.gfx;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.QuadCurve2D;
+import java.util.Random;
 
 import javax.swing.JComponent;
 

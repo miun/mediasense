@@ -137,18 +137,20 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 					}
 					else {
-						if(blockJoinFor != null) {
-							//Send busy message
-							answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
-							communication.sendMessage(answer);
+						synchronized(this) {
+							if(blockJoinFor != null) {
+								//Send busy message
+								answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
+							}
+							else {
+								//Prepare answer
+								answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
+								blockJoinFor = newFingerEntry;
+							}
 						}
-						else {
-							//Prepare answer
-							answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
-							communication.sendMessage(answer);
-							
-							blockJoinFor = newFingerEntry;
-						}
+						
+						//Send
+						communication.sendMessage(answer);
 					}
 				}
 				else {
@@ -209,9 +211,8 @@ public class Node extends Thread implements LookupServiceInterface {
 						
 						//TODO remove
 						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
-						
 						connected = true;
-						
+
 						//Inform the node that we got the message
 						communication.sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
 						
@@ -551,4 +552,15 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}, time);
 	}
+	
+	//TODO remove debug function
+	public boolean getStateConnected() {
+		return connected;
+	}
+
+	//TODO remove debug function
+	public FingerEntry getStateBlockJoinFor() {
+		return blockJoinFor;
+	}
+	
 }

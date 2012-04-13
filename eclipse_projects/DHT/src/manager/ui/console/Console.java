@@ -14,8 +14,8 @@ import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
-import manager.ui.CircleGUI;
-import manager.ui.NodeInfo;
+import manager.ui.gfx.CircleGUI;
+import manager.ui.gfx.NodeInfo;
 
 public class Console implements NodeMessageListener,FingerChangeListener,KeepAliveListener {
 	private Manager manager;
@@ -28,12 +28,12 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		//Set objects
 		this.manager = manager;
 	}
-		
+	
 	public void run() {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		String in;
 		Command cmd;
-
+		
 		while(true) {
 			//Read line
 			try {
@@ -45,7 +45,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				break;
 			}
 			
-			//Get line
+			//Get,log, extract line
 			if(in == null) break;
 			cmd = extractCmd(in);
 			
@@ -247,7 +247,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				}
 				else if(cmd.cmd.toLowerCase().equals("wait")) {
 					//Wait for the specified time in ms
-					if(cmd.param != null || cmd.param.length > 1) throw new InvalidParamAmountException();
+					if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
 					
 					//Wait
 					long wait = Long.parseLong(cmd.param[0]);
@@ -265,6 +265,21 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						System.out.println("Wait done");
 					}
 					
+				}
+				else if(cmd.cmd.toLowerCase().equals("stat")) {
+					String filename = "";
+					
+					if(cmd.param == null) {
+						//Stop statistic
+						manager.stopStatistic();
+					}
+					else {
+						//Combine params to filename, as it can contain ","
+						for(String s: cmd.param) filename += s;
+
+						//Start new one
+						manager.startStatistic(filename);
+					}
 				}
 				else if(!cmd.cmd.equals("")) { 
 					System.out.println("Invalid command!");
