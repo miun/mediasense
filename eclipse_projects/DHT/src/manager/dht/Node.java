@@ -318,6 +318,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}
 	
+	
 	public FingerEntry getIdentity() {
 		return identity;
 	}

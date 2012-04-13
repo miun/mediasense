@@ -170,7 +170,7 @@ public final class Manager {
 		
 		//Start new one
 		try {
-			statistic = new Statistic(getInstance(),filename);
+			statistic = new Statistic(getInstance(),filename,Statistic.TRIGGER_SECOND);
 			statistic.start();
 		}
 		catch (IOException e) {
