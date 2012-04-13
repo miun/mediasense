@@ -52,7 +52,7 @@ public class NodeInfo extends JFrame implements FingerChangeListener {
 	@Override
 	public void OnFingerChange(int changeType, FingerEntry node, FingerEntry finger) {
 		//Only change if the change occurred on the finger we are responsible for
-		if(nodeID.equals(node)) {
+		if(nodeID.equals(node.getNodeID())) {
 			if(changeType == FINGER_CHANGE_ADD) {
 				console.setText("Last change (added finger " + finger.toString() + ") on: " + new Date() + "\n" + manager.showFinger(address));
 			} else if(changeType == FINGER_CHANGE_REMOVE) {

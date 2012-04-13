@@ -137,18 +137,20 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 					}
 					else {
-						if(blockJoinFor != null) {
-							//Send busy message
-							answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
-							communication.sendMessage(answer);
+						synchronized(this) {
+							if(blockJoinFor != null) {
+								//Send busy message
+								answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
+							}
+							else {
+								//Prepare answer
+								answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
+								blockJoinFor = newFingerEntry;
+							}
 						}
-						else {
-							//Prepare answer
-							answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
-							communication.sendMessage(answer);
-							
-							blockJoinFor = newFingerEntry;
-						}
+						
+						//Send
+						communication.sendMessage(answer);
 					}
 				}
 				else {
@@ -560,4 +562,5 @@ public class Node extends Thread implements LookupServiceInterface {
 	public FingerEntry getStateBlockJoinFor() {
 		return blockJoinFor;
 	}
+	
 }

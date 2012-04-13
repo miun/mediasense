@@ -1,7 +1,6 @@
 package manager.ui.console;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,7 +16,6 @@ import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.gfx.CircleGUI;
 import manager.ui.gfx.NodeInfo;
-import manager.ui.log.Log;
 
 public class Console implements NodeMessageListener,FingerChangeListener,KeepAliveListener {
 	private Manager manager;

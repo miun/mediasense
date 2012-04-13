@@ -340,8 +340,10 @@ public class Network {
 
 		//For each finger
 		for(FingerEntry fingerEntry: fingerTable.keySet()) {
-			log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
-			localTable.put(log2, fingerEntry);
+			if(!fingerEntry.getNodeID().equals(client.getNodeID())) { 
+				log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
+				localTable.put(log2, fingerEntry);
+			}
 		}
 		
 		//Print list
