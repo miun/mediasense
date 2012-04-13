@@ -69,7 +69,8 @@ public class CirclePanel extends JPanel {
 				//get the caption
 				String posText = Integer.toString(i, 16);
 				//draw the string
-				gLocal.drawString(posText, p.x, p.y);
+				int h = gLocal.getFontMetrics().getHeight()/2;
+				gLocal.drawString(posText, p.x, p.y+h);
 				
 				//Next position
 				pos_current = pos_current.add(pos_1);
@@ -108,68 +109,4 @@ public class CirclePanel extends JPanel {
 		}
 		return result;
 	}
-	/*
-	public void removeNode(Communication com) {
-		//Remove from the HashMap and from the panel
-		NodePanel toRemove = nodes.remove(com.getNodeID());
-		if(toRemove != null)
-			remove(toRemove.getNumberPanel());
-			remove(toRemove);
-		//Repaint the P
-		this.repaint();
-	}
-	
-	
-	
-	
-	
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
-		NodePanel np = nodes.get(node);
-		if(np==null) return;
-		
-		//Get the relevant points on the circle
-		Point pf = getPosOnCircle(finger, circleRadius);
-		Point pn = getPosOnCircle(node, circleRadius);
-		
-		Arrow a = null;
-		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-						
-			
-			int x = (int) (pf.getX());
-			int y = (int) (pf.getY());
-						
-			np.addFinger(finger, x, y);
-			
-			a = new Arrow(pn, pf, Arrow.ADD);
-		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {		
-			np.removeFinger(finger);
-			a = new Arrow(pn, pf, Arrow.REMOVE);
-		}
-		//Add KeepAlive Arrow
-		synchronized (changedFingersSinceLastKeepAlive) {
-			changedFingersSinceLastKeepAlive.add(a);
-		}
-		//Add also to this
-		this.add(a);
-		this.validate();
-		this.repaint();
-	}
-	
-	public void setActiveNode(NodePanel np) {
-		activeNode = np;
-		repaint();
-	}
-	
-	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
-		synchronized (changedFingersSinceLastKeepAlive) {
-			for(Arrow a: changedFingersSinceLastKeepAlive) {
-				this.remove(a);
-			}
-			changedFingersSinceLastKeepAlive.clear();
-		}
-		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
-		this.validate();
-		this.repaint();
-	}*/
-		
 }

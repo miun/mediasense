@@ -24,6 +24,7 @@ import manager.Communication;
 import manager.Manager;
 import manager.Network;
 import manager.dht.FingerEntry;
+import manager.dht.Node;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
@@ -47,7 +48,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private JLabel healthLabel;
 	
 	//CENTER Painting Surface
-	private JPanel paintingSurface;
+	private PaintingSurface paintingSurface;
 	private CirclePanel circleForNodes;
 	private CirclePanel circleForIds;
 	
@@ -100,7 +101,7 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		this.nodeObjects = new HashMap<String, JComponent[]>();
 		
 		//Create the painting surface which holds the graphical elements
-		paintingSurface = new JPanel(null);
+		paintingSurface = new PaintingSurface();
 		paintingSurface.setBackground(Color.BLACK);
 		Dimension d = new Dimension((circleRadius+BORDER+20)*2,(circleRadius+BORDER+20)*2);
 		paintingSurface.setSize(d);
@@ -116,9 +117,16 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		circleForIds = new CirclePanel(circleRadius+20,BORDER-10, null, Color.cyan);
 		paintingSurface.add(circleForIds);
 		
-		//Add all Nodes that are already existing in the network
-		for(Communication com: Network.getInstance().getClients()) 
-			addNode(com);
+		//Add all Nodes and their fingers that are already existing in the network
+		for(Communication com: Network.getInstance().getClients()) {
+			NodePanel node = addNode(com);
+			Node n = com.getNode();
+			for(FingerEntry fe: n.getFingerTable().keySet()) {
+				if(!fe.equals(n.getIdentity())) {
+					node.addFinger(fe);
+				}
+			}
+		}
 		
 		//A circlePanel which holds all fingerchanges since the last keepAlive initiation
 		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
@@ -140,14 +148,13 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		deleteFinger.addActionListener(this);
 		controlPanel.add(deleteFinger);
 		
-		
 		//Show the Frame
 		this.pack();
 		
 		this.setVisible(true);
 	}
 	
-	private void addNode(Communication com) {
+	private NodePanel addNode(Communication com) {
 		NodeID nodeID = com.getNodeID();
 		//Get Points on the circles
 		Point pNode = circleForNodes.getPosOnCircle(nodeID);
@@ -168,7 +175,8 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		//After validation repaint the painting surface
 		paintingSurface.validate();
 		paintingSurface.repaint();
-				
+		
+		return node;
 	}
 	
 	public void showFingers(CirclePanel cp) {
@@ -235,25 +243,25 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		Arrow a = null;
 		//Filter the event type
 		if(changeType==FINGER_CHANGE_ADD) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.YELLOW);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.ADD);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.addFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_ADD_BETTER) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.GREEN);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.ADD_BETTER);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.addFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE_WORSE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.RED);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.REMOVE_WORSE);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.removeFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Color.ORANGE);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.REMOVE);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.removeFinger(finger);
