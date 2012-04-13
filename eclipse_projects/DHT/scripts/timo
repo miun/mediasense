@@ -1,16 +1,25 @@
 # Comment
 
-statistic /home/timo/node_100.stat
+statistic /home/timo/node_10x10.stat
 
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
+wait 10000
 node_add 0,0,0,0,0,0,0,0,0,0
-
