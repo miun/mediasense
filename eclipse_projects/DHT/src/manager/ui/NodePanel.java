@@ -14,8 +14,10 @@ import manager.dht.FingerEntry;
 @SuppressWarnings("serial")
 public class NodePanel extends JPanel implements MouseListener {
 	
+	//Communication object that belongs to me!
 	private Communication com;
 	
+	//All my fingers
 	private CirclePanel myFingers;
 	private HashMap<FingerEntry,Arrow> fingerData;
 	
@@ -40,8 +42,8 @@ public class NodePanel extends JPanel implements MouseListener {
 	}
 	
 	public void addFinger(FingerEntry finger) {
-		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
-				myFingers.getPosOnCircle(finger.getNodeID()), 
+		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID(),0),
+				myFingers.getPosOnCircle(finger.getNodeID(),0), 
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
 				Arrow.PREVIEW);
 		myFingers.add(a);

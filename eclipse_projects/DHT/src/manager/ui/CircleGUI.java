@@ -157,8 +157,8 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 	private NodePanel addNode(Communication com) {
 		NodeID nodeID = com.getNodeID();
 		//Get Points on the circles
-		Point pNode = circleForNodes.getPosOnCircle(nodeID);
-		Point pIden = circleForIds.getPosOnCircle(nodeID);
+		Point pNode = circleForNodes.getPosOnCircle(nodeID,0);
+		Point pIden = circleForIds.getPosOnCircle(nodeID,0);
 		
 		//Create the objects
 		NodePanel node = new NodePanel(com,pNode, new CirclePanel(circleRadius, BORDER, null, null),this);
@@ -243,25 +243,25 @@ public class CircleGUI extends JFrame implements NodeListener, WindowListener, F
 		Arrow a = null;
 		//Filter the event type
 		if(changeType==FINGER_CHANGE_ADD) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.ADD);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID(),0), circleForNodes.getPosOnCircle(finger.getNodeID(),0), (circleRadius+BORDER)*2, Arrow.ADD);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.addFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_ADD_BETTER) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.ADD_BETTER);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID(),0), circleForNodes.getPosOnCircle(finger.getNodeID(),0), (circleRadius+BORDER)*2, Arrow.ADD_BETTER);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.addFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE_WORSE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.REMOVE_WORSE);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID(),0), circleForNodes.getPosOnCircle(finger.getNodeID(),0), (circleRadius+BORDER)*2, Arrow.REMOVE_WORSE);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.removeFinger(finger);
 		}
 		else if(changeType==FINGER_CHANGE_REMOVE) {
-			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID()), circleForNodes.getPosOnCircle(finger.getNodeID()), (circleRadius+BORDER)*2, Arrow.REMOVE);
+			a = new Arrow(circleForNodes.getPosOnCircle(node.getNodeID(),0), circleForNodes.getPosOnCircle(finger.getNodeID(),0), (circleRadius+BORDER)*2, Arrow.REMOVE);
 			NodePanel n = (NodePanel) nodeObjects.get(node.getNetworkAddress())[0];
 			if(n!=null)
 				n.removeFinger(finger);

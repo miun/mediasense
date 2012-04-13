@@ -14,6 +14,8 @@ import manager.dht.NodeID;
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
 	public static final byte[] MAXNUMBER = {-1,-1,-1,-1};
+	//That defines how far two nodes can be away from each other
+	private static double rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);;
 	
 	private int circleRadius;
 	private int border;
@@ -22,8 +24,7 @@ public class CirclePanel extends JPanel {
 	
 	private Graphics2D g2D;
 	
-	//That defines how far two nodes can be away from each other
-	private double rangeOnCircle;
+	
 	
 	public CirclePanel(int circleRadius, int border, Color circle, Color scale) {
 		//init
@@ -31,9 +32,6 @@ public class CirclePanel extends JPanel {
 		this.border = border;
 		this.color = circle;
 		this.scale = scale;
-		
-		//Calculation stuff
-		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
 		
 		//Gui stuff
 		this.setLayout(null);
@@ -65,7 +63,7 @@ public class CirclePanel extends JPanel {
 			
 			for(int i = 0; i < 16; i++) {
 				//get point on the circle
-				Point p = getPosOnCircle(pos_current);
+				Point p = getPosOnCircle(pos_current,0);
 				//get the caption
 				String posText = Integer.toString(i, 16);
 				//draw the string
@@ -79,7 +77,7 @@ public class CirclePanel extends JPanel {
 	
 	}
 	
-	public Point getPosOnCircle(NodeID nodeID) {
+	public Point getPosOnCircle(NodeID nodeID, int extraRadius) {
 		//Get the most valuable bytes of the hash
 		byte[] hash = nodeID.getID();
 		byte[] node = new byte[MAXNUMBER.length];

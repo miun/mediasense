@@ -18,6 +18,7 @@ public class NumberPanel extends JPanel {
 		this.setOpaque(false);
 	}
 	
+	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent( g );
 		Graphics gLocal = g.create();
