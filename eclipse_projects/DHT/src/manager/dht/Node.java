@@ -30,10 +30,13 @@ public class Node extends Thread implements LookupServiceInterface {
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private FingerEntry identity;
 	private FingerEntry successor;
+	private FingerEntry predecessor;
 	
 	//Keep alive
 	private static final int KEEP_ALIVE_PERIOD = 10000;
 	private static final int KEEP_ALIVE_RANDOM_PERIOD = 10000;
+	private static final int JOIN_BLOCK_PERIOD = 15000;
+	
 	Timer timer = null;
 	TimerTask keepAlive;
 	
@@ -52,11 +55,13 @@ public class Node extends Thread implements LookupServiceInterface {
 		//TODO ask stefan if inclusion of port address is reasonable
 		byte[] hash = SHA1Generator.SHA1(communication.getLocalIp());
 		
+		//Init timer
 		this.timer = new Timer();
 
 		//Set identity
 		setIdentity(hash);
 		this.successor = identity;
+		this.predecessor = identity;
 		
 		//Save bootstrap address
 		//No bootstrap means, WE are the beginning of the DHT
@@ -111,10 +116,10 @@ public class Node extends Thread implements LookupServiceInterface {
 				JoinMessage join_msg = (JoinMessage) message;
 				Message answer = null;
 
-				FingerEntry predecessor = getPredecessor(join_msg.getKey());
+				FingerEntry predecessorOfJoiningNode = getPredecessor(join_msg.getKey());
 				
 				//Forward or answer?
-				if(predecessor.equals(identity)) {
+				if(predecessorOfJoiningNode.equals(identity)) {
 					//It's us => reply on JOIN
 
 					//Check if it exists
@@ -149,6 +154,16 @@ public class Node extends Thread implements LookupServiceInterface {
 								//Prepare answer
 								answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
 								blockJoinFor = newFingerEntry;
+								
+								//Start timer for node unblocking
+								timer.schedule(new TimerTask() {
+
+									@Override
+									public void run() {
+										triggerUnblockJoinBlock();
+									}
+									
+								}, JOIN_BLOCK_PERIOD);
 							}
 						}
 						
@@ -207,9 +222,12 @@ public class Node extends Thread implements LookupServiceInterface {
 				if(!connected) {
 					if(jrm.getJoinKey().equals(identity.getNodeID())) {
 						//Add finger
-						FingerEntry newFingerEntry = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
+						FingerEntry newSuccessor = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
+						FingerEntry newPredecessor = new FingerEntry(jrm.getPredecessor(),jrm.getFromIp());
+						
 						synchronized (finger) {
-							successor = newFingerEntry;
+							successor = newSuccessor;
+							predecessor = newPredecessor;
 						}
 						
 						//TODO remove
@@ -268,11 +286,26 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			case Message.NODE_JOIN_NOTIFY:
 				NotifyJoinMessage njm = (NotifyJoinMessage)message;
+				FingerEntry newFinger;
 				
 				//Check if this node can use the newly added node
 				//for the finger table
-				updateFingerTableEntry(new FingerEntry(njm.getHash(),njm.getNetworkAddress()));
-					
+				newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
+				updateFingerTableEntry(newFinger);
+				
+				//Send advertisement if we probably are a finger of the joining node
+				if(identity.getNetworkAddress().equals("0")) {
+					System.out.println("BLA");
+				}
+				
+				int log2 = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
+				log2 = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
+				
+				if(NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID())) < NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()))) {
+					//Send advertisement
+					sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()));
+				}
+				
 				//Check finger table
 				//checkFingerTable();
 				
@@ -334,7 +367,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		synchronized(finger) {
 			finger.put(identity, identity);
 			finger.put(successor, successor);
-			
+			finger.put(predecessor, predecessor);
+
 			//Find predecessor of a node
 			result = finger.lowerKey(hash);
 			if(result == null) {
@@ -345,6 +379,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 			finger.remove(successor);
+			finger.remove(predecessor);
 		}
 		
 		return result;
@@ -358,6 +393,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Add identity and successor to the finger-table - IMPORTANT: remove them before return
 			finger.put(identity, identity);
 			finger.put(successor, successor);
+			finger.put(predecessor, predecessor);
 
 			//Get successor of us
 			result = finger.higherKey(hash);
@@ -369,6 +405,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 			finger.remove(successor);
+			finger.remove(predecessor);
 		}
 		
 		return result;
@@ -396,7 +433,20 @@ public class Node extends Thread implements LookupServiceInterface {
 		synchronized(finger) {
 			if(newFinger.equals(identity)) return;
 			if(newFinger.equals(successor)) return;
+			if(newFinger.equals(predecessor)) return;
 			if(finger.containsKey(newFinger)) return;
+		}
+		
+		
+		if(getPredecessor(newFinger.getNodeID()).getNodeID().equals(predecessor.getNodeID())) {
+			FingerEntry oldPredecessor = predecessor;
+
+			//It is a better predecessor
+			synchronized (finger) {
+				predecessor = newFinger;
+			}
+
+			updateFingerTableEntry(oldPredecessor);
 		}
 		
 		//1 - Rotate hash to the "origin"
@@ -533,6 +583,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			newMap = new TreeMap<FingerEntry,FingerEntry>(finger);
 			newMap.put(successor, successor);
 			newMap.put(identity,identity);
+			newMap.put(predecessor,predecessor);
 		}
 		
 		return newMap;
@@ -578,6 +629,15 @@ public class Node extends Thread implements LookupServiceInterface {
 	//TODO remove debug function
 	public FingerEntry getStateBlockJoinFor() {
 		return blockJoinFor;
+	}
+	
+	private void triggerUnblockJoinBlock() {
+		//Unblock node if new successor did not answer
+		synchronized(this) {
+			if(blockJoinFor != null) {
+				blockJoinFor = null;
+			}
+		}
 	}
 	
 }
