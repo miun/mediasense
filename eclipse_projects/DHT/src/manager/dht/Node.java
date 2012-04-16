@@ -185,6 +185,13 @@ public class Node extends Thread implements LookupServiceInterface {
 					//Notify everybody of the new node
 					sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
 					
+					//if I am still my own predecessor, make the new node the predecessor (startup)
+					synchronized (finger) {
+						if(identity.equals(predecessor)) {
+							predecessor = new FingerEntry(jam.getJoinKey(), jam.getFromIp());
+						}
+					}
+					
 					//Set successor to new node and update finger-table with old successor
 					FingerEntry old_successor;
 					
@@ -294,10 +301,6 @@ public class Node extends Thread implements LookupServiceInterface {
 				updateFingerTableEntry(newFinger);
 				
 				//Send advertisement if we probably are a finger of the joining node
-				if(identity.getNetworkAddress().equals("0")) {
-					System.out.println("BLA");
-				}
-				
 				int log2 = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
 				log2 = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
 				
