@@ -1,8 +1,0 @@
-set yrange [0:1]
-set y2range [0:1500000]
-
-set y2tics border
-
-plot [0:100] "./keepalive.dat" using 2:3 with lines, "./nokeepalive.dat" using 2:3 with lines, "./keepalive.dat" using 2:9 axes x1y2 with lines
-
-
