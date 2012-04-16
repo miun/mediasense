@@ -66,6 +66,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 	private JPanel nodeControl;
 	private JLabel nodeInfo;
 	private JSpinner nodeDelay;
+	private JButton nodeDeleteButton;
 	
 	//EAST controlPanel
 	private JPanel controlPanel;
@@ -145,6 +146,10 @@ KeepAliveListener, ActionListener, ChangeListener {
 		this.nodeDelay = new JSpinner();
 		nodeDelay.addChangeListener(this);
 		nodeControl.add(nodeDelay);
+		
+		this.nodeDeleteButton = new JButton("delete");
+		nodeDeleteButton.addActionListener(this);
+		nodeControl.add(nodeDeleteButton);
 		
 		//EAST controlPanel
 		this.controlPanel = new JPanel();
@@ -361,6 +366,10 @@ KeepAliveListener, ActionListener, ChangeListener {
 			paintingSurface.add(changedFingersSinceLastKeepalive);
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
+		} else if (e.getSource().equals(nodeDeleteButton)) {
+			if(activeNode != null) {
+				manager.rempveNode(activeNode.getCommunication().getLocalIp());
+			}
 		}
 	}
 

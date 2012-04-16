@@ -79,7 +79,10 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				
 			}
 			else if(cmd.cmd.toLowerCase().equals("node_del")) {
-				
+				if(cmd.param == null) throw new InvalidParamAmountException();
+				for(String address : cmd.param) {
+					manager.rempveNode(address);
+				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("g")) {
 				if(cmd.param == null) { 

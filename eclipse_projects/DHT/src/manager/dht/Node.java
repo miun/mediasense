@@ -153,13 +153,13 @@ public class Node extends Thread implements LookupServiceInterface {
 						}
 						
 						//Send
-						communication.sendMessage(answer);
+						sendMessage(answer);
 					}
 				}
 				else {
 					//Forward to the best fitting predecessor
 					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
-					communication.sendMessage(answer);
+					sendMessage(answer);
 				}
 				break;
 			case Message.JOIN_ACK:
@@ -217,7 +217,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						connected = true;
 
 						//Inform the node that we got the message
-						communication.sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
+						sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
 						
 						//Check
 						updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
@@ -293,7 +293,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Connect DHT node
 		while(connected == false) {
 			//Try to connect to DHT
-			communication.sendMessage(new JoinMessage(identity.getNetworkAddress(),bootstrapAddress,identity.getNetworkAddress(),identity.getNodeID()));
+			sendMessage(new JoinMessage(identity.getNetworkAddress(),bootstrapAddress,identity.getNetworkAddress(),identity.getNodeID()));
 			
 			try {
 				//Wait for connection and try again
@@ -460,6 +460,14 @@ public class Node extends Thread implements LookupServiceInterface {
 	private void checkFingerTable() {
 	}
 	
+	private void sendMessage(Message message) {
+		try {
+			communication.sendMessage(message);
+		} catch(DestinationNotReachableException e) {
+			//TODO handle this for unicast
+		}
+	}
+	
 	private void sendBroadcast(BroadcastMessage bcast_msg, NodeID startKey,NodeID endKey) {
 		FingerEntry suc,next;
 		String from,to;
@@ -497,7 +505,11 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Send message
 				to = suc.getNetworkAddress();
 				new_bcast_msg = bcast_msg.cloneWithNewAddresses(from, to,newStartKey,newEndKey);
-				communication.sendMessage(new_bcast_msg);
+				try {
+					communication.sendMessage(new_bcast_msg);
+				} catch(DestinationNotReachableException e) {
+					//TODO handle this for Broadcast!
+				}
 			}
 
 			//Move to next range
@@ -552,7 +564,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			@Override
 			public void run() {
 				//Trigger keep alive
-				//triggerKeepAliveTimer();
+				triggerKeepAliveTimer();
 			}
 		};
 		timer.schedule(keepAlive, time);

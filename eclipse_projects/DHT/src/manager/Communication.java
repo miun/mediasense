@@ -3,6 +3,7 @@ package manager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
@@ -50,7 +51,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 * send a message over the network
 	 * @param m message to send
 	 */
-	public void sendMessage(Message m) {
+	public void sendMessage(Message m) throws DestinationNotReachableException {
 		//Foward to network
 		network.sendMessage(m,messageDelay);
 	}

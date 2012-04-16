@@ -1,68 +1,68 @@
 # Comment
-statistic /Users/florianrueter/Desktop/statisticnka.dat
+statistic /home/florian/Desktop/stat/keepalive.dat
 
-msg_delay 100
+msg_delay 300
 
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
-wait 5000
+
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0
 node_add 0,0,0,0,0,0,0,0,0,0

@@ -97,6 +97,11 @@ public final class Manager {
 		return newNodeCounter;
 	}
 	
+	public void rempveNode(String networkAddress) {
+		//Forward to network
+		network.removeNode(networkAddress);
+	}
+	
 	public boolean setMessageDelay(int delay,String networkAddress) {
 		//Forward to network
 		return network.setMessageDelay(delay, networkAddress);

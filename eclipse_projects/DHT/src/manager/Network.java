@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
 
+import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
@@ -58,7 +59,7 @@ public class Network {
 		}
 	}
 	
-	public void sendMessage(Message m, int senderDelay) {
+	public void sendMessage(Message m, int senderDelay) throws DestinationNotReachableException{
 		Communication receiver = null;
 		
 		synchronized(clients) {
@@ -71,6 +72,7 @@ public class Network {
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
+			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}
 
