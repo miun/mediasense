@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import manager.dht.FingerEntry;
 import manager.dht.Node;
@@ -149,6 +148,27 @@ public class Network {
 				return true;
 			}
 			else return false;
+		}
+	}
+	
+	/**
+	 * Returns the messagedelay for a specific node or the network
+	 * @param networkAddress if null the delay from the network is returned, if not null the 
+	 * the delay from the client with the given address will be returned or -1 if there is no
+	 * such client
+	 * @return the delay from the network or a specific client. 
+	 */
+	public int getMessageDelay(String networkAddress) {
+		if(networkAddress == null) {
+			//return the delay of the network
+			return msg_delay;
+		} else {
+			Communication com = clients.get(networkAddress);
+			if(com != null) {
+				return com.getMessageDelay();
+			} else {
+				return -1;
+			}
 		}
 	}
 	

@@ -34,7 +34,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Keep alive
 	private static final int KEEP_ALIVE_PERIOD = 10000;
 	private static final int KEEP_ALIVE_RANDOM_PERIOD = 10000;
-	Timer keepAliveTimer = null;
+	Timer timer = null;
+	TimerTask keepAlive;
 	
 	//Connection state
 	private boolean connected = false;
@@ -50,6 +51,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Generate hash from the local network address
 		//TODO ask stefan if inclusion of port address is reasonable
 		byte[] hash = SHA1Generator.SHA1(communication.getLocalIp());
+		
+		this.timer = new Timer();
 
 		//Set identity
 		setIdentity(hash);
@@ -542,16 +545,17 @@ public class Node extends Thread implements LookupServiceInterface {
 		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
 		
 		//Cancel and reschedule timer
-		if(keepAliveTimer != null) keepAliveTimer.cancel();
-		keepAliveTimer = new Timer();
-		keepAliveTimer.schedule(new TimerTask() {
+		//TODO create a new Timer is not good!!!!!!!!! It every time creates a new Thread! One Timer thread should be enough!
+		if(keepAlive != null) keepAlive.cancel();
+		keepAlive = new TimerTask() {
 
 			@Override
 			public void run() {
 				//Trigger keep alive
 				//triggerKeepAliveTimer();
 			}
-		}, time);
+		};
+		timer.schedule(keepAlive, time);
 	}
 	
 	//TODO remove debug function

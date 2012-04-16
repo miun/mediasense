@@ -76,6 +76,10 @@ public class NodePanel extends JPanel implements MouseListener {
 		return myNumber;
 	}
 	
+	public Communication getCommunication() {
+		return com;
+	}
+	
 	@Override
 	public void mouseReleased(MouseEvent e) {
 	}

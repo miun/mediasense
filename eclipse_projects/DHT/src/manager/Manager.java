@@ -102,6 +102,11 @@ public final class Manager {
 		return network.setMessageDelay(delay, networkAddress);
 	}
 	
+	public int getMessageDelay(String networkAddress) {
+		//Forward to network
+		return network.getMessageDelay(networkAddress);
+	}
+	
 	public String showNodeInfo() {
 		//Forward to network
 		return network.showNodeInfo();

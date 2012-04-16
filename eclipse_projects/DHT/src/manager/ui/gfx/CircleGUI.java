@@ -18,6 +18,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import manager.Communication;
 import manager.Manager;
@@ -38,7 +41,7 @@ import manager.listener.NodeListener;
 @SuppressWarnings("serial")
 public class CircleGUI extends JFrame 
 implements NodeListener, WindowListener, FingerChangeListener, 
-KeepAliveListener, ActionListener {
+KeepAliveListener, ActionListener, ChangeListener {
 	public static final int BORDER = 30;
 	
 	private Manager manager;
@@ -59,10 +62,16 @@ KeepAliveListener, ActionListener {
 	
 	private NodePanel activeNode;
 	
-	//EAST control Panel
+	//WEST node controlPanel
+	private JPanel nodeControl;
+	private JLabel nodeInfo;
+	private JSpinner nodeDelay;
+	
+	//EAST controlPanel
 	private JPanel controlPanel;
 	private JButton addButton;
 	private JButton deleteFinger;
+	private JSpinner networkDelay;
 	
 	private JCheckBox clearOnKeepalive;
 	
@@ -74,7 +83,7 @@ KeepAliveListener, ActionListener {
 		//initiate manager object
 		this.manager = manager;
 		
-		this.setLayout(new BorderLayout());
+		this.setLayout(new BorderLayout(20,20));
 		
 		if(circleRadius <= 0) circleRadius = 400;
 		this.circleRadius = circleRadius;
@@ -124,6 +133,19 @@ KeepAliveListener, ActionListener {
 		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
 		paintingSurface.add(changedFingersSinceLastKeepalive);
 		
+		//WEST node controlPanel
+		this.nodeControl = new JPanel();
+		nodeControl.setLayout(new BoxLayout(nodeControl, BoxLayout.Y_AXIS));
+		nodeControl.setEnabled(false);
+		getContentPane().add(nodeControl,BorderLayout.WEST);
+		
+		this.nodeInfo = new JLabel("Selected Node: -");
+		nodeControl.add(nodeInfo);
+		
+		this.nodeDelay = new JSpinner();
+		nodeDelay.addChangeListener(this);
+		nodeControl.add(nodeDelay);
+		
 		//EAST controlPanel
 		this.controlPanel = new JPanel();
 		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
@@ -140,6 +162,11 @@ KeepAliveListener, ActionListener {
 		deleteFinger.addActionListener(this);
 		controlPanel.add(deleteFinger);
 		
+		this.networkDelay = new JSpinner();
+		networkDelay.addChangeListener(this);
+		networkDelay.setValue(manager.getMessageDelay(null));
+		controlPanel.add(networkDelay);
+		
 		//Show the Frame
 		this.pack();
 		
@@ -150,15 +177,9 @@ KeepAliveListener, ActionListener {
 		NodeID nodeID = com.getNodeID();
 		//Get Points on the circles
 		Point pNode = circleForNodes.getPosOnCircle(nodeID,0);
-		//Point pIden = circleForIds.getPosOnCircle(nodeID,0);
 		
 		//Create the objects
 		NodePanel node = new NodePanel(com,pNode, new CirclePanel(circleRadius, BORDER, null, null),this);
-		
-		//NumberPanel id = new NumberPanel(com.getLocalIp(),pIden);
-		
-		
-		//circleForIds.add(id);
 		
 		nodeObjects.put(com.getLocalIp(), node);
 		
@@ -200,6 +221,9 @@ KeepAliveListener, ActionListener {
 			//If that node was already the active node, make it inactive
 			if(activeNode.equals(node)) {
 				activeNode = null;
+				//make the node control panel inactive
+				nodeInfo.setText("active node: -");
+				nodeControl.setEnabled(false);
 				return;
 			} else {
 				//Set the new active node
@@ -209,6 +233,10 @@ KeepAliveListener, ActionListener {
 				hideFingers(oldActive);
 			}
 		}
+		//update the node control panel
+		nodeInfo.setText("active Node: "+activeNode.getCommunication().getLocalIp());
+		nodeDelay.setValue(manager.getMessageDelay(activeNode.getCommunication().getLocalIp()));
+		nodeControl.setEnabled(true);
 	}
 	//----------------------------------------//
 	
@@ -334,6 +362,28 @@ KeepAliveListener, ActionListener {
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
 		}
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		//Check which object triggered the event
+		if(e.getSource().equals(nodeDelay)) {
+			//The delay for one node should be changed
+			//do nothing if no node is active (should not happen)
+			if(activeNode == null) return;
+			
+			//Get the value of the JSpinner
+			int value = (Integer) ((JSpinner) e.getSource()).getValue();
+			//Set the delay
+			manager.setMessageDelay(value,activeNode.getCommunication().getLocalIp());
+		}else if(e.getSource().equals(networkDelay)) {
+			//The delay for the whole network should be changed
+			//Get the value of the JSpinner
+			int value = (Integer) ((JSpinner) e.getSource()).getValue();
+			//Set the delay
+			manager.setMessageDelay(value,null);
+		}
+		
 	}
 	
 }
