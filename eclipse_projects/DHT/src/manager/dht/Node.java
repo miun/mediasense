@@ -618,11 +618,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			@Override
 			public void run() {
 				//Trigger keep alive
-<<<<<<< HEAD
-//				triggerKeepAliveTimer();
-=======
 				//triggerKeepAliveTimer();
->>>>>>> 53f71e5d39532b51cce1f9b9f605b7beac3e6436
 			}
 		};
 		timer.schedule(keepAlive, time);
