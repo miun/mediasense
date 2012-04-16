@@ -27,6 +27,7 @@ public class Network {
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
+	private Set<NodeMessageListener> nodeMessageListenerAll;
 	private Set<FingerChangeListener> fingerChangeListener;
 	private Set<NodeListener> nodeListener;
 	private Set<KeepAliveListener> keepAliveListener;
@@ -42,6 +43,7 @@ public class Network {
 		this.timer = new Timer();
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
+		nodeMessageListenerAll = new HashSet<NodeMessageListener>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
 		nodeListener = new HashSet<NodeListener>();
 		keepAliveListener = new HashSet<KeepAliveListener>();
@@ -68,7 +70,7 @@ public class Network {
 		
 		//Send the message to the receiver
 		if(receiver != null) {
-			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+receiver.getMessageDelay()+senderDelay);
+			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
@@ -110,24 +112,43 @@ public class Network {
 		}
 	}
 	
-	public void addNodeMessageListener(int msgType,NodeMessageListener listener) {
+	public void addNodeMessageListener(Integer msgType,NodeMessageListener listener) {
 		synchronized(nodeMessageListener) {
-			//Check if list exists, otherwise create it
-			if(!nodeMessageListener.containsKey(msgType)) {
-				nodeMessageListener.put(msgType,new HashSet<NodeMessageListener>());
+			if(msgType != null) {
+				//Don't add the listener if it listens to all messages
+				if(!nodeMessageListenerAll.contains(listener)) {
+					//Check if list exists, otherwise create it
+					if(!nodeMessageListener.containsKey(msgType)) {
+						nodeMessageListener.put(msgType,new HashSet<NodeMessageListener>());
+					}
+					
+					//Get listener list
+					Set<NodeMessageListener> nml = nodeMessageListener.get(msgType);
+					nml.add(listener);
+				}
 			}
-			
-			//Get listener list
-			Set<NodeMessageListener> nml = nodeMessageListener.get(msgType);
-			nml.add(listener);
+			else {
+				//msgType == null means listen to all messages
+				nodeMessageListenerAll.add(listener);
+				
+				for(Set<NodeMessageListener> s: nodeMessageListener.values()) {
+					//Remove listener
+					s.remove(listener);
+				}
+			}
 		}
 	}
 	
-	public void removeNodeMessageListener(int msgType,NodeMessageListener listener) {
+	public void removeNodeMessageListener(Integer msgType,NodeMessageListener listener) {
 		synchronized(nodeMessageListener) {
-			Set<NodeMessageListener> listeners = nodeMessageListener.get(msgType);
-			if(listeners!=null) {
-				listeners.remove(listener);
+			if(msgType != null) {
+				Set<NodeMessageListener> listeners = nodeMessageListener.get(msgType);
+				if(listeners!=null) {
+					listeners.remove(listener);
+				}
+			}
+			else {
+				nodeMessageListenerAll.remove(listener);
 			}
 		}
 	}

@@ -1,0 +1,42 @@
+Column - Data
+
+0 Timestamp
+1 Seconds
+2 Health
+3 Connected
+4 ConnectedD
+5 fingerChanges
+6 fingerChangesD
+7 txData
+8 txDataD
+
+Absolut
+-----
+9 Join
+10 Join_Response
+11 Keepalive
+12 Duplicate
+13 Broadcast
+14 JoinNotify
+15 LeaveNotify
+16 FindPredecessor
+17 FindPredecessorResponse
+18 JoinAck
+19 JoinBusy
+
+Delta
+-----
+20 Join
+21 Join_Response
+22 Keepalive
+23 Duplicate
+24 Broadcast
+25 JoinNotify
+26 LeaveNotify
+27 FindPredecessor
+28 FindPredecessorResponse
+29 JoinAck
+30 JoinBusy
+
+31 AllMsg
+32 AllMsgDelta

@@ -1,5 +1,5 @@
 # Comment
-statistic /home/florian/Desktop/stat/nokeepalive.dat
+statistic ../../stat/50nodes5000ms/nokeepalive.dat
 
 msg_delay 300
 

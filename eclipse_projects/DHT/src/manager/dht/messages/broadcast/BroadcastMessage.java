@@ -8,13 +8,9 @@ public abstract class BroadcastMessage extends Message {
 	//Definition of the region the broadcast is responsible for
 	private NodeID startKey;
 	private NodeID endKey;
-
-	//Type of the delivered message
-	private int internalType;
 	
 	public BroadcastMessage(String from, String to,NodeID startKey,NodeID endKey,int internalType) {
 		super(from,to,Message.BROADCAST);
-		this.internalType = internalType;
 		this.startKey = startKey;
 		this.endKey = endKey;
 	}
@@ -36,4 +32,9 @@ public abstract class BroadcastMessage extends Message {
 	
 	//Clone with new addresses to easily forward messages
 	public abstract BroadcastMessage cloneWithNewAddresses(String from,String to,NodeID startKey,NodeID endKey);
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE;
+	}
 }

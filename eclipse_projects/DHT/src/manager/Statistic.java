@@ -34,6 +34,8 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	
 	//Statistic data
 	long secondCounter = 0;
+	long txPkt = 0;
+	long txPktD = 0;
 	long txData = 0;
 	long txDataD = 0;
 	long fingerChanges = 0;
@@ -65,6 +67,9 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 				break;
 			}
 			
+			//Write column headers
+			fileBufferedWriter.write("#TimeStamp\tSec\tHth\tCon\tConD\tFin\tFinD\tData\tDataD\tPkt\tPktD\n");
+			
 		}
 		catch (IOException e) {
 			//TODO what shall happen here
@@ -85,15 +90,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		
 		//Register listener
 		manager.addFingerChangeListener(this);
-		manager.addNodeMessageListener(Message.JOIN, this);
-		manager.addNodeMessageListener(Message.JOIN_RESPONSE, this);
-		manager.addNodeMessageListener(Message.JOIN_ACK, this);
-		manager.addNodeMessageListener(Message.JOIN_BUSY, this);
-		manager.addNodeMessageListener(Message.DUPLICATE_NODE_ID, this);
-		manager.addNodeMessageListener(Message.FIND_PREDECESSOR, this);
-		manager.addNodeMessageListener(Message.FIND_PREDECESSOR_RESPONSE, this);
-		manager.addNodeMessageListener(Message.NODE_JOIN_NOTIFY, this);
-		manager.addNodeMessageListener(Message.NODE_LEAVE_NOTIFY, this);
+		manager.addNodeMessageListener(null, this); //Listen to ALL nodes
 		
 		System.out.println("Statistic started for " + filename);
 	}
@@ -138,29 +135,42 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	
 	@Override
 	public void OnNodeMessage(Date timeStamp, Message msg) {
-		Message handleMessage = msg;		
+		Message handleMessage = msg;
+		boolean broadcast = false;
+		
 		if(msg.getType() == Message.BROADCAST) {
 			//handle broadcast and inner message
-			countMessage(msg);
+			countMessage(msg,false);
 			handleMessage = ((BroadcastMessage)msg).extractMessage();
+			broadcast = true;
 		}
 		
-		countMessage(handleMessage);
+		countMessage(handleMessage,broadcast);
 	}
 	
-	private void countMessage(Message msg) {
+	private void countMessage(Message msg,boolean broadcast) {
 		Long count;
-		//Increment packet count
+
 		synchronized (this) {
+			//Increment packet count
 			count = txPktDetail.get(msg.getType());
-			if(count == null) count = 0L;
-			txPktDetail.put(msg.getType(), count + 1);
+			if(count != null) txPktDetail.put(msg.getType(), count + 1);
 
 			count = txPktDetailD.get(msg.getType());
-			if(count == null) count = 0L;
-			txPktDetailD.put(msg.getType(), count + 1);
+			if(count != null) txPktDetailD.put(msg.getType(), count + 1);
 			
-			
+			//Count all messages (do not count broadcasts because they are counted as normal messages
+			if(msg.getType() != Message.BROADCAST) {
+				txPkt += 1;
+				txPktD += 1;
+			}
+
+			//Count amount of sent data
+			//Don't count bcast
+			if(!broadcast) {			
+				txData += msg.getDataAmount();
+				txDataD += msg.getDataAmount();
+			}
 		}
 		
 		//Trigger connect event
@@ -214,7 +224,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	private void writeDataSet() {
 		//Write one data set to file
 		try {
-			//TODO add other data
+			//Write statistic
 			synchronized(this) {
 				fileBufferedWriter.write(
 						new SimpleDateFormat("HH:mm:ss.SSS").format(new Date()) + "\t" +
@@ -225,7 +235,9 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 						fingerChanges + "\t" +
 						fingerChangesD + "\t" +
 						txData + "\t" + 
-						txDataD + "\t"
+						txDataD + "\t" +
+						txPkt + "\t" + 
+						txPktD + "\t"
 				);
 				
 				//Write packet data
@@ -238,12 +250,13 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 					fileBufferedWriter.write(l.toString() + "\t");
 				}
 				
-				//Write line end
+				//Write newline
 				fileBufferedWriter.write("\n");
 			}
 			
 			//Reset the delta data
 			txDataD = 0;
+			txPktD = 0;
 			fingerChangesD = 0;
 			connectedD = 0;
 			resetDeltaMap();
@@ -256,7 +269,9 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 	}
 	
 	private void resetDeltaMap() {
-		txPktDetailD.put(Message.JOIN,0L);
+		//Add the messages you like!!
+		
+		/*txPktDetailD.put(Message.JOIN,0L);
 		txPktDetailD.put(Message.BROADCAST,0L);
 		txPktDetailD.put(Message.JOIN_RESPONSE,0L);
 		txPktDetailD.put(Message.JOIN_ACK,0L);
@@ -267,6 +282,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		txPktDetailD.put(Message.NODE_JOIN_NOTIFY,0L);
 		txPktDetailD.put(Message.NODE_LEAVE_NOTIFY,0L);
 		txPktDetailD.put(Message.KEEPALIVE,0L);
+		*/
 	}
 }
  

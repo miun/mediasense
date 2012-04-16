@@ -21,4 +21,9 @@ public class DuplicateNodeIdMessage extends Message{
 	public NodeID getDuplicateKey() {
 		return duplicateKey;
 	}
+	
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE;
+	}
 }

@@ -19,4 +19,9 @@ public class NotifyLeaveBroadcastMessage extends BroadcastMessage {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount();
+	}
 }

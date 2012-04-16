@@ -20,4 +20,9 @@ public class FindPredecessorResponseMessage extends Message {
 	public NodeID getHash() {
 		return hash;
 	}
+	
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + 4 + NodeID.ADDRESS_SIZE;
+	}
 }

@@ -10,4 +10,9 @@ public class KeepAliveResponse extends Message {
 	public String toString() {
 		return super.toString("KEEP-ALIVE-RESPONSE");
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount();
+	}
 }

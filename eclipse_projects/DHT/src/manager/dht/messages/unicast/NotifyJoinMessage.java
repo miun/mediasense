@@ -2,7 +2,6 @@ package manager.dht.messages.unicast;
 
 import manager.Message;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 
 public class NotifyJoinMessage extends Message {
 	private String networkAddress;
@@ -25,5 +24,10 @@ public class NotifyJoinMessage extends Message {
 	public String toString() {
 		//Return message info
 		return super.toString("MSG-JOIN-NOTIFY") + " hash: " + hash.toString() + " - Adr: (" + networkAddress + ")"; 
+	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE + 4;
 	}
 }

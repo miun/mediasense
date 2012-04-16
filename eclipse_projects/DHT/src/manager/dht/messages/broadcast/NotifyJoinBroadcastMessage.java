@@ -23,4 +23,9 @@ public class NotifyJoinBroadcastMessage extends BroadcastMessage {
 	public BroadcastMessage cloneWithNewAddresses(String from, String to,NodeID startKey,NodeID endKey) {
 		return new NotifyJoinBroadcastMessage(from,to,startKey,endKey,networkAddress,hash);
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE + 4;
+	}
 }

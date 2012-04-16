@@ -127,7 +127,7 @@ public final class Manager {
 		return network.showCircle(startAddress);
 	}
 	
-	public void addNodeMessageListener(int msgType, NodeMessageListener listener) {
+	public void addNodeMessageListener(Integer msgType, NodeMessageListener listener) {
 		//Forward to network
 		network.addNodeMessageListener(msgType, listener);
 	}

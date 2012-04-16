@@ -24,4 +24,9 @@ public class KeepAliveMessage extends Message {
 	public NodeID getAdvertisedID() {
 		return advertisedID;
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE + 4;
+	}
 }
