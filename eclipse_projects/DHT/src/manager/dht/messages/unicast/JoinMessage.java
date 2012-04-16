@@ -2,7 +2,6 @@ package manager.dht.messages.unicast;
 
 import manager.Message;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 
 public class JoinMessage extends Message {
 	private NodeID key;
@@ -25,5 +24,10 @@ public class JoinMessage extends Message {
 	
 	public String getOriginatorAddress() {
 		return originatorAddress;
+	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE + 4;
 	}
 }

@@ -69,4 +69,9 @@ public abstract class Message {
 		//Return message info
 		return "MSG: type: " + msgType + " - from: (" + fromIp + ") - to: (" + toIp + ")"; 
 	}
+	
+	public int getDataAmount() {
+		//2 x ip-address + 1 type
+		return 4 + 4 + 1;
+	}
 }

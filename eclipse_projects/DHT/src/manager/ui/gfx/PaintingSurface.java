@@ -1,4 +1,4 @@
-package manager.ui;
+package manager.ui.gfx;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;

@@ -2,6 +2,7 @@ package manager;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TimerTask;
 
@@ -12,11 +13,13 @@ public class MessageForwarder extends TimerTask {
 	private Communication receiver;
 	private Message message;
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
+	private Set<NodeMessageListener> nodeMessageListenerAll;
 	
-	public MessageForwarder(Communication receiver, Message message, HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener) {
+	public MessageForwarder(Communication receiver, Message message, HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener,Set<NodeMessageListener> nodeMessageListenerAll) {
 		this.receiver = receiver;
 		this.message = message;
 		this.nodeMessageListener =  nodeMessageListener;
+		this.nodeMessageListenerAll = nodeMessageListenerAll;
 	}
 	
 	@Override
@@ -29,6 +32,11 @@ public class MessageForwarder extends TimerTask {
 		if (messageType == Message.BROADCAST) {
 			//Extract the broadcast message
 			messageType = ((BroadcastMessage)message).extractMessage().getType();
+		}
+		
+		//Inform nodes that listen to all messages
+		for(NodeMessageListener nml: nodeMessageListenerAll) {
+			nml.OnNodeMessage(new Date(),message);
 		}
 		
 		//Inform all NodeMessageListeners listening to that type of message

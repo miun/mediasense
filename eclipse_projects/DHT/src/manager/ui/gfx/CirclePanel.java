@@ -1,9 +1,8 @@
-package manager.ui;
+package manager.ui.gfx;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.math.BigInteger;
 
@@ -14,16 +13,13 @@ import manager.dht.NodeID;
 @SuppressWarnings("serial")
 public class CirclePanel extends JPanel {
 	public static final byte[] MAXNUMBER = {-1,-1,-1,-1};
+	//That defines how far two nodes can be away from each other
+	private static double rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);;
 	
 	private int circleRadius;
 	private int border;
 	Color color;
 	Color scale;
-	
-	private Graphics2D g2D;
-	
-	//That defines how far two nodes can be away from each other
-	private double rangeOnCircle;
 	
 	public CirclePanel(int circleRadius, int border, Color circle, Color scale) {
 		//init
@@ -31,9 +27,6 @@ public class CirclePanel extends JPanel {
 		this.border = border;
 		this.color = circle;
 		this.scale = scale;
-		
-		//Calculation stuff
-		rangeOnCircle = 2*Math.PI/bAtoLong(MAXNUMBER);
 		
 		//Gui stuff
 		this.setLayout(null);
@@ -46,7 +39,6 @@ public class CirclePanel extends JPanel {
 	@Override
 	protected void paintComponent( Graphics g ) {
 		super.paintComponent(g);
-		this.g2D = (Graphics2D) g.create();
 		Graphics gLocal = g.create();
 		//color = null means dont draw additional stuff
 		if(color != null) {		
@@ -65,12 +57,12 @@ public class CirclePanel extends JPanel {
 			
 			for(int i = 0; i < 16; i++) {
 				//get point on the circle
-				Point p = getPosOnCircle(pos_current);
+				Point p = getPosOnCircle(pos_current,-15);
 				//get the caption
 				String posText = Integer.toString(i, 16);
 				//draw the string
 				int h = gLocal.getFontMetrics().getHeight()/2;
-				gLocal.drawString(posText, p.x, p.y+h);
+				gLocal.drawString(posText, p.x+border/2, p.y+h+border/2);
 				
 				//Next position
 				pos_current = pos_current.add(pos_1);
@@ -79,7 +71,8 @@ public class CirclePanel extends JPanel {
 	
 	}
 	
-	public Point getPosOnCircle(NodeID nodeID) {
+	public Point getPosOnCircle(NodeID nodeID, int extraRadius) {
+		int radius = circleRadius+extraRadius;
 		//Get the most valuable bytes of the hash
 		byte[] hash = nodeID.getID();
 		byte[] node = new byte[MAXNUMBER.length];
@@ -93,8 +86,8 @@ public class CirclePanel extends JPanel {
 		double cos = -Math.cos(longNode*rangeOnCircle);
 		double sin = Math.sin(longNode*rangeOnCircle);
 		
-		int x = new Double(sin*circleRadius).intValue()+border+circleRadius;
-		int y = new Double(cos*circleRadius).intValue()+border+circleRadius;
+		int x = new Double(sin*radius).intValue()+border+radius;
+		int y = new Double(cos*radius).intValue()+border+radius;
 		return new Point(x, y);
 	}
 	
@@ -109,68 +102,4 @@ public class CirclePanel extends JPanel {
 		}
 		return result;
 	}
-	/*
-	public void removeNode(Communication com) {
-		//Remove from the HashMap and from the panel
-		NodePanel toRemove = nodes.remove(com.getNodeID());
-		if(toRemove != null)
-			remove(toRemove.getNumberPanel());
-			remove(toRemove);
-		//Repaint the P
-		this.repaint();
-	}
-	
-	
-	
-	
-	
-	public void OnFingerChange(int changeType, NodeID node, NodeID finger) {
-		NodePanel np = nodes.get(node);
-		if(np==null) return;
-		
-		//Get the relevant points on the circle
-		Point pf = getPosOnCircle(finger, circleRadius);
-		Point pn = getPosOnCircle(node, circleRadius);
-		
-		Arrow a = null;
-		if(changeType == FingerChangeListener.FINGER_CHANGE_ADD) {
-						
-			
-			int x = (int) (pf.getX());
-			int y = (int) (pf.getY());
-						
-			np.addFinger(finger, x, y);
-			
-			a = new Arrow(pn, pf, Arrow.ADD);
-		}else if(changeType == FingerChangeListener.FINGER_CHANGE_REMOVE) {		
-			np.removeFinger(finger);
-			a = new Arrow(pn, pf, Arrow.REMOVE);
-		}
-		//Add KeepAlive Arrow
-		synchronized (changedFingersSinceLastKeepAlive) {
-			changedFingersSinceLastKeepAlive.add(a);
-		}
-		//Add also to this
-		this.add(a);
-		this.validate();
-		this.repaint();
-	}
-	
-	public void setActiveNode(NodePanel np) {
-		activeNode = np;
-		repaint();
-	}
-	
-	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
-		synchronized (changedFingersSinceLastKeepAlive) {
-			for(Arrow a: changedFingersSinceLastKeepAlive) {
-				this.remove(a);
-			}
-			changedFingersSinceLastKeepAlive.clear();
-		}
-		lastKeepAliveInitiation = "This changed since last KA on:" + date + key + " {" + networkAddress + "}";
-		this.validate();
-		this.repaint();
-	}*/
-		
 }

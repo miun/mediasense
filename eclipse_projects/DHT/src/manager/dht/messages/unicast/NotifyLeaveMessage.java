@@ -33,4 +33,9 @@ public class NotifyLeaveMessage extends Message {
 	public NodeID getHash() {
 		return hash;
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE + 2 * 4;
+	}
 }

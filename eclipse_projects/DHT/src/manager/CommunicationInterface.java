@@ -1,5 +1,6 @@
 package manager;
 
+import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 
@@ -11,12 +12,12 @@ public interface CommunicationInterface {
 	public final static int SCTP = 4;	
 	public final static int TCP_PROXY = 5;
 	
-	public void sendMessage(Message message);
+	public void sendMessage(Message message) throws DestinationNotReachableException;
 	
 	public String getLocalIp();
 	
-	/*public void shutdown();
-	*/
+	public void shutdown();
+	
 	
 	//TODO remove DEBUG stuff
 	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger);

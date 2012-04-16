@@ -2,7 +2,6 @@ package manager.dht.messages.unicast;
 
 import manager.Message;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 
 public class JoinResponseMessage extends Message {
 	//Send the own key to prevent exploits and duplicate entries
@@ -40,5 +39,10 @@ public class JoinResponseMessage extends Message {
 	
 	public NodeID getPredecessor() {
 		return predecessor;
+	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + 3 * NodeID.ADDRESS_SIZE + 4;
 	}
 }

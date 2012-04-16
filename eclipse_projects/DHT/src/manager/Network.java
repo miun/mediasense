@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
 
+import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
@@ -26,6 +27,7 @@ public class Network {
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
+	private Set<NodeMessageListener> nodeMessageListenerAll;
 	private Set<FingerChangeListener> fingerChangeListener;
 	private Set<NodeListener> nodeListener;
 	private Set<KeepAliveListener> keepAliveListener;
@@ -41,6 +43,7 @@ public class Network {
 		this.timer = new Timer();
 		
 		nodeMessageListener = new HashMap<Integer, Set<NodeMessageListener>>();
+		nodeMessageListenerAll = new HashSet<NodeMessageListener>();
 		fingerChangeListener = new HashSet<FingerChangeListener>();
 		nodeListener = new HashSet<NodeListener>();
 		keepAliveListener = new HashSet<KeepAliveListener>();
@@ -53,57 +56,100 @@ public class Network {
 	}
 	
 	public Collection<Communication> getClients() {
-		return this.clients.values();
+		synchronized(clients) {
+			return this.clients.values();
+		}
 	}
 	
-	public void sendMessage(Message m, int senderDelay) {
-		
+	public void sendMessage(Message m, int senderDelay) throws DestinationNotReachableException{
 		Communication receiver = null;
-		receiver = clients.get(m.getToIp());
+		
+		synchronized(clients) {
+			receiver = clients.get(m.getToIp());
+		}
 		
 		//Send the message to the receiver
 		if(receiver != null) {
-			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener), msg_delay+receiver.getMessageDelay()+senderDelay);
+			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
 			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
+			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}
 
 	public boolean addNode(Communication comm, Node node) {
 		//Add node to list
-		if(!clients.containsKey(comm.getLocalIp())) {
-			clients.put(comm.getLocalIp(), comm);
-			//start the Communication object
-			comm.start(node);
-			//Inform listeners
-			for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
-			return true;
-		} else 
-			return false;
+		synchronized(clients) {
+			if(!clients.containsKey(comm.getLocalIp())) {
+				clients.put(comm.getLocalIp(), comm);
+				
+				//start the Communication object
+				comm.start(node);
+				
+				//Inform listeners
+				synchronized(nodeListener) {
+					for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
+				}
+				
+				return true;
+			} else 
+				return false;
+		}
 	}
 	
 	public void removeNode(String networkAddress) {
-		Communication com = clients.remove(networkAddress);
-		//Inform listeners
-		for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
-	}
-	
-	public void addNodeMessageListener(int msgType,NodeMessageListener listener) {
-		//Check if list exists, otherwise create it
-		if(!nodeMessageListener.containsKey(msgType)) {
-			nodeMessageListener.put(msgType,new HashSet<NodeMessageListener>());
-		}
+		Communication com;
 		
-		//Get listener list
-		Set<NodeMessageListener> nml = nodeMessageListener.get(msgType);
-		nml.add(listener);
+		//Remove
+		synchronized (clients) {
+			com = clients.remove(networkAddress);
+		}
+
+		//Inform listeners
+		synchronized(nodeListener) {
+			for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+		}
 	}
 	
-	public void removeNodeMessageListener(int msgType,NodeMessageListener listener) {
-		Set<NodeMessageListener> listeners = nodeMessageListener.get(msgType);
-		if(listeners!=null) {
-			listeners.remove(listener);
+	public void addNodeMessageListener(Integer msgType,NodeMessageListener listener) {
+		synchronized(nodeMessageListener) {
+			if(msgType != null) {
+				//Don't add the listener if it listens to all messages
+				if(!nodeMessageListenerAll.contains(listener)) {
+					//Check if list exists, otherwise create it
+					if(!nodeMessageListener.containsKey(msgType)) {
+						nodeMessageListener.put(msgType,new HashSet<NodeMessageListener>());
+					}
+					
+					//Get listener list
+					Set<NodeMessageListener> nml = nodeMessageListener.get(msgType);
+					nml.add(listener);
+				}
+			}
+			else {
+				//msgType == null means listen to all messages
+				nodeMessageListenerAll.add(listener);
+				
+				for(Set<NodeMessageListener> s: nodeMessageListener.values()) {
+					//Remove listener
+					s.remove(listener);
+				}
+			}
+		}
+	}
+	
+	public void removeNodeMessageListener(Integer msgType,NodeMessageListener listener) {
+		synchronized(nodeMessageListener) {
+			if(msgType != null) {
+				Set<NodeMessageListener> listeners = nodeMessageListener.get(msgType);
+				if(listeners!=null) {
+					listeners.remove(listener);
+				}
+			}
+			else {
+				nodeMessageListenerAll.remove(listener);
+			}
 		}
 	}
 	
@@ -113,14 +159,39 @@ public class Network {
 			return true;
 		}
 		else {
-			//Find node and set delay
-			Communication comm = clients.get(networkAddress);
+			Communication comm;
 			
+			//Find node and set delay
+			synchronized(clients) {
+				comm = clients.get(networkAddress);
+			}
+
 			if(comm != null) {
 				comm.setMessageDelay(delay);
 				return true;
 			}
 			else return false;
+		}
+	}
+	
+	/**
+	 * Returns the messagedelay for a specific node or the network
+	 * @param networkAddress if null the delay from the network is returned, if not null the 
+	 * the delay from the client with the given address will be returned or -1 if there is no
+	 * such client
+	 * @return the delay from the network or a specific client. 
+	 */
+	public int getMessageDelay(String networkAddress) {
+		if(networkAddress == null) {
+			//return the delay of the network
+			return msg_delay;
+		} else {
+			Communication com = clients.get(networkAddress);
+			if(com != null) {
+				return com.getMessageDelay();
+			} else {
+				return -1;
+			}
 		}
 	}
 	
@@ -135,8 +206,10 @@ public class Network {
 		String result = "";
 		
 		//For each node
-		for(Communication comm: clients.values()) {
-			result += comm.showNodeInfo() + "\n";
+		synchronized(clients) {
+			for(Communication comm: clients.values()) {
+				result += comm.showNodeInfo() + "\n";
+			}
 		}
 		
 		return result;
@@ -150,7 +223,12 @@ public class Network {
 	 */
 	public String showNodeInfo(String networkAddress) {
 		//forward to the communication
-		Communication comm = clients.get(networkAddress);
+		Communication comm;
+		
+		synchronized(clients) {
+			comm = clients.get(networkAddress);
+		}
+		
 		if(comm == null) {
 			return "There is no node with networkAddress {" + networkAddress + "}";
 		}
@@ -171,11 +249,16 @@ public class Network {
 		HashSet<Communication> alreadyShown = new HashSet<Communication>();
 		List<Integer> intersections = new ArrayList<Integer>();
 
-		Communication startClient = clients.get(startNodeName);
-		Communication currentClient = startClient;
+		Communication startClient;
+		Communication currentClient;
 
 		NodeID start,end;
 		int counter = 0;
+		
+		synchronized(clients) {
+			startClient = clients.get(startNodeName);
+			currentClient = startClient;
+		}
 
 		//Test if node exists
 		if(startClient == null) {
@@ -194,7 +277,10 @@ public class Network {
 			//Get next node
 			result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
 			alreadyShown.add(currentClient);
-			currentClient = clients.get(currentClient.getSuccessorAddress());
+			
+			synchronized(clients) {
+				currentClient = clients.get(currentClient.getSuccessorAddress());
+			}
 			
 			//Check for loop
 			if(alreadyShown.contains(currentClient)) break;
@@ -247,18 +333,24 @@ public class Network {
 
 	public void addFingerChangeListener(FingerChangeListener listener) {
 		//Add listener to list
-		fingerChangeListener.add(listener);
+		synchronized(fingerChangeListener) {
+			fingerChangeListener.add(listener);
+		}
 	}
 	
 	public void removeFingerChangeListener(FingerChangeListener listener) {
 		//Remove listener
-		fingerChangeListener.remove(listener);
+		synchronized (fingerChangeListener) {
+			fingerChangeListener.remove(listener);
+		}
 	}
 	
 	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		//Inform all listener
-		for(FingerChangeListener l: fingerChangeListener) 
-			l.OnFingerChange(eventType, node, finger);
+		synchronized(fingerChangeListener) {
+			for(FingerChangeListener l: fingerChangeListener) 
+				l.OnFingerChange(eventType, node, finger);
+		}
 	}
 	
 	public String showFinger(String nodeAddress) {
@@ -272,7 +364,10 @@ public class Network {
 		int log2;
 		
 		//Get and check node
-		client = clients.get(nodeAddress);
+		synchronized(clients) {
+			client = clients.get(nodeAddress);
+		}
+		
 		if(client == null) return "Node " + nodeAddress + " not found!";
 		
 		//Get list
@@ -288,8 +383,10 @@ public class Network {
 
 		//For each finger
 		for(FingerEntry fingerEntry: fingerTable.keySet()) {
-			log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
-			localTable.put(log2, fingerEntry);
+			if(!fingerEntry.getNodeID().equals(client.getNodeID())) { 
+				log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
+				localTable.put(log2, fingerEntry);
+			}
 		}
 		
 		//Print list
@@ -302,31 +399,41 @@ public class Network {
 	}
 	
 	public void addNodeListener(NodeListener nl) {
-		nodeListener.add(nl);
+		synchronized(nodeListener) {
+			nodeListener.add(nl);
+		}
 	}
 	
 	public void removeNodeListener(NodeListener nl) {
-		nodeListener.remove(nl);
+		synchronized(nodeListener) {
+			nodeListener.remove(nl);
+		}
 	}
 	
 	public void addKeepAliveListener(KeepAliveListener listener) {
-		keepAliveListener.add(listener);
+		synchronized(keepAliveListener) {
+			keepAliveListener.add(listener);
+		}
 	}
 		
 	public void removeKeepAliveListener(KeepAliveListener listener) {
-		keepAliveListener.remove(listener);
+		synchronized(keepAliveListener) {
+			keepAliveListener.remove(listener);
+		}
 	}
 	
 	public void fireKeepAliveEvent(NodeID key,String networkAddress) {
 		//Call each handler
-		for(KeepAliveListener kal: keepAliveListener) {
-			kal.OnKeepAliveEvent(new Date(), key, networkAddress);
+		synchronized(keepAliveListener) {
+			for(KeepAliveListener kal: keepAliveListener) {
+				kal.OnKeepAliveEvent(new Date(), key, networkAddress);
+			}
 		}
 	}
 
 	public double calculateHealthOfDHT(boolean listMissingFinger) {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
-		TreeMap<FingerEntry,FingerEntry> DHT;
+		TreeMap<FingerEntry,Communication> dht;
 		
 		FingerEntry currentSuccessor;
 		FingerEntry bestSuccessor;
@@ -339,16 +446,18 @@ public class Network {
 		if(listMissingFinger) System.out.println("Printing missing finger list...");
 
 		//Copy DHT into a map accessible through the NodeID  
-		DHT = new TreeMap<FingerEntry,FingerEntry>();
+		dht = new TreeMap<FingerEntry,Communication>();
 
-		for(Communication client: clients.values()) {
-			FingerEntry newFinger;
-			newFinger = new FingerEntry(client.getNodeID(),client.getLocalIp());
-			DHT.put(newFinger,newFinger);
+		synchronized(clients) {
+			for(Communication client: clients.values()) {
+				FingerEntry newFinger;
+				newFinger = new FingerEntry(client.getNodeID(),client.getLocalIp());
+				dht.put(newFinger,client);
+			}
 		}
 		
 		//Check the quality of each client's finger table
-		for(Communication client: clients.values()) {
+		for(Communication client : dht.values()) {
 			//Get finger table
 			fingerTable = client.getNode().getFingerTable();
 			
@@ -356,8 +465,8 @@ public class Network {
 			for(int i = 0; i < NodeID.ADDRESS_SIZE * 8; i++) {
 				//Get current finger, if any, of the DHT region specified by log2 
 				hash_log2 = NodeID.powerOfTwo(i).add(client.getNodeID());
-				currentSuccessor = getSuccessor(fingerTable,hash_log2);
-				bestSuccessor = getSuccessor(DHT,hash_log2);
+				currentSuccessor = getSuccessorFinger(fingerTable,hash_log2);
+				bestSuccessor = getSuccessorDHT(dht,hash_log2);
 				
 				//Compare
 				if(!bestSuccessor.equals(client.getNode().getIdentity())) {
@@ -390,11 +499,27 @@ public class Network {
 		return count_max > 0 ? (double)count_ok / count_max : 1.0;
 	}
 
-	public FingerEntry getSuccessor(TreeMap<FingerEntry,FingerEntry> table,NodeID nodeID) {
+	private FingerEntry getSuccessorFinger(TreeMap<FingerEntry,FingerEntry> table,NodeID nodeID) {
 		FingerEntry hash = new FingerEntry(nodeID,null);
 		FingerEntry result;
 
-		synchronized(this) {
+		synchronized(table) {
+			//Get successor of us
+			result = table.higherKey(hash);
+			if(result == null) { 
+				//There is no higher key in the finger tree
+				result = table.firstKey();
+			}
+		}
+		
+		return result;
+	}
+
+	private FingerEntry getSuccessorDHT(TreeMap<FingerEntry,Communication> table,NodeID nodeID) {
+		FingerEntry hash = new FingerEntry(nodeID,null);
+		FingerEntry result;
+
+		synchronized(table) {
 			//Get successor of us
 			result = table.higherKey(hash);
 			if(result == null) { 

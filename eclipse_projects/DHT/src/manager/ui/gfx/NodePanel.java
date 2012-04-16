@@ -1,4 +1,4 @@
-package manager.ui;
+package manager.ui.gfx;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -13,16 +13,22 @@ import manager.dht.FingerEntry;
 
 @SuppressWarnings("serial")
 public class NodePanel extends JPanel implements MouseListener {
-	
+	//Communication object that belongs to me!
 	private Communication com;
 	
+	//All my fingers
 	private CirclePanel myFingers;
 	private HashMap<FingerEntry,Arrow> fingerData;
+	
+	private NumberPanel myNumber;
 	
 	private CircleGUI cg;
 
 	public NodePanel(Communication com, Point p, CirclePanel myFingers, CircleGUI cg){
 		this.com = com;
+		
+		this.myNumber = new NumberPanel(com.getLocalIp(), myFingers.getPosOnCircle(com.getNodeID(), 20),20);
+		
 		this.myFingers = myFingers;
 		this.fingerData = new HashMap<FingerEntry, Arrow>();
 		this.cg = cg;
@@ -37,13 +43,15 @@ public class NodePanel extends JPanel implements MouseListener {
 		
 		//Listen to Mouse Events
 		this.addMouseListener(this);
+		
 	}
 	
 	public void addFinger(FingerEntry finger) {
-		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID()),
-				myFingers.getPosOnCircle(finger.getNodeID()), 
+		Arrow a = new Arrow(myFingers.getPosOnCircle(this.com.getNodeID(),0),
+				myFingers.getPosOnCircle(finger.getNodeID(),0), 
+				myFingers.getPosOnCircle(finger.getNodeID(),0), 0,
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
-				Color.MAGENTA);
+				Arrow.PREVIEW);
 		myFingers.add(a);
 		fingerData.put(finger, a);
 		
@@ -60,6 +68,18 @@ public class NodePanel extends JPanel implements MouseListener {
 		myFingers.repaint();
 	}
 	
+	public CirclePanel getMyFingers() {
+		return myFingers;
+	}
+	
+	public NumberPanel getMyNumber() {
+		return myNumber;
+	}
+	
+	public Communication getCommunication() {
+		return com;
+	}
+	
 	@Override
 	public void mouseReleased(MouseEvent e) {
 	}
@@ -71,17 +91,18 @@ public class NodePanel extends JPanel implements MouseListener {
 	@Override
 	public void mouseExited(MouseEvent e) {
 		setBackground(Color.WHITE);
-		cg.hideFingers(myFingers);
+		cg.hideFingers(this);
 	}
 	
 	@Override
 	public void mouseEntered(MouseEvent e) {
 		setBackground(Color.RED);
-		cg.showFingers(myFingers);
+		cg.showFingers(this);
 	}
 	
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		cg.setActiveNode(this);
 	}
 		
 	

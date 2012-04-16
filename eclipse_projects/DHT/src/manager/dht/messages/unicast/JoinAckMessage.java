@@ -19,4 +19,9 @@ public class JoinAckMessage extends Message {
 		//Return message info
 		return super.toString("MSG-JOIN_ACK") + " key: " + joinKey.toString(); 
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE;
+	}
 }

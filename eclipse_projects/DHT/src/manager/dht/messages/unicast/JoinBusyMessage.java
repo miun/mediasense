@@ -12,4 +12,9 @@ public class JoinBusyMessage extends Message {
 		//Return message info
 		return super.toString("MSG-JOIN_BUSY"); 
 	}
+
+	//Return packet size for statistic
+	public int getDataAmount() {
+		return super.getDataAmount();
+	}
 }
