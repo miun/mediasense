@@ -185,19 +185,15 @@ public class Node extends Thread implements LookupServiceInterface {
 					//Notify everybody of the new node
 					sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
 					
-					//if I am still my own predecessor, make the new node the predecessor (startup)
-					synchronized (finger) {
-						if(identity.equals(predecessor)) {
-							predecessor = new FingerEntry(jam.getJoinKey(), jam.getFromIp());
-						}
-					}
-					
 					//Set successor to new node and update finger-table with old successor
 					FingerEntry old_successor;
 					
 					synchronized(finger) {
 						old_successor = successor;
 						successor = blockJoinFor;
+						
+						//if identity is the predecessor it is only us till now in the circle - set predecessor = successor
+						if(predecessor.equals(identity)) predecessor = successor;
 					}
 					
 					//TODO REMOVE
@@ -432,15 +428,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		NodeID hash_log2;
 		int log2floor;
 		
-		//Check for dont's
-		synchronized(finger) {
-			if(newFinger.equals(identity)) return;
-			if(newFinger.equals(successor)) return;
-			if(newFinger.equals(predecessor)) return;
-			if(finger.containsKey(newFinger)) return;
-		}
-		
-		
+		//Check first if the new one might be a new predecessor
 		if(getPredecessor(newFinger.getNodeID()).getNodeID().equals(predecessor.getNodeID())) {
 			FingerEntry oldPredecessor = predecessor;
 
@@ -448,8 +436,16 @@ public class Node extends Thread implements LookupServiceInterface {
 			synchronized (finger) {
 				predecessor = newFinger;
 			}
-
-			updateFingerTableEntry(oldPredecessor);
+			//go on with the old predecessor 
+			newFinger = oldPredecessor;
+		}
+		
+		//Check for dont's
+		synchronized(finger) {
+			if(newFinger.equals(identity)) return;
+			if(newFinger.equals(successor)) return;
+			if(newFinger.equals(predecessor)) return;
+			if(finger.containsKey(newFinger)) return;
 		}
 		
 		//1 - Rotate hash to the "origin"
