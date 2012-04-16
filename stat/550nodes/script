@@ -1,5 +1,5 @@
 # Comment
-statistic ../../stat/550nodes/keepalive.dat
+statistic ../../stat/550nodes/nokeepalive.dat
 
 msg_delay 300
 
