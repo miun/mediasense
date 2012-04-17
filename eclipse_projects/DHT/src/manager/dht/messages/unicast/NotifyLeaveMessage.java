@@ -29,11 +29,6 @@ public class NotifyLeaveMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-JOIN-LEAVE") + " hash: " + hash.toString() + " - Adr: (" + networkAddress + ")"; 
-	}
-
-	public String toString() {
-		//Return message info
 		return super.toString("MSG-JOIN-LEAVE") + " hash: " + hash.toString() + " - sucHash: " + successorHash.toString() + " - SucAddr: (" + successorNetworkAddress + ")"; 
 	}
 
