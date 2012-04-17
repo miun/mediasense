@@ -15,5 +15,14 @@ public class JoinFinalizeMessage extends Message {
 		super(from, to, JOIN_FINALIZE);
 		this.joinKey = joinKey;
 	}
-
+	
+	@Override
+	public int getDataAmount() {
+		return super.getDataAmount() + NodeID.ADDRESS_SIZE;
+	}
+	
+	@Override
+	public String toString() {
+		return super.toString("MSG-JOIN_FINALIZE") + " key: " + joinKey.toString(); 
+	}
 }

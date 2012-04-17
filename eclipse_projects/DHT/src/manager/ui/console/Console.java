@@ -162,11 +162,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
 						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
@@ -219,6 +219,8 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.NODE_JOIN_NOTIFY;
 					} else if(type.equals("notify_leave")) {
 						msgType = Message.NODE_LEAVE_NOTIFY;
+					} else if(type.equals("join_finalize")) {
+						msgType = Message.JOIN_FINALIZE;
 					}
 					
 					//Call the function for every valid message type
