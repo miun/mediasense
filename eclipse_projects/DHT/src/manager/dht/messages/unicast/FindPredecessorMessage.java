@@ -15,6 +15,11 @@ public class FindPredecessorMessage extends Message {
 		return hash;
 	}
 
+	public String toString() {
+		//Return message info
+		return super.toString("MSG-FIND_PREDECESSOR")+ " | findKey: " + hash.toString(); 
+	}
+	
 	//Return packet size for statistic
 	public int getDataAmount() {
 		return super.getDataAmount() + NodeID.ADDRESS_SIZE;

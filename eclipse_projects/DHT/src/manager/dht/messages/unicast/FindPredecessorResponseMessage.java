@@ -21,6 +21,11 @@ public class FindPredecessorResponseMessage extends Message {
 		return hash;
 	}
 	
+	public String toString() {
+		//Return message info
+		return super.toString("MSG-PREDECESSOR_RESPONSE")+ " | predecessorKey: " + hash.toString() + " addr: (" + networkAddress.toString() + ")"; 
+	}
+	
 	//Return packet size for statistic
 	public int getDataAmount() {
 		return super.getDataAmount() + 4 + NodeID.ADDRESS_SIZE;
