@@ -33,6 +33,11 @@ public class NotifyLeaveMessage extends Message {
 	public NodeID getHash() {
 		return hash;
 	}
+	
+	public String toString() {
+		//Return message info
+		return super.toString("MSG-JOIN-LEAVE") + " hash: " + hash.toString() + " - Adr: (" + networkAddress + ")"; 
+	}
 
 	//Return packet size for statistic
 	public int getDataAmount() {

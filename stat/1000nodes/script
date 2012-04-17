@@ -1,6 +1,6 @@
 # Comment
 
-#statistic ../../stat/1000nodes/predecessor.dat
+statistic ../../stat/1000nodes/predecessor.dat
 
 msg_delay 100
 
