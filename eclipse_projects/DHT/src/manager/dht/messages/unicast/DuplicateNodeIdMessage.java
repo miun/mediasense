@@ -2,7 +2,6 @@ package manager.dht.messages.unicast;
 
 import manager.Message;
 import manager.dht.NodeID;
-import manager.dht.SHA1Generator;
 
 public class DuplicateNodeIdMessage extends Message{
 	//Specify the duplicate key in the DHT

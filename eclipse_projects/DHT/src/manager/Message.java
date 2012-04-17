@@ -25,6 +25,7 @@ public abstract class Message {
 	public final static int JOIN_RESPONSE = 12;
 	public final static int JOIN_ACK = 22;
 	public final static int JOIN_BUSY = 23;
+	public final static int JOIN_FINALIZE = 24;
 	public final static int DUPLICATE_NODE_ID = 16;
 	
 	public final static int KEEPALIVE = 13;
