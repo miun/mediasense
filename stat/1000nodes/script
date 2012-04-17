@@ -1,9 +1,6 @@
 # Comment
-<<<<<<< HEAD
-statistic ../../stat/1000nodes/nokeepalive.dat
-=======
-statistic ../../stat/550nodes/nokeepalive.dat
->>>>>>> 53f71e5d39532b51cce1f9b9f605b7beac3e6436
+
+#statistic ../../stat/1000nodes/predecessor.dat
 
 msg_delay 100
 

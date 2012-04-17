@@ -12,7 +12,7 @@ import manager.ui.log.Log;
 
 
 public final class Manager {
-	private static final String LOG_FILE = "/home/timo/media_sense.log";
+	private static final String LOG_FILE = "/home/florian/Desktop/media_sense.log";
 	
 	private static Manager instance;
 	

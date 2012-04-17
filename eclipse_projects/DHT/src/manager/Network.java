@@ -355,9 +355,11 @@ public class Network {
 	
 	public String showFinger(String nodeAddress) {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
-		TreeMap<Integer,FingerEntry> localTable;
+		TreeMap<Integer,FingerEntry> showTable;
 		
-		FingerEntry finger;
+		FingerEntry currentFinger;
+		FingerEntry successorFinger;
+		FingerEntry predecessorFinger;
 		
 		Communication client;
 		String result = "";
@@ -366,33 +368,45 @@ public class Network {
 		//Get and check node
 		synchronized(clients) {
 			client = clients.get(nodeAddress);
+			if(client == null) return "Node " + nodeAddress + " not found!";
+			
+			//Get successor and predecessor from client
+			successorFinger = client.getNode().getSuccessor(null);
+			predecessorFinger = client.getNode().getPredecessor(null);
 		}
 		
-		if(client == null) return "Node " + nodeAddress + " not found!";
-		
-		//Get list
+		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
 		
 		//Transform table
-		localTable = new TreeMap<Integer,FingerEntry>();
+		showTable = new TreeMap<Integer,FingerEntry>();
 
 		//Successor
-		finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
-		log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-		localTable.put(log2,finger);
+		currentFinger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
+		log2 = NodeID.logTwoFloor(currentFinger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
+		showTable.put(log2,currentFinger);
 
 		//For each finger
 		for(FingerEntry fingerEntry: fingerTable.keySet()) {
 			if(!fingerEntry.getNodeID().equals(client.getNodeID())) { 
 				log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
-				localTable.put(log2, fingerEntry);
+				showTable.put(log2, fingerEntry);
 			}
 		}
 		
 		//Print list
-		for(int log2temp: localTable.keySet()) {
-			finger = localTable.get(log2temp);
-			result = result + "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
+		for(int log2temp: showTable.keySet()) {
+			currentFinger = showTable.get(log2temp);
+			
+			if(currentFinger.equals(successorFinger)) {
+				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + " SUC\n";
+			}
+			else if(currentFinger.equals(predecessorFinger)) {
+				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + " PRE\n";
+			}
+			else {
+				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
+			}
 		}
 		
 		return result;
