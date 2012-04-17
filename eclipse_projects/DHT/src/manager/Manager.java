@@ -62,6 +62,7 @@ public final class Manager {
 		
 		//the famous last words...
 		System.out.println("May the hash be with you!");
+		System.exit(0);
 	}
 	
 	public void stopManager() {
@@ -97,7 +98,7 @@ public final class Manager {
 		return newNodeCounter;
 	}
 	
-	public void rempveNode(String networkAddress) {
+	public void removeNode(String networkAddress) {
 		//Forward to network
 		network.removeNode(networkAddress);
 	}

@@ -2,26 +2,32 @@ package manager.dht.messages.broadcast;
 
 import manager.Message;
 import manager.dht.NodeID;
+import manager.dht.messages.unicast.NotifyLeaveMessage;
 
 public class NotifyLeaveBroadcastMessage extends BroadcastMessage {
-	public NotifyLeaveBroadcastMessage(String from,String to,NodeID startKey,NodeID endKey) {
+	private NodeID hash;
+	private NodeID successorHash;
+	private String successorNetworkAddress;
+	
+	public NotifyLeaveBroadcastMessage(String from,String to,NodeID startKey,NodeID endKey,NodeID hash,NodeID successorHash,String successorNetworkAddress) {
 		super(from,to,startKey,endKey,Message.NODE_LEAVE_NOTIFY);
+		this.hash = hash;
+		this.successorHash = successorHash;
+		this.successorNetworkAddress = successorNetworkAddress;
 	}
 
 	@Override
 	public Message extractMessage() {
-		//TODO return new NotifyLeaveMessage(from,to);
-		return null;
+		return new NotifyLeaveMessage(this.getFromIp(),this.getToIp(),hash,successorHash,successorNetworkAddress);
 	}
 
 	@Override
 	public BroadcastMessage cloneWithNewAddresses(String from, String to,NodeID startKey,NodeID endKey) {
-		// TODO Auto-generated method stub
-		return null;
+		return new NotifyLeaveBroadcastMessage(from,to,startKey,endKey,hash,successorHash,successorNetworkAddress);
 	}
 
 	//Return packet size for statistic
 	public int getDataAmount() {
-		return super.getDataAmount();
+		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE + 4;
 	}
 }

@@ -3,12 +3,12 @@ package manager.dht.messages.unicast;
 import manager.Message;
 import manager.dht.NodeID;
 
-public class FindPredecessorResponseMessage extends Message {
+public class FindSuccessorResponseMessage extends Message {
 	private String networkAddress;
 	private NodeID hash;
 	
-	public FindPredecessorResponseMessage(String from,String to,String networkAddress,NodeID hash) {
-		super(from,to,Message.FIND_PREDECESSOR_RESPONSE);
+	public FindSuccessorResponseMessage(String from,String to,String networkAddress,NodeID hash) {
+		super(from,to,FIND_SUCCESSOR_RESPONSE);
 		this.networkAddress = networkAddress;
 		this.hash = hash;
 	}
@@ -23,11 +23,10 @@ public class FindPredecessorResponseMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-PREDECESSOR_RESPONSE")+ " | predecessorKey: " + hash.toString() + " addr: (" + networkAddress.toString() + ")"; 
+		return super.toString("MSG-PREDECESSOR_SUCCESSOR")+ " | sucKey: " + hash.toString() + " addr: (" + networkAddress.toString() + ")"; 
 	}
 	
 	//Return packet size for statistic
 	public int getDataAmount() {
 		return super.getDataAmount() + 4 + NodeID.ADDRESS_SIZE;
-	}
-}
+	}}

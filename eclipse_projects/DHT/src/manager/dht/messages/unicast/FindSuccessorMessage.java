@@ -3,11 +3,11 @@ package manager.dht.messages.unicast;
 import manager.Message;
 import manager.dht.NodeID;
 
-public class FindPredecessorMessage extends Message {
+public class FindSuccessorMessage extends Message {
 	private NodeID hash;
 	
-	public FindPredecessorMessage(String from,String to,NodeID hash) {
-		super(from,to,Message.FIND_PREDECESSOR);
+	public FindSuccessorMessage(String from,String to,NodeID hash) {
+		super(from,to,FIND_SUCCESSOR);
 		this.hash = hash;
 	}
 	
@@ -17,7 +17,7 @@ public class FindPredecessorMessage extends Message {
 
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-FIND_PREDECESSOR")+ " | findKey: " + hash.toString(); 
+		return super.toString("MSG-FIND_SUCCESSOR")+ " | findKey: " + hash.toString(); 
 	}
 	
 	//Return packet size for statistic
