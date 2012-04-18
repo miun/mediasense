@@ -453,11 +453,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Send message
 				to = suc.getNetworkAddress();
 				new_bcast_msg = bcast_msg.cloneWithNewAddresses(from, to,newStartKey,newEndKey);
-				try {
-					communication.sendMessage(new_bcast_msg);
-				} catch(DestinationNotReachableException e) {
-					//TODO handle this for Broadcast!
-				}
+				
+				sendMessage(new_bcast_msg,suc.getNodeID());
+				
 			}
 
 			//Move to next range
