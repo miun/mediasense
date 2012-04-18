@@ -15,6 +15,8 @@ import manager.dht.messages.broadcast.KeepAliveBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyLeaveBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
+import manager.dht.messages.unicast.FindPredecessorMessage;
+import manager.dht.messages.unicast.FindPredecessorResponseMessage;
 import manager.dht.messages.unicast.JoinAckMessage;
 import manager.dht.messages.unicast.JoinBusyMessage;
 import manager.dht.messages.unicast.JoinFinalizeMessage;
@@ -43,6 +45,9 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int JOIN_BLOCK_PERIOD = 15000;
 	private static final int JOIN_FINALIZE_PERIOD = 15000;
 	
+	private static final int CHECK_PREDECESSOR_SHORT_PERIOD = 5000;
+	private static final int CHECK_PREDECESSOR_LONG_PERIOD = 50000;
+	
 	//Actions
 	private static final int ACTION_CONNECT = 1;
 	private static final int ACTION_SHUTDOWN = 2;
@@ -53,8 +58,13 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Action-queue
 	BlockingQueue<Integer> actionQueue;
 	
+	//The timer and his tasks
 	private Timer timer = null;
-	TimerTask keepAlive,blockTask,finalizeTask;
+	private TimerTask connectTask;
+	private TimerTask keepAlive;
+	private TimerTask blockTask;
+	private TimerTask finalizeTask;
+	private TimerTask findPredecessorTask;
 	
 	//Connection state
 	private boolean connected = false;
@@ -89,6 +99,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Notify connect
 		notify(ACTION_CONNECT);
+		
+		//start Precessedessor refresh and keepalive
+		findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+		keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 		
 		//Start thread
 		this.start();
@@ -146,6 +160,12 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.NODE_LEAVE_NOTIFY:
 				handleNotifyLeaveMessage((NotifyLeaveMessage)message);
 				break;
+			case Message.FIND_PREDECESSOR:
+				handleFindPredecessorMessage((FindPredecessorMessage)message);
+				break;
+			case Message.FIND_PREDECESSOR_RESPONSE:
+				handleFindPredecessorResponseMessage((FindPredecessorResponseMessage)message);
+				break;
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
@@ -179,7 +199,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				case ACTION_CONNECT:
 					if(!connected) {
 						connect(bootstrapAddress);
-						timer.schedule(new NotifyTimer(ACTION_CONNECT,this), CONNECT_PERIOD);
+						
+						//Restart task
+						connectTask = startTask(connectTask,ACTION_CONNECT,CONNECT_PERIOD);
 					}
 					break;
 				case ACTION_SHUTDOWN:
@@ -187,12 +209,23 @@ public class Node extends Thread implements LookupServiceInterface {
 					this.interrupt();
 					break;
 				case ACTION_CHECK_PREDECESSOR:
+					//Send FIND_PREDECESSOR message to get a better predecessor
+					synchronized(this) {
+						FingerEntry dst = getPredecessor(null);
+						
+						sendMessage(new FindPredecessorMessage(identity.getNetworkAddress(), dst.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()),dst.getNodeID());
+					}
 					
+					//Reschedule task
+					findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
 					break;
 				case ACTION_CHECK_SUCCESSOR:
 					break;
 				case ACTION_KEEP_ALIVE:
-					resetKeepAliveTimer();
+					//trigger the keepalive and start period for the next one
+					triggerKeepAliveTimer();
+					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
+					//resetKeepAliveTimer();
 					break;
 			}
 		}
@@ -369,11 +402,17 @@ public class Node extends Thread implements LookupServiceInterface {
 		//TODO create this :-)
 	}
 
-	private void sendMessage(Message message) {
+	private void sendMessage(Message message,NodeID dstNode) {
+		//Don't send to ourselves
+		if(identity.getNodeID().equals(dstNode)) {
+			return;
+		}
+		
 		try {
 			communication.sendMessage(message);
 		} catch(DestinationNotReachableException e) {
-			//TODO handle this for unicast
+			//Handle failing node if we now him
+			if(dstNode != null) handleFailingNode(dstNode);
 		}
 	}
 	
@@ -442,7 +481,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			newMap = new TreeMap<FingerEntry,FingerEntry>(finger);
 			newMap.put(successor, successor);
 			newMap.put(identity,identity);
-			newMap.put(predecessor,predecessor);
+//			if(predecessor != null) newMap.put(predecessor,predecessor);
 		}
 		
 		return newMap;
@@ -460,10 +499,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		sendBroadcast(msg, identity.getNodeID(),identity.getNodeID().sub(1));
 		
 		//Reset time
-		resetKeepAliveTimer();
+		//resetKeepAliveTimer();
 	}
 
-	private void resetKeepAliveTimer() {
+	/*private void resetKeepAliveTimer() {
 		int time = KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD);
 		
 		//Cancel and reschedule timer
@@ -478,7 +517,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		};
 		timer.schedule(keepAlive, time);
-	}
+	}*/
 	
 	//TODO remove debug function
 	public boolean getStateConnected() {
@@ -513,15 +552,14 @@ public class Node extends Thread implements LookupServiceInterface {
 		if(newFinger.equals(identity) || newFinger.equals(predecessor)) return null;
 		
 		//Check first if the new one really is a better  predecessor
-		if(newFinger.getNodeID().sub(identity.getNodeID()).compareTo(predecessor.getNodeID().sub(identity.getNodeID())) > 0) {
-//		if(getPredecessor(newFinger.getNodeID()).getNodeID().equals(predecessor.getNodeID())) {
+		if(predecessor == null || newFinger.getNodeID().sub(identity.getNodeID()).compareTo(predecessor.getNodeID().sub(identity.getNodeID())) > 0) {
 			FingerEntry oldPredecessor = predecessor;
 
 			//It is a better predecessor
 			predecessor = newFinger;
 						
 			//Fire fingerChange event
-			if(oldPredecessor.equals(identity)) {
+			if(oldPredecessor == null || oldPredecessor.equals(identity)) {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD,identity, predecessor);
 			}
 			else {
@@ -534,9 +572,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			//return the old predecessor, maybe we can still use it
 			return oldPredecessor;
 		} 
-		else
+		else {
 			//we did not update anything
 			return null;
+		}
 	}
 	
 	private void connect(String address) {
@@ -556,10 +595,13 @@ public class Node extends Thread implements LookupServiceInterface {
 				if(address == null || address.equals(communication.getLocalIp())) {
 					//We are connected and we are our own successor
 					connected = true;
+					
+					//Cancel timer-task
+					if(connectTask != null) connectTask.cancel();
 				}
 				else {			
 					//Try to connect to DHT
-					sendMessage(new JoinMessage(identity.getNetworkAddress(),address,identity.getNetworkAddress(),identity.getNodeID()));
+					sendMessage(new JoinMessage(identity.getNetworkAddress(),address,identity.getNetworkAddress(),identity.getNodeID()),null);
 				}
 			}
 		}
@@ -620,13 +662,14 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 				
 				//Send
-				sendMessage(answer);
+				sendMessage(answer,join_msg.getKey());
 			}
 		}
 		else {
 			//Forward to the best fitting predecessor
-			answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
-			sendMessage(answer);
+			FingerEntry dst = getPredecessor(join_msg.getKey());
+			answer = new JoinMessage(identity.getNetworkAddress(),dst.getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
+			sendMessage(answer,dst.getNodeID());
 		}
 	}
 	
@@ -641,7 +684,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					futurePredecessor = new FingerEntry(jrm.getPredecessor(),jrm.getFromIp());
 					
 					//Inform the node that we got the message
-					sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
+					sendMessage(new JoinAckMessage(identity.getNetworkAddress(), futurePredecessor.getNetworkAddress(), identity.getNodeID()),futurePredecessor.getNodeID());
 					
 					//Start finalizeTask timer
 					timer.schedule(finalizeTask = new TimerTask() {
@@ -692,7 +735,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
 			
 			//Notify the new node, that it is connected
-			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()));
+			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()),jam.getJoinKey());
 
 			//unblock
 			synchronized(this) {
@@ -757,7 +800,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		if(log2_pre < log2_this) {
 			//Send advertisement
-			sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()));
+			sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()),newFinger.getNodeID());
 		}
 	}
 	
@@ -765,7 +808,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry advertisedFinger;
 		
 		//Reset timer
-		resetKeepAliveTimer();
+		//resetKeepAliveTimer();
+		keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 
 		//Handle keep-alive message
 		advertisedFinger = new FingerEntry(kam.getAdvertisedID(),kam.getAdvertisedNetworkAddress());
@@ -785,7 +829,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			updateSuccessor(leavingNodeSuccessor);
 		}
 		//If predecessor
-		else if (nlm.getHash().equals(successor.getNodeID())) {
+		else if (predecessor != null && nlm.getHash().equals(predecessor.getNodeID())) {
 			synchronized(this) {
 				predecessor = null;
 				notify(ACTION_CHECK_PREDECESSOR);
@@ -800,14 +844,14 @@ public class Node extends Thread implements LookupServiceInterface {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, removedFinger);
 			}
 			
-			//Check if the successor of the leaving node is a possible finger for us
+			//Check if the successor of the leaving node's successor is a possible finger for us
 			updateFingerTableEntry(leavingNodeSuccessor);
 		}
 		
 	}
 	
 	private synchronized FingerEntry updateSuccessor(FingerEntry newSuccessor) {
-		//TODO first check for donts?????
+		//TODO first check for don'ts?????
 		
 		FingerEntry oldSuccessor;
 		
@@ -834,12 +878,12 @@ public class Node extends Thread implements LookupServiceInterface {
 		return oldSuccessor;
 	}
 
-	private class NotifyTimer extends TimerTask {
+	private class NotifyTask extends TimerTask {
 		
 		private int action;
 		private Node notifyObj;
 		
-		public NotifyTimer(int action,Node notifyObj) {
+		public NotifyTask(int action,Node notifyObj) {
 			this.action = action;
 			this.notifyObj = notifyObj;
 		}
@@ -857,6 +901,66 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 		catch (InterruptedException e) {
 			//TODO ?!?!
+		}
+	}
+	
+	private TimerTask startTask(TimerTask timerTask,int action,int period) {
+		//Stop if appropriate
+		if(timerTask != null) {
+			timerTask.cancel();
+		}
+		
+		//Schedule new event
+		timerTask = new NotifyTask(action,this);
+		timer.schedule(timerTask, period);
+		
+		//Return new task
+		return timerTask;
+	}
+	
+	private void handleFindPredecessorMessage(FindPredecessorMessage fpm) {
+		FingerEntry findFinger;
+		
+		//Get responsible finger
+		findFinger = getPredecessor(fpm.getHash());
+		
+		if(findFinger.equals(identity)) {
+			//Its us => reply
+			sendMessage(new FindPredecessorResponseMessage(identity.getNetworkAddress(),fpm.getOrigAddress(),identity.getNodeID(),fpm.getHash()),null);
+		}
+		else {
+			//Forward to the best finger
+			sendMessage(new FindPredecessorMessage(identity.getNetworkAddress(),findFinger.getNetworkAddress(),fpm.getHash(),fpm.getOrigAddress()),findFinger.getNodeID());
+		}
+	}
+
+	private void handleFindPredecessorResponseMessage(FindPredecessorResponseMessage fprm) {
+		//Check if hash fits; ignore otherwise
+		if(identity.getNodeID().equals(fprm.getOrigHash())) {
+			//Update predecessor
+			updatePredecessor((new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp())));
+			
+			//Restart task
+			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_LONG_PERIOD);
+		}
+	}
+	
+	private synchronized void handleFailingNode(NodeID dst) {
+		if(successor.getNodeID().equals(dst)) {
+			//Successor failed
+			successor = getSuccessor(successor.getNodeID());
+		}
+		else if(predecessor != null && predecessor.getNodeID().equals(dst)) {
+			//Predecessor failed
+			predecessor = null;
+			
+			//Start recovery task
+			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
+		}
+		else if(finger.containsKey(dst)) {
+			//Finger failed
+			FingerEntry removedFinger = finger.remove(dst);
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
 	}
 }
