@@ -4,6 +4,8 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import manager.CommunicationInterface;
 import manager.LookupServiceInterface;
@@ -35,17 +37,28 @@ public class Node extends Thread implements LookupServiceInterface {
 	private FingerEntry predecessor;
 	
 	//Keep alive
+	private static final int CONNECT_PERIOD = 5000;
 	private static final int KEEP_ALIVE_PERIOD = 10000;
 	private static final int KEEP_ALIVE_RANDOM_PERIOD = 10000;
 	private static final int JOIN_BLOCK_PERIOD = 15000;
 	private static final int JOIN_FINALIZE_PERIOD = 15000;
 	
-	Timer timer = null;
+	//Actions
+	private static final int ACTION_CONNECT = 1;
+	private static final int ACTION_SHUTDOWN = 2;
+	private static final int ACTION_KEEP_ALIVE = 3;
+	private static final int ACTION_CHECK_PREDECESSOR = 4;
+	private static final int ACTION_CHECK_SUCCESSOR = 5;
+	
+	//Action-queue
+	BlockingQueue<Integer> actionQueue;
+	
+	private Timer timer = null;
 	TimerTask keepAlive,blockTask,finalizeTask;
 	
 	//Connection state
 	private boolean connected = false;
-	private boolean shutdown = false;
+	
 	private FingerEntry blockJoinFor = null;
 	private FingerEntry futureSuccessor = null;
 	private FingerEntry futurePredecessor = null;
@@ -71,6 +84,12 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Save bootstrap address
 		this.bootstrapAddress = bootstrapAddress;
 		
+		//Create blocking queue for action forwarding to worker thread
+		actionQueue = new LinkedBlockingQueue<Integer>(1);
+		
+		//Notify connect
+		notify(ACTION_CONNECT);
+		
 		//Start thread
 		this.start();
 	}
@@ -89,8 +108,8 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	@Override
 	public synchronized void shutdown() {
-		shutdown = true;
-		this.notify();
+		//Schedule immediately
+		notify(ACTION_SHUTDOWN);
 	}
 
 	@Override
@@ -143,35 +162,41 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	@Override
 	public void run() {
-		//Connect DHT node
-		while(connected == false) {
-			connect(bootstrapAddress);
-			
+		int currentAction;
+		
+		//Main loop
+		while(true) {
+			//Get next element from queue
 			try {
-				//Wait for connection and try again
-				Thread.sleep(5000);
+				currentAction = actionQueue.take();
 			}
 			catch (InterruptedException e) {
-				//Exit thread
+				//Thread was interrupted
 				break;
 			}
-		}
-		
-		//Connected => Set Keep alive timer
-		resetKeepAliveTimer();
-		
-		//Wait for nothing
-		synchronized(this) {
-			while(!shutdown) {
-				try {
-					this.wait();
-				}
-				catch (InterruptedException e) {
-					//TODO do something
-				}
+			
+			switch(currentAction) {
+				case ACTION_CONNECT:
+					if(!connected) {
+						connect(bootstrapAddress);
+						timer.schedule(new NotifyTimer(ACTION_CONNECT,this), CONNECT_PERIOD);
+					}
+					break;
+				case ACTION_SHUTDOWN:
+					//Discontinue thread
+					this.interrupt();
+					break;
+				case ACTION_CHECK_PREDECESSOR:
+					
+					break;
+				case ACTION_CHECK_SUCCESSOR:
+					break;
+				case ACTION_KEEP_ALIVE:
+					resetKeepAliveTimer();
+					break;
 			}
 		}
-		
+
 		//Shutdown timer
 		timer.cancel();
 		timer.purge();
@@ -759,6 +784,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Change the successor to the next one
 			updateSuccessor(leavingNodeSuccessor);
 		}
+		//If predecessor
+		else if (nlm.getHash().equals(successor.getNodeID())) {
+			synchronized(this) {
+				predecessor = null;
+				notify(ACTION_CHECK_PREDECESSOR);
+			}
+		}
 		else { 
 			//Remove leaving finger
 			FingerEntry removedFinger = finger.remove(new FingerEntry(nlm.getHash(),null));
@@ -800,5 +832,31 @@ public class Node extends Thread implements LookupServiceInterface {
 		//updateFingerTableEntry(oldSuccessor);
 		//return the old Successor, maybe we can still use it
 		return oldSuccessor;
+	}
+
+	private class NotifyTimer extends TimerTask {
+		
+		private int action;
+		private Node notifyObj;
+		
+		public NotifyTimer(int action,Node notifyObj) {
+			this.action = action;
+			this.notifyObj = notifyObj;
+		}
+		
+		@Override
+		public void run() {
+			notifyObj.notify(action);
+		}
+	}
+	
+	private void notify(int action) {
+		//Queue current action
+		try {
+			actionQueue.put(action);
+		}
+		catch (InterruptedException e) {
+			//TODO ?!?!
+		}
 	}
 }
