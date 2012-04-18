@@ -81,7 +81,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			else if(cmd.cmd.toLowerCase().equals("node_del")) {
 				if(cmd.param == null) throw new InvalidParamAmountException();
 				for(String address : cmd.param) {
-					manager.rempveNode(address);
+					manager.removeNode(address);
 				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("g")) {
@@ -162,11 +162,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
 						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
@@ -219,6 +219,16 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.NODE_JOIN_NOTIFY;
 					} else if(type.equals("notify_leave")) {
 						msgType = Message.NODE_LEAVE_NOTIFY;
+					} else if(type.equals("join_finalize")) {
+						msgType = Message.JOIN_FINALIZE;
+					} else if(type.equals("find_predecessor")) {
+						msgType = Message.FIND_PREDECESSOR;
+					} else if(type.equals("find_predecessor_response")) {
+						msgType = Message.FIND_PREDECESSOR_RESPONSE;
+					} else if(type.equals("find_successor")) {
+						msgType = Message.FIND_SUCCESSOR;
+					} else if(type.equals("find_successor_response")) {
+						msgType = Message.FIND_SUCCESSOR_RESPONSE;
 					}
 					
 					//Call the function for every valid message type

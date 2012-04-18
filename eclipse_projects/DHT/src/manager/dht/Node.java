@@ -11,9 +11,11 @@ import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.dht.messages.broadcast.KeepAliveBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
+import manager.dht.messages.broadcast.NotifyLeaveBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
 import manager.dht.messages.unicast.JoinAckMessage;
 import manager.dht.messages.unicast.JoinBusyMessage;
+import manager.dht.messages.unicast.JoinFinalizeMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.KeepAliveMessage;
@@ -36,14 +38,17 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int KEEP_ALIVE_PERIOD = 10000;
 	private static final int KEEP_ALIVE_RANDOM_PERIOD = 10000;
 	private static final int JOIN_BLOCK_PERIOD = 15000;
+	private static final int JOIN_FINALIZE_PERIOD = 15000;
 	
 	Timer timer = null;
-	TimerTask keepAlive,blockTask;
+	TimerTask keepAlive,blockTask,finalizeTask;
 	
 	//Connection state
 	private boolean connected = false;
+	private boolean shutdown = false;
 	private FingerEntry blockJoinFor = null;
-	
+	private FingerEntry futureSuccessor = null;
+	private FingerEntry futurePredecessor = null;
 
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -60,20 +65,11 @@ public class Node extends Thread implements LookupServiceInterface {
 
 		//Set identity
 		setIdentity(hash);
-		this.successor = identity;
-		this.predecessor = identity;
+		successor = identity;
+		predecessor = identity;
 		
 		//Save bootstrap address
-		//No bootstrap means, WE are the beginning of the DHT
-		//If we are a bootstrapping node, that means bootstrapping address is null or is our address,
-		//we are always connected !!
-		if(bootstrapAddress == null || bootstrapAddress.equals(communication.getLocalIp())) {
-			//We are connected and we are our own successor
-			connected = true;
-		}
-		else {
-			this.bootstrapAddress = bootstrapAddress;
-		}
+		this.bootstrapAddress = bootstrapAddress;
 		
 		//Start thread
 		this.start();
@@ -92,189 +88,44 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 
 	@Override
-	public void shutdown() {
-		// TODO Auto-generated method stub
-		
+	public synchronized void shutdown() {
+		shutdown = true;
+		this.notify();
 	}
 
 	@Override
 	public void handleMessage(Message message) {
 		//Don't process message if it was not for us!!
-		if(!message.getToIp().equals(identity.getNetworkAddress())) {
-			//TODO Remove sysout
-			System.out.println("!!!!! Message from THIS node !!!");
-			return;
-		}
+		if(!message.getToIp().equals(identity.getNetworkAddress())) return;
 
-		//Analyse message
+		//Analyze message
 		switch (message.getType()) {
-			//react on a Join message
 			case Message.JOIN:
-				//No action if not connected
-				if(!connected) break;
-				
-				JoinMessage join_msg = (JoinMessage) message;
-				Message answer = null;
-
-				FingerEntry predecessorOfJoiningNode = getPredecessor(join_msg.getKey());
-				
-				//Forward or answer?
-				if(predecessorOfJoiningNode.equals(identity)) {
-					//It's us => reply on JOIN
-
-					//Check if it exists
-					FingerEntry newFingerEntry = new FingerEntry(join_msg.getKey(),join_msg.getOriginatorAddress());
-					FingerEntry tempFinger = null;
-					
-					//Do we know the finger already? (As successor or finger entry)
-					synchronized(finger) {
-						if(successor.equals(newFingerEntry)) {
-							tempFinger = successor;
-						}
-						else {
-							tempFinger = finger.get(newFingerEntry);
-						}
-					}
-					
-					//If another node tried to enter the DHT with the same key, send duplicate message
-					if(tempFinger != null) {
-						//Skip, if the same node tried again!
-						if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
-							//Key not allowed message
-							answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.getFromIp(),join_msg.getKey());
-						}
-					}
-					else {
-						synchronized(this) {
-							if(blockJoinFor != null) {
-								//Send busy message
-								answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
-							}
-							else {
-								//Prepare answer
-								answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
-								blockJoinFor = newFingerEntry;
-								
-								//Start timer for node unblocking
-								timer.schedule(blockTask = new TimerTask() {
-
-									@Override
-									public void run() {
-										triggerUnblockJoinBlock();
-									}
-									
-								}, JOIN_BLOCK_PERIOD);
-							}
-						}
-						
-						//Send
-						sendMessage(answer);
-					}
-				}
-				else {
-					//Forward to the best fitting predecessor
-					answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
-					sendMessage(answer);
-				}
+				if(connected) handleJoinMessage((JoinMessage)message);
+				break;
+			case Message.JOIN_RESPONSE:
+				handleJoinResponseMessage((JoinResponseMessage)message);
 				break;
 			case Message.JOIN_ACK:
-				JoinAckMessage jam = (JoinAckMessage)message;
-				
-				//Skip if not blocked or it is a faked message
-				if(blockJoinFor != null && jam.getJoinKey().equals(blockJoinFor.getNodeID())) {
-					//Set successor to new node and update finger-table with old successor
-					FingerEntry old_successor;
-					
-					//Cancel block timer first!!
-					if(blockTask != null)  {
-						blockTask.cancel();
-					}
-					
-					synchronized(finger) {
-						old_successor = successor;
-						successor = blockJoinFor;
-					}
-					
-					//If there are 2 nodes the successor is also the predecessor 
-					updatePredecessor(successor);
-					
-					//TODO REMOVE
-					if(!old_successor.equals(identity)) {
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, old_successor);
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, successor);
-					}
-					else {
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
-					}
-					
-					//Check if we can use the old successor as finger
-					updateFingerTableEntry(old_successor);
-	
-					//Notify everybody of the new node
-					sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
-
-					//unblock
-					synchronized(this) {
-						blockJoinFor = null;
-					}
-				}
-				
+				handleJoinAckMessage((JoinAckMessage)message);
 				break;
 			case Message.JOIN_BUSY:
 				//TODO react on this !?
 				break;
-			case Message.JOIN_RESPONSE:
-				JoinResponseMessage jrm = (JoinResponseMessage) message;
-
-				//Ignore JOIN_RESPONSE message if the node is already connected!
-				if(!connected) {
-					//Check if the join id is really us!
-					if(jrm.getJoinKey().equals(identity.getNodeID())) {
-						//Add finger
-						FingerEntry newSuccessor = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
-						FingerEntry newPredecessor = new FingerEntry(jrm.getPredecessor(),jrm.getFromIp());
-						
-						synchronized (finger) {
-							successor = newSuccessor;
-							predecessor = newPredecessor;
-						}
-						
-						//TODO remove
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, predecessor);						
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
-						connected = true;
-
-						//Inform the node that we got the message
-						sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
-						
-						//Check
-						//updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
-						
-						//Create finger table the first time
-						//buildFingerTable();
-						//checkFingerTable();
-					}
-					else {
-						//Ignore this because the key does not match!!!
-						//TODO react on this
-					}
-				}
-				
+			case Message.JOIN_FINALIZE:
+				handleJoinFinalizeMessage((JoinFinalizeMessage)message);
 				break;
 			case Message.DUPLICATE_NODE_ID:
-				DuplicateNodeIdMessage dupMsg = (DuplicateNodeIdMessage)message;
-				
-				if(dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
-					//it is okay, a join that I send before has reached my predecessor
-				} else {
-					//If the node is not connected allow the change of the identity
-					//Check the duplicate id also
-					if(!connected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
-						//TODO what shall we do here?????
-						assert(false);
-					}
-				}
-
+				handleDuplicateNodeIDMessage((DuplicateNodeIdMessage)message);
+				break;
+			case Message.NODE_JOIN_NOTIFY:
+				handleNotifyJoinMessage((NotifyJoinMessage)message);
+				break;
+			case Message.KEEPALIVE:
+				handleKeepAliveMessage((KeepAliveMessage)message);
+				break;
+			case Message.NODE_LEAVE_NOTIFY:
+				handleNotifyLeaveMessage((NotifyLeaveMessage)message);
 				break;
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
@@ -282,48 +133,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Forward broadcast
 				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				
-				//Process broadcast
+				//Process broadcast content
 				handleMessage(bcast_msg.extractMessage());
 				break;
-			case Message.KEEPALIVE:
-				KeepAliveMessage keep_alive_msg = (KeepAliveMessage)message;
-				FingerEntry advertisedFinger;
-				
-				//Reset timer
-				resetKeepAliveTimer();
-
-				//Handle keep-alive message
-				advertisedFinger = new FingerEntry(keep_alive_msg.getAdvertisedID(),keep_alive_msg.getAdvertisedNetworkAddress());
-				updateFingerTableEntry(advertisedFinger);
-				updatePredecessor(advertisedFinger);
-				
-				break;
-			case Message.NODE_JOIN_NOTIFY:
-				NotifyJoinMessage njm = (NotifyJoinMessage)message;
-				FingerEntry newFinger;
-				
-				//Check if this node can use the newly added node
-				//for the finger table
-				newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
-				updateFingerTableEntry(newFinger);
-				updatePredecessor(newFinger);
-				
-				//Send advertisement if we probably are a finger of the joining node
-				int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
-				int log2_this = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
-				
-				if(log2_pre < log2_this) {
-					//Send advertisement
-					sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()));
-				}
-				
-				break;
-			case Message.NODE_LEAVE_NOTIFY:
-				NotifyLeaveMessage nlm = (NotifyLeaveMessage)message;
-				
-				//Remove finger from finger table and exchange by successor
-				removeFingerTableEntry(new FingerEntry(nlm.getHash(),nlm.getNetworkAddress()),new FingerEntry(nlm.getSuccessorHash(),nlm.getSuccessorNetworkAddress()));
-				
 			default:
 				//TODO Throw a Exception for a unsupported message?!
 		}
@@ -333,8 +145,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	public void run() {
 		//Connect DHT node
 		while(connected == false) {
-			//Try to connect to DHT
-			sendMessage(new JoinMessage(identity.getNetworkAddress(),bootstrapAddress,identity.getNetworkAddress(),identity.getNodeID()));
+			connect(bootstrapAddress);
 			
 			try {
 				//Wait for connection and try again
@@ -350,16 +161,23 @@ public class Node extends Thread implements LookupServiceInterface {
 		resetKeepAliveTimer();
 		
 		//Wait for nothing
-		while(true) {
-			try {
-				//Wait for connection and try again
-				Thread.sleep(5000);
-			}
-			catch (InterruptedException e) {
-				//Exit thread
-				break;
+		synchronized(this) {
+			while(!shutdown) {
+				try {
+					this.wait();
+				}
+				catch (InterruptedException e) {
+					//TODO do something
+				}
 			}
 		}
+		
+		//Shutdown timer
+		timer.cancel();
+		timer.purge();
+		
+		//Close gently by send a NOTIFY_LEAVE_BROADCAST and than exiting the thread
+		sendBroadcast(new NotifyLeaveBroadcastMessage(null, null, null, null,identity.getNodeID(),successor.getNodeID(),successor.getNetworkAddress()),identity.getNodeID(),identity.getNodeID().sub(1));
 	}
 	
 	
@@ -466,7 +284,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		synchronized(finger) {
 			if(newFinger.equals(identity)) return;
 			if(newFinger.equals(successor)) return;
-//			if(newFinger.equals(predecessor)) return;
 			if(finger.containsKey(newFinger)) return;
 		}
 		
@@ -652,6 +469,15 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 		}
 	}
+	
+	private void triggerFinalizeTimeout() {
+		//The finalize timed out => Try to reconnect
+		synchronized(this) {
+			futurePredecessor = null;
+			futureSuccessor = null;
+			connected = false;
+		}
+	}
 
 	private void updatePredecessor(FingerEntry newFinger) {
 		//Nothing to do
@@ -678,5 +504,268 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Check if it might be a finger
 			updateFingerTableEntry(oldPredecessor);
 		}
+	}
+	
+	private void connect(String address) {
+		synchronized(this) {
+			//If the futureSuccessor (or predecessor) is null, then we are not
+			//currently in the process of connection
+			if(!connected && (futureSuccessor == null || futurePredecessor == null)) {
+				
+				//Reset node!!
+				this.successor = identity;
+				this.predecessor = identity;
+				finger.clear();
+				
+				//No address means, WE are the beginning of the DHT
+				//If we are a bootstrapping node, that means bootstrapping address is null or is our address,
+				//we are always connected !!
+				if(address == null || address.equals(communication.getLocalIp())) {
+					//We are connected and we are our own successor
+					connected = true;
+				}
+				else {			
+					//Try to connect to DHT
+					sendMessage(new JoinMessage(identity.getNetworkAddress(),address,identity.getNetworkAddress(),identity.getNodeID()));
+				}
+			}
+		}
+	}
+	
+	private void handleJoinMessage(JoinMessage join_msg) {
+		Message answer = null;
+
+		FingerEntry predecessorOfJoiningNode = getPredecessor(join_msg.getKey());
+		
+		//Forward or answer?
+		if(predecessorOfJoiningNode.equals(identity)) {
+			//It's us => reply on JOIN
+
+			//Check if it exists
+			FingerEntry newFingerEntry = new FingerEntry(join_msg.getKey(),join_msg.getOriginatorAddress());
+			FingerEntry tempFinger = null;
+			
+			//Do we know the finger already? (As successor or finger entry)
+			synchronized(finger) {
+				if(successor.equals(newFingerEntry)) {
+					tempFinger = successor;
+				}
+				else {
+					tempFinger = finger.get(newFingerEntry);
+				}
+			}
+			
+			//If another node tried to enter the DHT with the same key, send duplicate message
+			if(tempFinger != null) {
+				//Skip, if the same node tried again!
+				if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
+					//Key not allowed message
+					answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.getFromIp(),join_msg.getKey());
+				}
+			}
+			else {
+				synchronized(this) {
+					if(blockJoinFor != null) {
+						//Send busy message
+						answer = new JoinBusyMessage(identity.getNetworkAddress(),join_msg.getOriginatorAddress());
+					}
+					else {
+						//Prepare answer
+						answer = new JoinResponseMessage(identity.getNetworkAddress(), join_msg.getOriginatorAddress(),join_msg.getKey(), successor.getNetworkAddress(),successor.getNodeID(),identity.getNodeID());
+						blockJoinFor = newFingerEntry;
+						
+						//Start timer for node unblocking
+						timer.schedule(blockTask = new TimerTask() {
+
+							@Override
+							public void run() {
+								triggerUnblockJoinBlock();
+							}
+							
+						}, JOIN_BLOCK_PERIOD);
+					}
+				}
+				
+				//Send
+				sendMessage(answer);
+			}
+		}
+		else {
+			//Forward to the best fitting predecessor
+			answer = new JoinMessage(identity.getNetworkAddress(),getPredecessor(join_msg.getKey()).getNetworkAddress(), join_msg.getOriginatorAddress(), join_msg.getKey());
+			sendMessage(answer);
+		}
+	}
+	
+	private void handleJoinResponseMessage(JoinResponseMessage jrm) {
+		//Ignore JOIN_RESPONSE message if the node is already connected!
+		synchronized(this) {
+			if(!connected) {
+				//Check if the join id is really us!
+				if(jrm.getJoinKey().equals(identity.getNodeID())) {
+					//Add finger
+					futureSuccessor = new FingerEntry(jrm.getSuccessor(), jrm.getSuccessorAddress());
+					futurePredecessor = new FingerEntry(jrm.getPredecessor(),jrm.getFromIp());
+					
+					//Inform the node that we got the message
+					sendMessage(new JoinAckMessage(identity.getNetworkAddress(), jrm.getFromIp(), identity.getNodeID()));
+					
+					//Start finalizeTask timer
+					timer.schedule(finalizeTask = new TimerTask() {
+
+						@Override
+						public void run() {
+							triggerFinalizeTimeout();
+						}
+						
+					}, JOIN_FINALIZE_PERIOD);
+					
+					//Check
+					//updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
+					
+					//Create finger table the first time
+					//buildFingerTable();
+					//checkFingerTable();
+				}
+				else {
+					//Ignore this because the key does not match!!!
+					//TODO react on this
+				}
+			}
+		}
+	}
+	
+	private void handleJoinAckMessage(JoinAckMessage jam) {
+		//Skip if not blocked or it is a faked message
+		if(blockJoinFor != null && jam.getJoinKey().equals(blockJoinFor.getNodeID())) {
+			//Set successor to new node and update finger-table with old successor
+			FingerEntry old_successor;
+			
+			//Cancel block timer first!!
+			if(blockTask != null)  {
+				blockTask.cancel();
+			}
+			
+			//Notify everybody of the new node
+			//Do it before the new node is integrated in our structure, so we dont rely on
+			//its capability to forward the broadcast
+			sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
+			
+			//Update successor and predecessor
+			updateSuccessor(blockJoinFor);
+			updatePredecessor(successor);
+
+			//Notify the new node, that it is connected
+			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()));
+
+			//unblock
+			synchronized(this) {
+				blockJoinFor = null;
+			}
+		}
+	}
+	
+	private void handleJoinFinalizeMessage(JoinFinalizeMessage jfm) {
+		synchronized(this) {
+			//Only if we are not connected
+			if(connected || futurePredecessor == null || futureSuccessor == null) return;
+			
+			//First, cancel timeout-timer
+			finalizeTask.cancel();
+			
+			//If the joinKey equals our hash
+			if(jfm.getJoinKey().equals(identity.getNodeID())) {
+				synchronized (finger) {
+					successor = futureSuccessor;
+					predecessor = futurePredecessor;
+					futurePredecessor = null;
+					futureSuccessor = null;
+				}
+			
+				//TODO remove
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, predecessor);						
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
+				connected = true;
+			}
+		}
+	}
+	
+	private void handleDuplicateNodeIDMessage(DuplicateNodeIdMessage dupMsg) {
+		if(dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
+			//it is okay, a join that I send before has reached my predecessor
+		} else {
+			//If the node is not connected allow the change of the identity
+			//Check the duplicate id also
+			if(!connected && dupMsg.getDuplicateKey().equals(identity.getNodeID())) {
+				//TODO what shall we do here?????
+				assert(false);
+			}
+		}
+	}
+	
+	private void handleNotifyJoinMessage(NotifyJoinMessage njm) {
+		FingerEntry newFinger;
+		
+		//Check if this node can use the newly added node
+		//for the finger table
+		newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
+		updateFingerTableEntry(newFinger);
+		updatePredecessor(newFinger);
+		
+		//Send advertisement if we probably are a finger of the joining node
+		int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
+		int log2_this = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
+		
+		if(log2_pre < log2_this) {
+			//Send advertisement
+			sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()));
+		}
+	}
+	
+	private void handleKeepAliveMessage(KeepAliveMessage kam) {
+		FingerEntry advertisedFinger;
+		
+		//Reset timer
+		resetKeepAliveTimer();
+
+		//Handle keep-alive message
+		advertisedFinger = new FingerEntry(kam.getAdvertisedID(),kam.getAdvertisedNetworkAddress());
+		updateFingerTableEntry(advertisedFinger);
+		updatePredecessor(advertisedFinger);
+	}
+	
+	private void handleNotifyLeaveMessage(NotifyLeaveMessage nlm) {
+		//Check if our successor is leaving
+		if(nlm.getHash().equals(successor.getNodeID()))  {
+			//Change the successor to the next one
+			updateSuccessor(new FingerEntry(nlm.getSuccessorHash(),nlm.getSuccessorNetworkAddress()));
+		}
+		
+		//Remove leaving finger
+		finger.remove(new FingerEntry(nlm.getHash(),null));
+	}
+	
+	private synchronized void updateSuccessor(FingerEntry newSuccessor) {
+		FingerEntry oldSuccessor;
+		
+		//It should not be in the finger table
+		finger.remove(newSuccessor);
+
+		//Take the new successor
+		oldSuccessor = successor;
+		successor = newSuccessor;
+
+		//TODO remove debug stuff
+		//Fire events
+		if(!oldSuccessor.equals(identity)) {
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, oldSuccessor);
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newSuccessor);
+		}
+		else {
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
+		}
+		
+		//Update finger table
+		updateFingerTableEntry(oldSuccessor);
 	}
 }

@@ -101,9 +101,10 @@ public class Network {
 	public void removeNode(String networkAddress) {
 		Communication com;
 		
-		//Remove
+		//Remove and shutdown
 		synchronized (clients) {
 			com = clients.remove(networkAddress);
+			if(com != null) com.shutdown();
 		}
 
 		//Inform listeners
@@ -282,6 +283,9 @@ public class Network {
 				currentClient = clients.get(currentClient.getSuccessorAddress());
 			}
 			
+			//Hole detected!
+			if(currentClient == null) break;
+			
 			//Check for loop
 			if(alreadyShown.contains(currentClient)) break;
 			
@@ -314,6 +318,10 @@ public class Network {
 			else {
 				result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
 			}
+		}
+		else if(currentClient == null) {
+			//Hole detected
+			result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
 		}
 		else {
 			//Circle contains a side-loop! 
@@ -377,21 +385,21 @@ public class Network {
 		
 		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
+		fingerTable.remove(predecessorFinger);
 		
 		//Transform table
 		showTable = new TreeMap<Integer,FingerEntry>();
 
-		//Successor
-		currentFinger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
-		log2 = NodeID.logTwoFloor(currentFinger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-		showTable.put(log2,currentFinger);
-
 		//For each finger
-		for(FingerEntry fingerEntry: fingerTable.keySet()) {
-			if(!fingerEntry.getNodeID().equals(client.getNodeID())) { 
-				log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
-				showTable.put(log2, fingerEntry);
-			}
+		FingerEntry fingerEntry = successorFinger;
+		
+		while(!fingerEntry.getNodeID().equals(client.getNodeID())) {
+			//Insert finger
+			log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
+			showTable.put(log2, fingerEntry);
+			
+			//Next finger
+			fingerEntry = getSuccessorFinger(fingerTable, fingerEntry.getNodeID());//client.getNode().getSuccessor(fingerEntry.getNodeID());
 		}
 		
 		//Print list
@@ -401,14 +409,14 @@ public class Network {
 			if(currentFinger.equals(successorFinger)) {
 				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + " SUC\n";
 			}
-			else if(currentFinger.equals(predecessorFinger)) {
-				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + " PRE\n";
-			}
 			else {
 				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
 			}
 		}
 		
+		//Add the predecessor at the very end
+		log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
+		result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
 		return result;
 	}
 	

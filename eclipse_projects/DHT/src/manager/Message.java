@@ -25,6 +25,7 @@ public abstract class Message {
 	public final static int JOIN_RESPONSE = 12;
 	public final static int JOIN_ACK = 22;
 	public final static int JOIN_BUSY = 23;
+	public final static int JOIN_FINALIZE = 24;
 	public final static int DUPLICATE_NODE_ID = 16;
 	
 	public final static int KEEPALIVE = 13;
@@ -35,6 +36,9 @@ public abstract class Message {
 	
 	public final static int FIND_PREDECESSOR = 20;
 	public final static int FIND_PREDECESSOR_RESPONSE = 21;
+
+	public final static int FIND_SUCCESSOR = 25;
+	public final static int FIND_SUCCESSOR_RESPONSE = 26;
 
 	//These were public first, the so called I-LIKE-TO-SOLVE-TRICKY-PROBLEMS-IN-THE-MIDDLE-OF-THE-NIGHT design pattern
 	//Changed to something better (someone owns me a beer for that)
