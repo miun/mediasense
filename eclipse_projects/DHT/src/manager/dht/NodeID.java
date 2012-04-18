@@ -1,7 +1,6 @@
 package manager.dht;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 public class NodeID implements Comparable<NodeID> {
 	//This is the address size, 160 bytes for SHA1
