@@ -198,7 +198,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		synchronized(finger) {
 			finger.put(identity, identity);
 			finger.put(successor, successor);
-			finger.put(predecessor, predecessor);
+			//finger.put(predecessor, predecessor);
 
 			//Find predecessor of a node
 			result = finger.lowerKey(hash);
@@ -210,7 +210,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 			finger.remove(successor);
-			finger.remove(predecessor);
+			//finger.remove(predecessor);
 		}
 		
 		//Temporary check
@@ -238,7 +238,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Add identity and successor to the finger-table - IMPORTANT: remove them before return
 			finger.put(identity, identity);
 			finger.put(successor, successor);
-			finger.put(predecessor, predecessor);
+			//finger.put(predecessor, predecessor);
 
 			//Get successor of us
 			result = finger.higherKey(hash);
@@ -250,7 +250,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 			finger.remove(successor);
-			finger.remove(predecessor);
+			//finger.remove(predecessor);
 		}
 		
 		//Temporary check
@@ -279,6 +279,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		NodeID hash_suc;
 		NodeID hash_log2;
 		int log2floor;
+		
+		if(newFinger.getNetworkAddress().equals("") && identity.getNetworkAddress().equals("4")) {
+			System.out.println("break");
+		}
 		
 		//Check for dont's
 		synchronized(finger) {
@@ -479,19 +483,18 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}
 
-	private void updatePredecessor(FingerEntry newFinger) {
+	synchronized private FingerEntry updatePredecessor(FingerEntry newFinger) {
 		//Nothing to do
-		if(newFinger.equals(identity) || newFinger.equals(predecessor)) return;
+		if(newFinger.equals(identity) || newFinger.equals(predecessor)) return null;
 		
-		//Check first if the new one might be a new predecessor
-		if(getPredecessor(newFinger.getNodeID()).getNodeID().equals(predecessor.getNodeID())) {
+		//Check first if the new one really is a better  predecessor
+		if(newFinger.getNodeID().sub(identity.getNodeID()).compareTo(predecessor.getNodeID().sub(identity.getNodeID())) > 0) {
+//		if(getPredecessor(newFinger.getNodeID()).getNodeID().equals(predecessor.getNodeID())) {
 			FingerEntry oldPredecessor = predecessor;
 
 			//It is a better predecessor
-			synchronized (finger) {
-				predecessor = newFinger;
-			}
-			
+			predecessor = newFinger;
+						
 			//Fire fingerChange event
 			if(oldPredecessor.equals(identity)) {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD,identity, predecessor);
@@ -502,8 +505,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//Check if it might be a finger
-			updateFingerTableEntry(oldPredecessor);
-		}
+			//updateFingerTableEntry(oldPredecessor);
+			//return the old predecessor, maybe we can still use it
+			return oldPredecessor;
+		} 
+		else
+			//we did not update anything
+			return null;
 	}
 	
 	private void connect(String address) {
@@ -639,7 +647,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Skip if not blocked or it is a faked message
 		if(blockJoinFor != null && jam.getJoinKey().equals(blockJoinFor.getNodeID())) {
 			//Set successor to new node and update finger-table with old successor
-			FingerEntry old_successor;
 			
 			//Cancel block timer first!!
 			if(blockTask != null)  {
@@ -652,9 +659,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
 			
 			//Update successor and predecessor
-			updateSuccessor(blockJoinFor);
-			updatePredecessor(successor);
-
+			FingerEntry oldSuccessor = updateSuccessor(blockJoinFor);
+			FingerEntry oldPredecessor = updatePredecessor(successor);
+			
+			//check if the old ones are good as fingers
+			if(oldSuccessor != null) updateFingerTableEntry(oldSuccessor);
+			if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
+			
 			//Notify the new node, that it is connected
 			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()));
 
@@ -710,7 +721,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		//for the finger table
 		newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
 		updateFingerTableEntry(newFinger);
-		updatePredecessor(newFinger);
+		FingerEntry oldPredecessor = updatePredecessor(newFinger);
+		
+		//if the predecessor was changed check the old one for the finger table
+		if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
 		
 		//Send advertisement if we probably are a finger of the joining node
 		int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
@@ -731,21 +745,38 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Handle keep-alive message
 		advertisedFinger = new FingerEntry(kam.getAdvertisedID(),kam.getAdvertisedNetworkAddress());
 		updateFingerTableEntry(advertisedFinger);
-		updatePredecessor(advertisedFinger);
+		FingerEntry oldPredecessor = updatePredecessor(advertisedFinger);
+		
+		//if the predecessor was changed check the old one for the finger table
+		if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
 	}
 	
 	private void handleNotifyLeaveMessage(NotifyLeaveMessage nlm) {
+		FingerEntry leavingNodeSuccessor = new FingerEntry(nlm.getSuccessorHash(),nlm.getSuccessorNetworkAddress());
+		
 		//Check if our successor is leaving
 		if(nlm.getHash().equals(successor.getNodeID()))  {
 			//Change the successor to the next one
-			updateSuccessor(new FingerEntry(nlm.getSuccessorHash(),nlm.getSuccessorNetworkAddress()));
+			updateSuccessor(leavingNodeSuccessor);
+		}
+		else { 
+			//Remove leaving finger
+			FingerEntry removedFinger = finger.remove(new FingerEntry(nlm.getHash(),null));
+			
+			if(removedFinger != null) {
+				//TODO remove debug
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, removedFinger);
+			}
+			
+			//Check if the successor of the leaving node is a possible finger for us
+			updateFingerTableEntry(leavingNodeSuccessor);
 		}
 		
-		//Remove leaving finger
-		finger.remove(new FingerEntry(nlm.getHash(),null));
 	}
 	
-	private synchronized void updateSuccessor(FingerEntry newSuccessor) {
+	private synchronized FingerEntry updateSuccessor(FingerEntry newSuccessor) {
+		//TODO first check for donts?????
+		
 		FingerEntry oldSuccessor;
 		
 		//It should not be in the finger table
@@ -766,6 +797,8 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 		
 		//Update finger table
-		updateFingerTableEntry(oldSuccessor);
+		//updateFingerTableEntry(oldSuccessor);
+		//return the old Successor, maybe we can still use it
+		return oldSuccessor;
 	}
 }
