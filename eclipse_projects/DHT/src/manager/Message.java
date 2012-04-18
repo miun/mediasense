@@ -34,6 +34,8 @@ public abstract class Message {
 	public final static int NODE_JOIN_NOTIFY = 18;
 	public final static int NODE_LEAVE_NOTIFY = 19;
 	
+	public final static int NODE_SUSPICIOUS = 27;
+	
 	public final static int FIND_PREDECESSOR = 20;
 	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 

@@ -73,7 +73,7 @@ public class Network {
 			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
-			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
+			System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
 			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}
@@ -356,8 +356,9 @@ public class Network {
 	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		//Inform all listener
 		synchronized(fingerChangeListener) {
-			for(FingerChangeListener l: fingerChangeListener) 
+			for(FingerChangeListener l: fingerChangeListener) {
 				l.OnFingerChange(eventType, node, finger);
+			}
 		}
 	}
 	
