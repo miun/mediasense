@@ -955,9 +955,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Start recovery task
 			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
 		}
-		else if(finger.containsKey(dst)) {
+		else if(finger.containsKey(new FingerEntry(dst, null))) {
 			//Finger failed
-			FingerEntry removedFinger = finger.remove(dst);
+			FingerEntry removedFinger = finger.remove(new FingerEntry(dst, null));
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
 	}
