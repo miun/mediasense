@@ -73,7 +73,7 @@ public class Network {
 			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
-			System.out.println("!!!!! UNKNOWN DESTINATION !!!!!");
+			System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
 			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}
@@ -101,9 +101,10 @@ public class Network {
 	public void removeNode(String networkAddress) {
 		Communication com;
 		
-		//Remove
+		//Remove and shutdown
 		synchronized (clients) {
 			com = clients.remove(networkAddress);
+			if(com != null) com.shutdown();
 		}
 
 		//Inform listeners
@@ -282,6 +283,9 @@ public class Network {
 				currentClient = clients.get(currentClient.getSuccessorAddress());
 			}
 			
+			//Hole detected!
+			if(currentClient == null) break;
+			
 			//Check for loop
 			if(alreadyShown.contains(currentClient)) break;
 			
@@ -314,6 +318,10 @@ public class Network {
 			else {
 				result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
 			}
+		}
+		else if(currentClient == null) {
+			//Hole detected
+			result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
 		}
 		else {
 			//Circle contains a side-loop! 
@@ -348,16 +356,19 @@ public class Network {
 	public void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		//Inform all listener
 		synchronized(fingerChangeListener) {
-			for(FingerChangeListener l: fingerChangeListener) 
+			for(FingerChangeListener l: fingerChangeListener) {
 				l.OnFingerChange(eventType, node, finger);
+			}
 		}
 	}
 	
 	public String showFinger(String nodeAddress) {
 		TreeMap<FingerEntry,FingerEntry> fingerTable;
-		TreeMap<Integer,FingerEntry> localTable;
+		TreeMap<Integer,FingerEntry> showTable;
 		
-		FingerEntry finger;
+		FingerEntry currentFinger;
+		FingerEntry successorFinger;
+		FingerEntry predecessorFinger;
 		
 		Communication client;
 		String result = "";
@@ -366,35 +377,47 @@ public class Network {
 		//Get and check node
 		synchronized(clients) {
 			client = clients.get(nodeAddress);
+			if(client == null) return "Node " + nodeAddress + " not found!";
+			
+			//Get successor and predecessor from client
+			successorFinger = client.getNode().getSuccessor(null);
+			predecessorFinger = client.getNode().getPredecessor(null);
 		}
 		
-		if(client == null) return "Node " + nodeAddress + " not found!";
-		
-		//Get list
+		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
+		fingerTable.remove(predecessorFinger);
 		
 		//Transform table
-		localTable = new TreeMap<Integer,FingerEntry>();
-
-		//Successor
-		finger = client.getNode().getSuccessor(client.getNode().getIdentity().getNodeID());
-		log2 = NodeID.logTwoFloor(finger.getNodeID().sub(client.getNode().getIdentity().getNodeID()));
-		localTable.put(log2,finger);
+		showTable = new TreeMap<Integer,FingerEntry>();
 
 		//For each finger
-		for(FingerEntry fingerEntry: fingerTable.keySet()) {
-			if(!fingerEntry.getNodeID().equals(client.getNodeID())) { 
-				log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
-				localTable.put(log2, fingerEntry);
-			}
+		FingerEntry fingerEntry = successorFinger;
+		
+		while(!fingerEntry.getNodeID().equals(client.getNodeID())) {
+			//Insert finger
+			log2 = NodeID.logTwoFloor(fingerEntry.getNodeID().sub(client.getNodeID()));
+			showTable.put(log2, fingerEntry);
+			
+			//Next finger
+			fingerEntry = getSuccessorFinger(fingerTable, fingerEntry.getNodeID());//client.getNode().getSuccessor(fingerEntry.getNodeID());
 		}
 		
 		//Print list
-		for(int log2temp: localTable.keySet()) {
-			finger = localTable.get(log2temp);
-			result = result + "Addr: " + finger.getNetworkAddress() + " | hash:{" + finger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
+		for(int log2temp: showTable.keySet()) {
+			currentFinger = showTable.get(log2temp);
+			
+			if(currentFinger.equals(successorFinger)) {
+				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + " SUC\n";
+			}
+			else {
+				result = result + "Addr: " + currentFinger.getNetworkAddress() + " | hash:{" + currentFinger.getNodeID().toString() + "} | log2: " + new Integer(log2temp).toString() + "\n";
+			}
 		}
 		
+		//Add the predecessor at the very end
+		log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
+		result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
 		return result;
 	}
 	

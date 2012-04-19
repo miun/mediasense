@@ -81,7 +81,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 */
 	public String showNodeInfo() {
 		if(node!=null) {
-			return "Node_info{" + networkAddress + "}\t||  NodeID{0x" + node.getIdentity().getNodeID().toString() + "}\tconnected: " + (node.getStateConnected() ? "YES" : "NO") + "\t bockedFor: " + (node.getStateBlockJoinFor() == null ? "-" : node.getStateBlockJoinFor());
+			return "Node_info{" + networkAddress + "}\t||  NodeID{0x" + node.getIdentity().getNodeID().toString() + "}\tconnected: " + (node.getStateConnected() ? "YES" : "NO") + "\t blockedFor: " + (node.getStateBlockJoinFor() == null ? "-" : node.getStateBlockJoinFor());
 		} else {
 			return "Node_info{" + networkAddress + "}: Node not started";
 		}
@@ -132,10 +132,11 @@ public class Communication extends Thread implements CommunicationInterface {
 				//handle it
 				node.handleMessage(msg);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//We shall quit, so do we
+				break;
 			}
 		}
+		
 	}
 
 	@Override
@@ -150,9 +151,12 @@ public class Communication extends Thread implements CommunicationInterface {
 
 	@Override
 	public void shutdown() {
-		// TODO Auto-generated method stub
 		//The object will probably last longer than this function call!!!
 		
+		//Forward to node
+		node.shutdown();
 		
+		//Interrupt thread
+		this.interrupt();
 	}
 }

@@ -12,7 +12,7 @@ import manager.ui.log.Log;
 
 
 public final class Manager {
-	private static final String LOG_FILE = "/home/timo/media_sense.log";
+	private static final String LOG_FILE = "../../../../media_sense.log";
 	
 	private static Manager instance;
 	
@@ -62,6 +62,7 @@ public final class Manager {
 		
 		//the famous last words...
 		System.out.println("May the hash be with you!");
+		System.exit(0);
 	}
 	
 	public void stopManager() {
@@ -97,7 +98,7 @@ public final class Manager {
 		return newNodeCounter;
 	}
 	
-	public void rempveNode(String networkAddress) {
+	public void removeNode(String networkAddress) {
 		//Forward to network
 		network.removeNode(networkAddress);
 	}

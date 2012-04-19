@@ -368,7 +368,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 			changedFingersSinceLastKeepalive.repaint();
 		} else if (e.getSource().equals(nodeDeleteButton)) {
 			if(activeNode != null) {
-				manager.rempveNode(activeNode.getCommunication().getLocalIp());
+				manager.removeNode(activeNode.getCommunication().getLocalIp());
 			}
 		}
 	}

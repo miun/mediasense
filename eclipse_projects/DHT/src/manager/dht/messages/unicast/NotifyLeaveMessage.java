@@ -6,20 +6,13 @@ import manager.dht.NodeID;
 public class NotifyLeaveMessage extends Message {
 	private NodeID hash;
 	private NodeID successorHash;
-
-	private String networkAddress;
 	private String successorNetworkAddress;
 	
-	NotifyLeaveMessage(String from,String to,NodeID hash,String networkAddress,NodeID successorHash,String successorNetworkAddress) {
+	public NotifyLeaveMessage(String from,String to,NodeID hash,NodeID successorHash,String successorNetworkAddress) {
 		super(from,to,Message.NODE_LEAVE_NOTIFY);
 		this.hash = hash;
 		this.successorHash = successorHash;
-		this.networkAddress = networkAddress;
 		this.successorNetworkAddress = successorNetworkAddress;
-	}
-
-	public String getNetworkAddress() {
-		return networkAddress;
 	}
 
 	public NodeID getSuccessorHash() {
@@ -32,6 +25,11 @@ public class NotifyLeaveMessage extends Message {
 
 	public NodeID getHash() {
 		return hash;
+	}
+	
+	public String toString() {
+		//Return message info
+		return super.toString("MSG-JOIN-LEAVE") + " hash: " + hash.toString() + " - sucHash: " + successorHash.toString() + " - SucAddr: (" + successorNetworkAddress + ")"; 
 	}
 
 	//Return packet size for statistic

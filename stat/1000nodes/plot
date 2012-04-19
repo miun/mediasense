@@ -3,4 +3,4 @@ set y2range [0:100000000]
 
 set y2tics border
 
-plot [0:200] "./keepalive.dat" using 2:3 with lines, "./nokeepalive.dat" using 2:3 with lines, "./keepalive.dat" using 2:8 axes x1y2 with lines, "nokeepalive.dat" using 2:8 axes x1y2 with lines
+plot [0:1000] "./keepalive.dat" using 2:3 with lines, "./nokeepalive.dat" using 2:3 with lines, "./predecessor.dat" using 2:3 with lines, "./keepalive2.dat" using 2:8 axes x1y2 with lines, "nokeepalive2.dat" using 2:8 axes x1y2 with lines
