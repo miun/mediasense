@@ -12,6 +12,7 @@ import manager.LookupServiceInterface;
 import manager.Message;
 import manager.dht.messages.broadcast.BroadcastMessage;
 import manager.dht.messages.broadcast.KeepAliveBroadcastMessage;
+import manager.dht.messages.broadcast.NodeSuspiciousBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyJoinBroadcastMessage;
 import manager.dht.messages.broadcast.NotifyLeaveBroadcastMessage;
 import manager.dht.messages.unicast.DuplicateNodeIdMessage;
@@ -23,6 +24,7 @@ import manager.dht.messages.unicast.JoinFinalizeMessage;
 import manager.dht.messages.unicast.JoinMessage;
 import manager.dht.messages.unicast.JoinResponseMessage;
 import manager.dht.messages.unicast.KeepAliveMessage;
+import manager.dht.messages.unicast.NodeSuspiciousMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
 import manager.dht.messages.unicast.NotifyLeaveMessage;
 import manager.listener.FingerChangeListener;
@@ -54,6 +56,9 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int ACTION_KEEP_ALIVE = 3;
 	private static final int ACTION_CHECK_PREDECESSOR = 4;
 	private static final int ACTION_CHECK_SUCCESSOR = 5;
+	
+	//TODO remove
+	private static final int ACTION_KILL = 6;
 	
 	//Action-queue
 	BlockingQueue<Integer> actionQueue;
@@ -169,11 +174,11 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
-				//Forward broadcast
-				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
-				
 				//Process broadcast content
 				handleMessage(bcast_msg.extractMessage());
+				
+				//Forward broadcast
+				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				break;
 			default:
 				//TODO Throw a Exception for a unsupported message?!
@@ -205,6 +210,10 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 					break;
 				case ACTION_SHUTDOWN:
+					//TODO copy behind the running loop
+					//Close gently by send a NOTIFY_LEAVE_BROADCAST and than exiting the thread
+					sendBroadcast(new NotifyLeaveBroadcastMessage(null, null, null, null,identity.getNodeID(),successor.getNodeID(),successor.getNetworkAddress()),identity.getNodeID(),identity.getNodeID().sub(1));
+					
 					//Discontinue thread
 					this.interrupt();
 					break;
@@ -227,6 +236,10 @@ public class Node extends Thread implements LookupServiceInterface {
 					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 					//resetKeepAliveTimer();
 					break;
+					
+				case ACTION_KILL:
+					this.interrupt();
+					break;
 			}
 		}
 
@@ -234,8 +247,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		timer.cancel();
 		timer.purge();
 		
-		//Close gently by send a NOTIFY_LEAVE_BROADCAST and than exiting the thread
-		sendBroadcast(new NotifyLeaveBroadcastMessage(null, null, null, null,identity.getNodeID(),successor.getNodeID(),successor.getNetworkAddress()),identity.getNodeID(),identity.getNodeID().sub(1));
+		//TODO here we can send the leave broadcast later
 	}
 	
 	
@@ -412,7 +424,13 @@ public class Node extends Thread implements LookupServiceInterface {
 			communication.sendMessage(message);
 		} catch(DestinationNotReachableException e) {
 			//Handle failing node if we now him
-			if(dstNode != null) handleFailingNode(dstNode);
+			if(dstNode != null) {
+				//handle the failing node
+				handleFailingNode(dstNode);
+				
+				//inform the network
+				sendBroadcast(new NodeSuspiciousBroadcastMessage(null, null, null, null, dstNode), identity.getNodeID(), identity.getNodeID().sub(1));
+			}
 		}
 	}
 	
@@ -453,11 +471,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Send message
 				to = suc.getNetworkAddress();
 				new_bcast_msg = bcast_msg.cloneWithNewAddresses(from, to,newStartKey,newEndKey);
-				try {
-					communication.sendMessage(new_bcast_msg);
-				} catch(DestinationNotReachableException e) {
-					//TODO handle this for Broadcast!
-				}
+				
+				sendMessage(new_bcast_msg,suc.getNodeID());
+				
 			}
 
 			//Move to next range
@@ -545,6 +561,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			futureSuccessor = null;
 			connected = false;
 		}
+		
+		//start to reconnect
+		//TODO think about a senseful address to reconnect
+		notify(ACTION_CONNECT);
 	}
 
 	synchronized private FingerEntry updatePredecessor(FingerEntry newFinger) {
@@ -764,6 +784,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				//TODO remove
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, predecessor);						
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
+				
 				connected = true;
 			}
 		}
@@ -850,6 +871,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 	}
 	
+	private void handleNodeSuspiciousMessage(NodeSuspiciousMessage nsm) {
+		handleFailingNode(nsm.getHash());
+	}
+	
 	private synchronized FingerEntry updateSuccessor(FingerEntry newSuccessor) {
 		//TODO first check for don'ts?????
 		
@@ -902,6 +927,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		catch (InterruptedException e) {
 			//TODO ?!?!
 		}
+	}
+	
+	public void killMe() {
+		notify(ACTION_KILL);
 	}
 	
 	private TimerTask startTask(TimerTask timerTask,int action,int period) {
@@ -957,9 +986,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Start recovery task
 			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
 		}
-		else if(finger.containsKey(dst)) {
+		else if(finger.containsKey(new FingerEntry(dst, null))) {
 			//Finger failed
-			FingerEntry removedFinger = finger.remove(dst);
+			FingerEntry removedFinger = finger.remove(new FingerEntry(dst, null));
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
 	}

@@ -2,9 +2,11 @@ package manager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -53,6 +55,22 @@ public class Network {
 		//Return singleton object
 		if(instance == null) instance = new Network();
 		return instance;
+	}
+	
+	public String getRandomAddress() {
+		if(clients.size()>0) {
+			//create a list from all keys
+			List<String> randomList = new LinkedList<String>(clients.keySet());
+			
+			//shuffle
+			Collections.shuffle(randomList);
+			
+			return randomList.get(0);
+		}
+		else {
+			//There are no clients
+			return null;
+		}
 	}
 	
 	public Collection<Communication> getClients() {
@@ -110,6 +128,46 @@ public class Network {
 		//Inform listeners
 		synchronized(nodeListener) {
 			for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+		}
+	}
+	
+	public String killNode(String networkAddress) {
+		//Can not kill any node if there is no node
+		if (clients.size() <1) return "Cannot kill a node, because there are no nodes";
+		
+		if(networkAddress == null) {
+			String randomClient = getRandomAddress();
+			Communication client = clients.remove(randomClient);
+			
+			//kill the client
+			client.kill();
+			
+			//Inform listeners
+			synchronized(nodeListener) {
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
+			}
+			
+			//return the address
+			return "killed (" + randomClient +")";
+		} 
+		else {
+			Communication client = clients.remove(networkAddress);
+			if(client!=null) {
+				//kill the client
+				client.kill();
+				
+				//Inform listeners
+				synchronized(nodeListener) {
+					for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
+				}
+				
+				//return success
+				return "killed (" + networkAddress +")";
+			}
+			else {
+				//return fail
+				return "can not kill (" + networkAddress +") because there is no node with that address";
+			}
 		}
 	}
 	
@@ -553,4 +611,9 @@ public class Network {
 		
 		return result;
 	}
+	
+	public int getNumberOfClients() {
+		return clients.size();
+	}
+	
 }

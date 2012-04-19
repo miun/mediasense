@@ -69,11 +69,24 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			else if(cmd.cmd.toLowerCase().equals("node_add")) {
 				if(cmd.param == null) {
-					manager.addNode();
+					manager.addNode(null);
+				} 
+				else {
+					manager.startRandomAdd(Integer.valueOf(cmd.param[0]));
+					/*
+					for(String bsa: cmd.param) {
+						manager.addNode(bsa);
+					}*/
+				}
+				
+			}
+			else if(cmd.cmd.toLowerCase().equals("kill")) {
+				if(cmd.param == null) {
+					System.out.println(manager.killNode(null));
 				} 
 				else {
 					for(String bsa: cmd.param) {
-						manager.addNode(bsa);
+						System.out.println(manager.killNode(bsa));
 					}
 				}
 				
@@ -162,17 +175,17 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
-						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave"};
+						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave","!node_suspicious"};
 					}
 					else if(cmd.param[0].equals("broadcast")) {
-						types = new String[]{"keepalive","keepalive_response","notify_join","notify_leave"};
+						types = new String[]{"keepalive","keepalive_response","notify_join","notify_leave","node_suspicious"};
 					}
 					else {
 						//Just forward all parameters as they are
@@ -229,6 +242,8 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.FIND_SUCCESSOR;
 					} else if(type.equals("find_successor_response")) {
 						msgType = Message.FIND_SUCCESSOR_RESPONSE;
+					} else if(type.equals("node_suspicious")) {
+						msgType = Message.NODE_SUSPICIOUS;
 					}
 					
 					//Call the function for every valid message type
