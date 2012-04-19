@@ -34,6 +34,6 @@ public class NotifyLeaveMessage extends Message {
 
 	//Return packet size for statistic
 	public int getDataAmount() {
-		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE + 2 * 4;
+		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE + 4;
 	}
 }

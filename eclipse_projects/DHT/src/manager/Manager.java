@@ -1,6 +1,9 @@
 package manager;
 
 import java.io.IOException;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import manager.dht.Node;
 import manager.listener.FingerChangeListener;
@@ -20,16 +23,19 @@ public final class Manager {
 	private Network network;
 	
 	//Logging facility
-	Log log;
+	private Log log;
 	
 	//Statistic object
-	Statistic statistic = null;
+	private Statistic statistic = null;
 	
 	//UI classes
 	private Console console;
 	
 	//To create nodes in ascending order
 	private int newNodeCounter = -1;
+	
+	//Timer for Random Events
+	private Timer timer;
 	
 	public static void main(String[] args) {
 		new Manager();
@@ -55,6 +61,9 @@ public final class Manager {
 			System.out.println("Cannot open log file " + e.getMessage());
 			log = null;
 		}
+		
+		//Create Timer object
+		timer = new Timer();
 
 		//Create UI classes
 		console = new Console(this.getInstance());
@@ -87,20 +96,47 @@ public final class Manager {
 		Communication comm;
 		Node node;
 		
-		//Add node with communication interface adopted from MediaSense
-		comm = new Communication(network,new Integer(++newNodeCounter).toString());
-		node = new Node(comm,bootstrapAddress);
-		
-		//Give control to the network //Also starts the communication
-		//TODO allow to create nodes with delayed starting capability
-		network.addNode(comm,node);
-		
-		return newNodeCounter;
+		if(bootstrapAddress == null) {
+			String adr;
+			do {
+				//Create a "IP"
+				adr = String.valueOf(new Random().nextInt(10000));
+				comm = new Communication(network, adr);
+				
+				//Get a bootstrapaddress
+				bootstrapAddress = network.getRandomAddress();
+				if(bootstrapAddress == null) {
+					//No nodes in network, open it with bootstrap on us
+					bootstrapAddress = adr;
+				}
+				
+				// create node
+				node = new Node(comm, bootstrapAddress);
+			} while(!network.addNode(comm, node)); //Retry with new values if fails
+			
+			return Integer.valueOf(adr);
+		}
+		else {
+			//Add node with communication interface adopted from MediaSense
+			comm = new Communication(network,new Integer(++newNodeCounter).toString());
+			node = new Node(comm,bootstrapAddress);
+			
+			//Give control to the network //Also starts the communication
+			//TODO allow to create nodes with delayed starting capability
+			network.addNode(comm,node);
+			
+			return newNodeCounter;
+		}
 	}
 	
 	public void removeNode(String networkAddress) {
 		//Forward to network
 		network.removeNode(networkAddress);
+	}
+	
+	public String killNode(String networkAddress) {
+		//Forward to network
+		return network.killNode(networkAddress);
 	}
 	
 	public boolean setMessageDelay(int delay,String networkAddress) {
@@ -196,6 +232,51 @@ public final class Manager {
 		if(statistic != null) {
 			statistic.stop();
 			statistic = null;
+		}
+	}
+	
+	
+	/**
+	 * Kills random clients in a random time until there are minClients or less
+	 * @param minClients
+	 */
+	public void startRandomKill(int minClients) {
+		if(network.getNumberOfClients() > minClients) {
+			timer.schedule(new RandomKillTimerTask(minClients), new Random().nextInt(10000));
+			killNode(null);
+		}
+	}
+	
+	public void startRandomAdd(int maxClients) {
+		if(network.getNumberOfClients() < maxClients) {
+			timer.schedule(new RandomAddTimerTask(maxClients), new Random().nextInt(10000));
+			addNode(null);
+		}
+	}
+	
+	private class RandomKillTimerTask extends TimerTask {
+		private int minClients;
+		
+		public RandomKillTimerTask(int minClients) {
+			this.minClients = minClients;
+		}
+		
+		@Override
+		public void run() {
+			startRandomKill(minClients);
+		}
+	}
+	
+	private class RandomAddTimerTask extends TimerTask {
+		private int maxClients;
+		
+		public RandomAddTimerTask(int maxClients) {
+			this.maxClients = maxClients;
+		}
+		
+		@Override
+		public void run() {
+			startRandomAdd(maxClients);
 		}
 	}
 }

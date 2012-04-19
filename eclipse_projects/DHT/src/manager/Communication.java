@@ -159,4 +159,12 @@ public class Communication extends Thread implements CommunicationInterface {
 		//Interrupt thread
 		this.interrupt();
 	}
+	
+	public void kill() {
+		//kill the node
+		node.killMe();
+		
+		//interrupt the thread
+		this.interrupt();
+	}
 }
