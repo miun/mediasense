@@ -171,6 +171,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			case Message.FIND_PREDECESSOR_RESPONSE:
 				handleFindPredecessorResponseMessage((FindPredecessorResponseMessage)message);
 				break;
+			case Message.NODE_SUSPICIOUS:
+				handleNodeSuspiciousMessage((NodeSuspiciousMessage)message);
+				break;
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
 				
