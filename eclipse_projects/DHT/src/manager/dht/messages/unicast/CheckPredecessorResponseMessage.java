@@ -4,26 +4,26 @@ import manager.Message;
 import manager.dht.NodeID;
 
 public class CheckPredecessorResponseMessage extends Message {
-	private String networkAddress;
-	private NodeID hash;
+	private String preNetworkAddress;
+	private NodeID preHash;
 	
-	public CheckPredecessorResponseMessage(String from,String to,String networkAddress,NodeID hash) {
+	public CheckPredecessorResponseMessage(String from,String to,String preNetworkAddress,NodeID preHash) {
 		super(from,to,FIND_SUCCESSOR_RESPONSE);
-		this.networkAddress = networkAddress;
-		this.hash = hash;
+		this.preNetworkAddress = preNetworkAddress;
+		this.preHash = preHash;
 	}
 
-	public String getNetworkAddress() {
-		return networkAddress;
+	public String getPreNetworkAddress() {
+		return preNetworkAddress;
 	}
 
-	public NodeID getHash() {
-		return hash;
+	public NodeID getPreHash() {
+		return preHash;
 	}
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-PREDECESSOR_SUCCESSOR")+ " | sucKey: " + hash.toString() + " addr: (" + networkAddress.toString() + ")"; 
+		return super.toString("MSG-PREDECESSOR_SUCCESSOR")+ " | preKey: " + preHash.toString() + " preAddr: (" + preNetworkAddress.toString() + ")"; 
 	}
 	
 	//Return packet size for statistic

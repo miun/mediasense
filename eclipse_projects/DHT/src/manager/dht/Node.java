@@ -49,8 +49,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int JOIN_BLOCK_PERIOD = 15000;
 	private static final int JOIN_FINALIZE_PERIOD = 15000;
 	
-	private static final int CHECK_PREDECESSOR_SHORT_PERIOD = 5000;
-	private static final int CHECK_PREDECESSOR_LONG_PERIOD = 50000;
+//	private static final int CHECK_PREDECESSOR_SHORT_PERIOD = 5000;
+	private static final int CHECK_PREDECESSOR_PERIOD = 10000;
 	
 	//Actions
 	private static final int ACTION_CONNECT = 1;
@@ -72,6 +72,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	private TimerTask blockTask;
 	private TimerTask finalizeTask;
 	private TimerTask findPredecessorTask;
+	private TimerTask checkPredecessorTask;
 	
 	//Connection state
 	private boolean connected = false;
@@ -635,7 +636,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					connected = true;
 					
 					//start Precessedessor refresh and keepalive
-					findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+					//findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+					checkPredecessorTask = startTask(checkPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_PERIOD);
 					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 					
 					//Cancel timer-task
