@@ -213,8 +213,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 					break;
 				case ACTION_SHUTDOWN:
-					//TODO copy behind the running loop
-					//Close gently by send a NOTIFY_LEAVE_BROADCAST and than exiting the thread
+					//Close gently by sending a NOTIFY_LEAVE_BROADCAST and than exiting the thread
 					sendBroadcast(new NotifyLeaveBroadcastMessage(null, null, null, null,identity.getNodeID(),successor.getNodeID(),successor.getNetworkAddress()),identity.getNodeID(),identity.getNodeID().sub(1));
 					
 					//Discontinue thread
@@ -249,8 +248,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Shutdown timer
 		timer.cancel();
 		timer.purge();
-		
-		//TODO here we can send the leave broadcast later
 	}
 	
 	
