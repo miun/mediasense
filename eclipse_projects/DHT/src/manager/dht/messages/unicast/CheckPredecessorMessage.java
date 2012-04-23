@@ -17,7 +17,7 @@ public class CheckPredecessorMessage extends Message {
 
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-FIND_SUCCESSOR")+ " | findKey: " + hash.toString(); 
+		return super.toString("MSG-CHECK_PREDECESSOR")+ " | hash: " + hash.toString(); 
 	}
 	
 	//Return packet size for statistic

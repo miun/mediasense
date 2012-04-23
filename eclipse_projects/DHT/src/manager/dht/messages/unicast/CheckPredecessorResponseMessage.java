@@ -23,7 +23,7 @@ public class CheckPredecessorResponseMessage extends Message {
 	
 	public String toString() {
 		//Return message info
-		return super.toString("MSG-PREDECESSOR_SUCCESSOR")+ " | preKey: " + preHash.toString() + " preAddr: (" + preNetworkAddress.toString() + ")"; 
+		return super.toString("MSG-CHECK_PREDECESSOR_RESPONSE")+ " | preHash: " + preHash.toString() + " preAddr: (" + preNetworkAddress.toString() + ")"; 
 	}
 	
 	//Return packet size for statistic

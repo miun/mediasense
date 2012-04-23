@@ -69,24 +69,10 @@ public class Network {
 			//shuffle
 			Collections.shuffle(randomList);
 			Node cur = randomList.get(0).getNode();
-			if(!mustBeConnected) {
-				//It does not matter if it is a connected one - return the first
-				return cur.getIdentity().getNetworkAddress();
-			} else {
-				int i = 0;
-				//Iterate to connected note
-				while(!cur.getStateConnected()) {
-					if(++i >= clients.size()) {
-						//there are no connected nodes 
-						return null;
-					}
-					else {
-						cur = randomList.get(i).getNode();
-					}
-				}
-				//this node is connected
-				return cur.getIdentity().getNetworkAddress();
-			}
+			
+			//It does not matter if it is a connected one - return the first
+			return cur.getIdentity().getNetworkAddress();
+			
 		}
 		else {
 			//There are no clients
