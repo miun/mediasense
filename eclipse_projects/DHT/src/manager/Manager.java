@@ -86,7 +86,7 @@ public final class Manager {
 	//Add node function
 	public String addNode(String bootstrap) {
 		String address = Network.createSequentialAddress();
-		if(bootstrap == null) bootstrap = network.getRandomClientAddress();
+		if(bootstrap == null) bootstrap = network.getRandomClientAddress(true);
 		Network.getInstance().addNode(address,bootstrap);
 		return address;
 	}
@@ -201,7 +201,7 @@ public final class Manager {
 	public void addNodeN(int count) {
 		//Add count nodes
 		for(int i = 0; i < count; i++) {
-			addNode(network.getRandomClientAddress());
+			addNode(network.getRandomClientAddress(true));
 		}
 	}
 	
@@ -209,7 +209,7 @@ public final class Manager {
 		String address;
 		
 		for(int i = 0; i < count; i++) {
-			address = network.getRandomClientAddress();
+			address = network.getRandomClientAddress(false);
 			if(address != null) network.killNode(address);
 		}
 	}
@@ -218,7 +218,7 @@ public final class Manager {
 		String address;
 		
 		for(int i = 0; i < count; i++) {
-			address = network.getRandomClientAddress();
+			address = network.getRandomClientAddress(false);
 			if(address != null) network.removeNode(address);
 		}
 	}
