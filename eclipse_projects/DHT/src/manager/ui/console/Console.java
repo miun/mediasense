@@ -75,33 +75,76 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					manager.addNode(null);
 				} 
 				else {
-					manager.startRandomAdd(Integer.valueOf(cmd.param[0]));
-					/*
-					for(String bsa: cmd.param) {
-						manager.addNode(bsa);
-					}*/
+					manager.addNode(cmd.param[0]);
 				}
-				
 			}
-			else if(cmd.cmd.toLowerCase().equals("kill")) {
-				if(cmd.param == null) {
-					System.out.println(manager.killNode(null));
+			else if(cmd.cmd.toLowerCase().equals("node_add_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
 				} 
 				else {
-					for(String bsa: cmd.param) {
-						System.out.println(manager.killNode(bsa));
+					try {
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.addNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
 					}
 				}
-				
 			}
-			else if(cmd.cmd.toLowerCase().equals("node_del")) {
-				if(cmd.param == null) throw new InvalidParamAmountException();
-				for(String address : cmd.param) {
-					manager.removeNode(address);
+			else if(cmd.cmd.toLowerCase().equals("node_kill")) {
+				if(cmd.param == null) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					//Kill all specified nodes
+					for(int i = 1; i < cmd.param.length; i++) {
+						manager.killNode(cmd.param[i]);
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_kill_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					try {
+						//Kill specified amount of nodes
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.killNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_remove")) {
+				if(cmd.param == null) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					for(int i = 1; i < cmd.param.length; i++) {
+						manager.removeNode(cmd.param[i]);
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_remove_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					try {
+						//Kill specified amount of nodes
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.removeNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
+					}
 				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("g")) {
-				if(cmd.param == null) { 
+				if(cmd.param == null) {
 					new CircleGUI(manager,0);
 				}
 				else {

@@ -2,9 +2,11 @@ package manager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -60,21 +62,20 @@ public class Network {
 		return instance;
 	}
 	
-	/*public String getRandomAddress() {
-		if(clients.size()>0) {
+	public String getRandomClientAddress() {
+		if(clients.size() > 0) {
 			//create a list from all keys
 			List<String> randomList = new LinkedList<String>(clients.keySet());
 			
 			//shuffle
 			Collections.shuffle(randomList);
-			
 			return randomList.get(0);
 		}
 		else {
 			//There are no clients
 			return null;
 		}
-	}*/
+	}
 	
 	public static synchronized String createSequentialAddress() {
 		//Create an address 
@@ -142,35 +143,41 @@ public class Network {
 		//Remove and shutdown
 		synchronized (clients) {
 			com = clients.remove(networkAddress);
-			if(com != null) com.shutdown();
 		}
+		
+		if(com != null) {
+			//Shutdown
+			com.shutdown();
 
-		//Inform listeners
-		synchronized(nodeListener) {
-			for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+			//Print
+			System.out.println("Shut down " + com.getLocalIp());
+	
+			//Inform listeners
+			synchronized(nodeListener) {
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+			}
 		}
 	}
 	
-	public boolean killNode(String networkAddress) {
-		Communication client = clients.get(networkAddress);
+	public void killNode(String networkAddress) {
+		Communication com;
 		
-		if(client != null) {
-			//Kill node
-			client.kill();
+		//Remove and shutdown
+		synchronized (clients) {
+			com = clients.remove(networkAddress);
+		}
+		
+		if(com != null) {
+			//Kill
+			com.kill();
 
+			//Print
+			System.out.println("Killed " + com.getLocalIp());
+	
 			//Inform listeners
 			synchronized(nodeListener) {
-				for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
 			}
-			
-			//Log it
-			System.out.println("Node " + networkAddress + " has been killed!");
-			return true;
-		}
-		else {
-			//Not found
-			System.out.println("Cannot find node " + networkAddress);
-			return false;
 		}
 	}
 	

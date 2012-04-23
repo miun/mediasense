@@ -13,7 +13,6 @@ import manager.listener.NodeMessageListener;
 import manager.ui.console.Console;
 import manager.ui.log.Log;
 
-
 public final class Manager {
 	private static final String LOG_FILE = "../../../../media_sense.log";
 	
@@ -84,20 +83,10 @@ public final class Manager {
 		return null;
 	}
 	
-	//Add node functions
-	public String addNode() {
-		String newAddress = Network.createSequentialAddress();
-		Network.getInstance().addNode(newAddress,null);
-		return newAddress;
-	}
-	
-	public String addNode(String address) {
-		Network.getInstance().addNode(address,null);
-		return address;
-	}
-	
-	public String addNode(String address,String bootstrap) {
-		Network.getInstance().addNode(address, bootstrap);
+	//Add node function
+	public String addNode(String bootstrap) {
+		String address = Network.createSequentialAddress();
+		Network.getInstance().addNode(address,bootstrap);
 		return address;
 	}
 	
@@ -106,9 +95,9 @@ public final class Manager {
 		network.removeNode(networkAddress);
 	}
 	
-	public boolean killNode(String networkAddress) {
+	public void killNode(String networkAddress) {
 		//Forward to network
-		return network.killNode(networkAddress);
+		network.killNode(networkAddress);
 	}
 	
 	public boolean setMessageDelay(int delay,String networkAddress) {
@@ -207,48 +196,29 @@ public final class Manager {
 		}
 	}
 	
-	
-	/**
-	 * Kills random clients in a random time until there are minClients or less
-	 * @param minClients
-	 */
-	public void startRandomKill(int minClients) {
-		if(network.getNumberOfClients() > minClients) {
-			timer.schedule(new RandomKillTimerTask(minClients), new Random().nextInt(10000));
-			killNode(null);
-		}
-	}
-	
-	public void startRandomAdd(int maxClients) {
-		if(network.getNumberOfClients() < maxClients) {
-			timer.schedule(new RandomAddTimerTask(maxClients), new Random().nextInt(10000));
+	//Add multiple nodes at once
+	public void addNodeN(int count) {
+		//Add count nodes
+		for(int i = 0; i < count; i++) {
 			addNode(null);
 		}
 	}
 	
-	private class RandomKillTimerTask extends TimerTask {
-		private int minClients;
+	public void killNodeN(int count) {
+		String address;
 		
-		public RandomKillTimerTask(int minClients) {
-			this.minClients = minClients;
-		}
-		
-		@Override
-		public void run() {
-			startRandomKill(minClients);
+		for(int i = 0; i < count; i++) {
+			address = network.getRandomClientAddress();
+			if(address != null) network.killNode(address);
 		}
 	}
-	
-	private class RandomAddTimerTask extends TimerTask {
-		private int maxClients;
+
+	public void removeNodeN(int count) {
+		String address;
 		
-		public RandomAddTimerTask(int maxClients) {
-			this.maxClients = maxClients;
-		}
-		
-		@Override
-		public void run() {
-			startRandomAdd(maxClients);
+		for(int i = 0; i < count; i++) {
+			address = network.getRandomClientAddress();
+			if(address != null) network.removeNode(address);
 		}
 	}
 }
