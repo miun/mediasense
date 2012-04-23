@@ -53,16 +53,14 @@ public class NodePanel extends JPanel implements MouseListener {
 				(myFingers.getCircleRadius()+CircleGUI.BORDER)*2, 
 				Arrow.PREVIEW);
 		myFingers.add(a);
-		fingerData.put(finger, a);
+		Arrow old = fingerData.put(finger, a);
+		if(old!=null) myFingers.remove(old);
 		
 		myFingers.validate();
 		myFingers.repaint();
 	}
 	
 	public void removeFinger(FingerEntry finger) {
-	/*	if(com.getLocalIp().equals("5921")) {
-			System.out.println("");
-		}*/
 		Arrow a = fingerData.get(finger);
 		if(a!=null) {
 			myFingers.remove(a);
