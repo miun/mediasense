@@ -284,10 +284,10 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.FIND_PREDECESSOR;
 					} else if(type.equals("find_predecessor_response")) {
 						msgType = Message.FIND_PREDECESSOR_RESPONSE;
-					} else if(type.equals("find_successor")) {
-						msgType = Message.FIND_SUCCESSOR;
-					} else if(type.equals("find_successor_response")) {
-						msgType = Message.FIND_SUCCESSOR_RESPONSE;
+					} else if(type.equals("check_predecessor")) {
+						msgType = Message.CHECK_PREDECESSOR;
+					} else if(type.equals("check_predecessor_response")) {
+						msgType = Message.CHECK_PREDECESSOR_RESPONSE;
 					} else if(type.equals("node_suspicious")) {
 						msgType = Message.NODE_SUSPICIOUS;
 					}

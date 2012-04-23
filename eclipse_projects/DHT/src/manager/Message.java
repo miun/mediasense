@@ -39,8 +39,8 @@ public abstract class Message {
 	public final static int FIND_PREDECESSOR = 20;
 	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 
-	public final static int FIND_SUCCESSOR = 25;
-	public final static int FIND_SUCCESSOR_RESPONSE = 26;
+	public final static int CHECK_PREDECESSOR = 25;
+	public final static int CHECK_PREDECESSOR_RESPONSE = 26;
 
 	//These were public first, the so called I-LIKE-TO-SOLVE-TRICKY-PROBLEMS-IN-THE-MIDDLE-OF-THE-NIGHT design pattern
 	//Changed to something better (someone owns me a beer for that)

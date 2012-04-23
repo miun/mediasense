@@ -8,7 +8,7 @@ public class CheckPredecessorResponseMessage extends Message {
 	private NodeID preHash;
 	
 	public CheckPredecessorResponseMessage(String from,String to,String preNetworkAddress,NodeID preHash) {
-		super(from,to,FIND_SUCCESSOR_RESPONSE);
+		super(from,to,CHECK_PREDECESSOR_RESPONSE);
 		this.preNetworkAddress = preNetworkAddress;
 		this.preHash = preHash;
 	}
@@ -29,4 +29,5 @@ public class CheckPredecessorResponseMessage extends Message {
 	//Return packet size for statistic
 	public int getDataAmount() {
 		return super.getDataAmount() + 4 + NodeID.ADDRESS_SIZE;
-	}}
+	}
+}

@@ -7,7 +7,7 @@ public class CheckPredecessorMessage extends Message {
 	private NodeID hash;
 	
 	public CheckPredecessorMessage(String from,String to,NodeID hash) {
-		super(from,to,FIND_SUCCESSOR);
+		super(from,to,CHECK_PREDECESSOR);
 		this.hash = hash;
 	}
 	
