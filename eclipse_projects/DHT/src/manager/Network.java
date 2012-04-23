@@ -2,12 +2,11 @@ package manager;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
@@ -25,7 +24,11 @@ public class Network {
 	private static Network instance = null;
 	public static int msg_delay = 250;
 	
+	//Timer for package transmission
 	private Timer timer;
+	
+	//Counter for sequential addresses
+	private static int sequential_address = 0;
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
@@ -57,7 +60,7 @@ public class Network {
 		return instance;
 	}
 	
-	public String getRandomAddress() {
+	/*public String getRandomAddress() {
 		if(clients.size()>0) {
 			//create a list from all keys
 			List<String> randomList = new LinkedList<String>(clients.keySet());
@@ -71,6 +74,18 @@ public class Network {
 			//There are no clients
 			return null;
 		}
+	}*/
+	
+	public static synchronized String createSequentialAddress() {
+		//Create an address 
+		String result = sequential_address / 10000 % 10 + "." + sequential_address / 1000 % 10 + "." + sequential_address / 100 % 10 + "." + sequential_address % 10;
+		sequential_address++;
+		return result;
+	}
+	
+	public static synchronized String createRandomAddress() {
+		Random R = new Random();
+		return R.nextInt(10) + "." + R.nextInt(10) + "." + R.nextInt(10) + "." + R.nextInt(10) + "."; 
 	}
 	
 	public Collection<Communication> getClients() {
@@ -96,11 +111,19 @@ public class Network {
 		}
 	}
 
-	public boolean addNode(Communication comm, Node node) {
+	public void addNode(String address,String bootstrap) {
+		Communication comm;
+		Node node;		
+		
 		//Add node to list
 		synchronized(clients) {
-			if(!clients.containsKey(comm.getLocalIp())) {
-				clients.put(comm.getLocalIp(), comm);
+			if(!clients.containsKey(address)) {
+				//Create new DHT client
+				comm = new Communication(getInstance(), address);
+				node = new Node(comm, bootstrap);
+
+				//Insert
+				clients.put(address, comm);
 				
 				//start the Communication object
 				comm.start(node);
@@ -109,10 +132,7 @@ public class Network {
 				synchronized(nodeListener) {
 					for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
 				}
-				
-				return true;
-			} else 
-				return false;
+			} 
 		}
 	}
 	
@@ -131,43 +151,26 @@ public class Network {
 		}
 	}
 	
-	public String killNode(String networkAddress) {
-		//Can not kill any node if there is no node
-		if (clients.size() <1) return "Cannot kill a node, because there are no nodes";
+	public boolean killNode(String networkAddress) {
+		Communication client = clients.get(networkAddress);
 		
-		if(networkAddress == null) {
-			String randomClient = getRandomAddress();
-			Communication client = clients.remove(randomClient);
-			
-			//kill the client
+		if(client != null) {
+			//Kill node
 			client.kill();
-			
+
 			//Inform listeners
 			synchronized(nodeListener) {
 				for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
 			}
 			
-			//return the address
-			return "killed (" + randomClient +")";
-		} 
+			//Log it
+			System.out.println("Node " + networkAddress + " has been killed!");
+			return true;
+		}
 		else {
-			Communication client = clients.remove(networkAddress);
-			if(client!=null) {
-				//kill the client
-				client.kill();
-				
-				//Inform listeners
-				synchronized(nodeListener) {
-					for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
-				}
-				
-				//return success
-				return "killed (" + networkAddress +")";
-			}
-			else {
-				//return fail
-				return "can not kill (" + networkAddress +") because there is no node with that address";
-			}
+			//Not found
+			System.out.println("Cannot find node " + networkAddress);
+			return false;
 		}
 	}
 	

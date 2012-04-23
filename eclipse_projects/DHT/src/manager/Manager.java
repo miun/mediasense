@@ -31,9 +31,6 @@ public final class Manager {
 	//UI classes
 	private Console console;
 	
-	//To create nodes in ascending order
-	private int newNodeCounter = -1;
-	
 	//Timer for Random Events
 	private Timer timer;
 	
@@ -87,46 +84,21 @@ public final class Manager {
 		return null;
 	}
 	
-	public int addNode() {
-		//No bootstrapping!
-		return addNode(null);
+	//Add node functions
+	public String addNode() {
+		String newAddress = Network.createSequentialAddress();
+		Network.getInstance().addNode(newAddress,null);
+		return newAddress;
 	}
 	
-	public int addNode(String bootstrapAddress) {
-		Communication comm;
-		Node node;
-		
-		if(bootstrapAddress == null) {
-			String adr;
-			do {
-				//Create a "IP"
-				adr = String.valueOf(new Random().nextInt(10000));
-				comm = new Communication(network, adr);
-				
-				//Get a bootstrapaddress
-				bootstrapAddress = network.getRandomAddress();
-				if(bootstrapAddress == null) {
-					//No nodes in network, open it with bootstrap on us
-					bootstrapAddress = adr;
-				}
-				
-				// create node
-				node = new Node(comm, bootstrapAddress);
-			} while(!network.addNode(comm, node)); //Retry with new values if fails
-			
-			return Integer.valueOf(adr);
-		}
-		else {
-			//Add node with communication interface adopted from MediaSense
-			comm = new Communication(network,new Integer(++newNodeCounter).toString());
-			node = new Node(comm,bootstrapAddress);
-			
-			//Give control to the network //Also starts the communication
-			//TODO allow to create nodes with delayed starting capability
-			network.addNode(comm,node);
-			
-			return newNodeCounter;
-		}
+	public String addNode(String address) {
+		Network.getInstance().addNode(address,null);
+		return address;
+	}
+	
+	public String addNode(String address,String bootstrap) {
+		Network.getInstance().addNode(address, bootstrap);
+		return address;
 	}
 	
 	public void removeNode(String networkAddress) {
@@ -134,7 +106,7 @@ public final class Manager {
 		network.removeNode(networkAddress);
 	}
 	
-	public String killNode(String networkAddress) {
+	public boolean killNode(String networkAddress) {
 		//Forward to network
 		return network.killNode(networkAddress);
 	}
