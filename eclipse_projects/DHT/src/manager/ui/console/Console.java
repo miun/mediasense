@@ -8,6 +8,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
 import manager.Manager;
 import manager.Message;
@@ -287,24 +290,48 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			else if(cmd.cmd.toLowerCase().equals("wait")) {
 				//Wait for the specified time in ms
-				if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+				if(cmd.param == null || cmd.param.length > 2) throw new InvalidParamAmountException();
+				
+				long wait,wait_rand;
 				
 				//Wait
-				long wait = Long.parseLong(cmd.param[0]);
-				if(wait > 0) {
-					System.out.println("Wait for " + wait + " ms...");
-					
-					try {
-						Thread.sleep(wait);
-					}
-					catch (InterruptedException e) {
-						System.out.println("Sleep interrupted by exception!");
-						return false;
-					}
-
-					System.out.println("Wait done");
+				try {
+					wait = Long.parseLong(cmd.param[0]);
+					wait_rand = cmd.param.length > 1 ? Long.parseLong(cmd.param[1]) : 0;
+				}
+				catch (NumberFormatException e) {
+					System.out.println("Invalid number!");
+					return true;
 				}
 				
+				if(wait > 0) {
+					if(wait_rand > 0) {
+						System.out.println("Wait between " + wait + " and " + (wait + wait_rand) + " ms...");
+						
+						try {
+							Thread.sleep(wait + (new Random()).nextInt((int)wait_rand));
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							return false;
+						}
+
+						System.out.println("Wait done");
+					}
+					else {
+						System.out.println("Wait for " + wait + " ms...");
+						
+						try {
+							Thread.sleep(wait);
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							return false;
+						}
+	
+						System.out.println("Wait done");
+					}
+				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("statistic")) {
 				String filename = "";
@@ -370,7 +397,13 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		}
 
 		//Return list if it contains elements
-		if(temp.size() > 0) params = temp.toArray(params);
+		if(temp.size() > 0) {
+			params = temp.toArray(params);
+		}
+		else {
+			params = null;
+		}
+		
 		return new Command(cmd,params);
 	}
 	
@@ -418,13 +451,16 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		BufferedReader reader;
 		String line = null;
 		
+		List<String> lines = new ArrayList<String>();
+		HashMap<String,Integer> gotos = new HashMap<String,Integer>();
+
 		try {
 			//Open file
 			fstream = new FileInputStream(filename);
 			reader = new BufferedReader(new InputStreamReader(fstream));
 			
 			//GO!
-			System.out.println("Executing script file " + filename);
+			System.out.println("Loading script file " + filename);
 
 			//Execute each line
 			while((line = reader.readLine()) != null) {
@@ -433,18 +469,53 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				
 				//Ignore comments
 				if(line.length() > 0 && !line.substring(0,1).equals("#")) {
-					if(handleCommand(line) == false) break;
+					if(line.substring(0,1).equals(":")) {
+						//Goto mark
+						gotos.put(line.substring(1,line.length()).trim().toLowerCase(), lines.size() - 1);
+					}
+					else {
+						//Normal script line
+						lines.add(line.trim());
+					}
 				}
 			}
 			
 			//Close file
 			reader.close();
 			fstream.close();
-			
-			System.out.println(" --- script done ---");
 		}
 		catch (IOException e) {
 			System.out.println("Cannot load script " + filename);
+			return;
 		}
+		
+		//Execute
+		System.out.println("Executing script file...");
+		for(int i = 0; i < lines.size(); i++) {
+			//Get current line
+			line = lines.get(i);
+			
+			//Special handling of goto lines
+			if(line.length() >= 4 && line.substring(0,4).toLowerCase().equals("goto")) {
+				//Get line link
+				String link = line.substring(4,line.length()).trim().toLowerCase();
+				Integer line_number = gotos.get(link);
+				
+				if(line_number == null) {
+					System.out.println("Invalid goto reference " + link + "! Ignoring...");
+				}
+				else {
+					System.out.println("GOTO line " + line_number.toString());
+					i = line_number < 0 ? 0 : line_number;
+				}
+			}
+			else {
+				//Handle normal command
+				System.out.println(line);
+				if(handleCommand(line) == false) break;
+			}
+		}
+		
+		System.out.println(" --- script done ---");
 	}
 }
