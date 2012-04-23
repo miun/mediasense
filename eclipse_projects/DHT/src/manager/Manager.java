@@ -222,4 +222,8 @@ public final class Manager {
 			if(address != null) network.removeNode(address);
 		}
 	}
+	
+	public void breakNode(String address) {
+		network.breakNode(address);
+	}
 }

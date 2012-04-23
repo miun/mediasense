@@ -108,7 +108,7 @@ public class Network {
 
 	public void addNode(String address,String bootstrap) {
 		Communication comm;
-		Node node;		
+		Node node;
 		
 		//Add node to list
 		synchronized(clients) {
@@ -622,5 +622,11 @@ public class Network {
 	public int getNumberOfClients() {
 		return clients.size();
 	}
-	
+
+	public void breakNode(String address) {
+		Communication client;
+		
+		client = clients.get(address);
+		if(client != null) client.getNode().debugBreak();
+	}
 }

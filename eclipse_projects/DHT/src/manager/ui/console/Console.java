@@ -406,6 +406,17 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					execScript(filename);
 				}
 			}
+			else if(cmd.cmd.toLowerCase().equals("break")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					//No filename specified
+					throw new InvalidParamAmountException();
+				}
+				else {
+					//Stop node for inspection
+					//Works only in debug mode
+					manager.breakNode(cmd.param[0]);
+				}
+			}
 			else if(!cmd.cmd.equals("")) { 
 				System.out.println("Invalid command!");
 			}

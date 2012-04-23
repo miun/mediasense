@@ -717,6 +717,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					sendMessage(new JoinAckMessage(identity.getNetworkAddress(), futurePredecessor.getNetworkAddress(), identity.getNodeID()),futurePredecessor.getNodeID());
 					
 					//Start finalizeTask timer
+					//finalizeTask = startTask(finalizeTask)
 					timer.schedule(finalizeTask = new TimerTask() {
 
 						@Override
@@ -969,6 +970,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		if(findFinger.equals(identity)) {
 			//Its us => reply
 			sendMessage(new FindPredecessorResponseMessage(identity.getNetworkAddress(),fpm.getOrigAddress(),identity.getNodeID(),fpm.getHash()),null);
+			
+			//TODO check if this is good or not
+			updateFingerTable(new FingerEntry(fpm.getHash(),fpm.getOrigAddress()));
 		}
 		else {
 			//Forward to the best finger
@@ -1031,5 +1035,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			//TODO remove debugging
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
+	}
+	
+	//TODO remove debug function
+	public void debugBreak() {
+		assert(false);
 	}
 }
