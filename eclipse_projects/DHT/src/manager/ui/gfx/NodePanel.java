@@ -60,6 +60,9 @@ public class NodePanel extends JPanel implements MouseListener {
 	}
 	
 	public void removeFinger(FingerEntry finger) {
+		if(com.getLocalIp().equals("5921")) {
+			System.out.println("");
+		}
 		Arrow a = fingerData.get(finger);
 		if(a!=null) {
 			myFingers.remove(a);

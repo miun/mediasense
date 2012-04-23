@@ -127,6 +127,9 @@ KeepAliveListener, ActionListener, ChangeListener {
 				if(!fe.equals(n.getIdentity())) {
 					node.addFinger(fe);
 				}
+				//add the predecessor if there is one
+				FingerEntry pre = n.getPredecessor();
+				if(pre != null) node.addFinger(pre);
 			}
 		}
 		

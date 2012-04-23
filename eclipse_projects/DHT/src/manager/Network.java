@@ -439,12 +439,11 @@ public class Network {
 			
 			//Get successor and predecessor from client
 			successorFinger = client.getNode().getSuccessor(null);
-			predecessorFinger = client.getNode().getPredecessor(null);
+			predecessorFinger = client.getNode().getPredecessor();
 		}
 		
 		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
-		fingerTable.remove(predecessorFinger);
 		
 		//Transform table
 		showTable = new TreeMap<Integer,FingerEntry>();
@@ -473,9 +472,13 @@ public class Network {
 			}
 		}
 		
-		//Add the predecessor at the very end
-		log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
-		result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
+		//Add the predecessor at the very end if there is a predecessor
+		if(predecessorFinger!=null) {
+			log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
+			result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
+		} else {
+			result = result + "currently no predeccessor\n";
+		}
 		return result;
 	}
 	

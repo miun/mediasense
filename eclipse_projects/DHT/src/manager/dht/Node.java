@@ -258,6 +258,11 @@ public class Node extends Thread implements LookupServiceInterface {
 		return identity;
 	}
 	
+	//TODO just for UI purposes
+	public FingerEntry getPredecessor() {
+		return predecessor;
+	}
+	
 	//TODO private later !
 	public FingerEntry getPredecessor(NodeID nodeID) {
 		FingerEntry hash;
@@ -855,6 +860,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		//If predecessor
 		else if (predecessor != null && nlm.getHash().equals(predecessor.getNodeID())) {
 			synchronized(this) {
+				//TODO remove DEBUG fire event
+				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);				
+				
 				predecessor = null;
 				notify(ACTION_CHECK_PREDECESSOR);
 			}
@@ -969,8 +977,25 @@ public class Node extends Thread implements LookupServiceInterface {
 	private void handleFindPredecessorResponseMessage(FindPredecessorResponseMessage fprm) {
 		//Check if hash fits; ignore otherwise
 		if(identity.getNodeID().equals(fprm.getOrigHash())) {
-			//Update predecessor
-			updatePredecessor((new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp())));
+			//Update predecessor if it has changed
+			FingerEntry newPredecessor = new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp());
+			synchronized (this) {
+				if(predecessor == null || !predecessor.equals(newPredecessor)) {
+					//TODO remove dubugging
+					if(predecessor != null) {
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, predecessor);
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newPredecessor);
+					}else {
+						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newPredecessor);
+					}
+					
+					
+					predecessor = newPredecessor;
+				}
+			}
+			
+			//updatePredecessor((new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp())));
+			
 			
 			//Restart task
 			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_LONG_PERIOD);
@@ -979,19 +1004,29 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	private synchronized void handleFailingNode(NodeID dst) {
 		if(successor.getNodeID().equals(dst)) {
+			//TODO remove later fire events
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, successor);
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, getSuccessor(successor.getNodeID()));
+			
 			//Successor failed
-			successor = getSuccessor(successor.getNodeID());
+			successor = getSuccessor(successor.getNodeID());				
 		}
 		else if(predecessor != null && predecessor.getNodeID().equals(dst)) {
+			//TODO remove later fire events
+			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);
+			
 			//Predecessor failed
 			predecessor = null;
 			
 			//Start recovery task
-			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
+			notify(ACTION_CHECK_PREDECESSOR);
+			//findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
 		}
 		else if(finger.containsKey(new FingerEntry(dst, null))) {
 			//Finger failed
 			FingerEntry removedFinger = finger.remove(new FingerEntry(dst, null));
+			
+			//TODO remove debugging
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
 	}
