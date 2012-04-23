@@ -1,4 +1,4 @@
-package manager.dht;
+       package manager.dht;
 
 import java.util.Random;
 import java.util.Timer;
@@ -104,10 +104,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Notify connect
 		notify(ACTION_CONNECT);
-		
-		//start Precessedessor refresh and keepalive
-		findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
-		keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 		
 		//Start thread
 		this.start();
@@ -616,7 +612,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				
 				//Reset node!!
 				this.successor = identity;
-				this.predecessor = identity;
+				//this.predecessor = identity;
 				finger.clear();
 				
 				//No address means, WE are the beginning of the DHT
@@ -625,6 +621,10 @@ public class Node extends Thread implements LookupServiceInterface {
 				if(address == null || address.equals(communication.getLocalIp())) {
 					//We are connected and we are our own successor
 					connected = true;
+					
+					//start Precessedessor refresh and keepalive
+					findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 					
 					//Cancel timer-task
 					if(connectTask != null) connectTask.cancel();
@@ -795,6 +795,9 @@ public class Node extends Thread implements LookupServiceInterface {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);						
 				
 				connected = true;
+				//start Precessedessor refresh and keepalive
+				findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+				keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 			}
 		}
 	}
