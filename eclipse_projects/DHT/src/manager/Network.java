@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
@@ -79,14 +78,9 @@ public class Network {
 	
 	public static synchronized String createSequentialAddress() {
 		//Create an address 
-		String result = sequential_address / 10000 % 10 + "." + sequential_address / 1000 % 10 + "." + sequential_address / 100 % 10 + "." + sequential_address % 10;
+		String result = new Integer(sequential_address).toString(); 
 		sequential_address++;
 		return result;
-	}
-	
-	public static synchronized String createRandomAddress() {
-		Random R = new Random();
-		return R.nextInt(10) + "." + R.nextInt(10) + "." + R.nextInt(10) + "." + R.nextInt(10) + "."; 
 	}
 	
 	public Collection<Communication> getClients() {

@@ -86,6 +86,7 @@ public final class Manager {
 	//Add node function
 	public String addNode(String bootstrap) {
 		String address = Network.createSequentialAddress();
+		if(bootstrap == null) bootstrap = network.getRandomClientAddress();
 		Network.getInstance().addNode(address,bootstrap);
 		return address;
 	}
@@ -200,7 +201,7 @@ public final class Manager {
 	public void addNodeN(int count) {
 		//Add count nodes
 		for(int i = 0; i < count; i++) {
-			addNode(null);
+			addNode(network.getRandomClientAddress());
 		}
 	}
 	
