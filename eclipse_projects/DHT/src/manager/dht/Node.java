@@ -49,15 +49,17 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int JOIN_BLOCK_PERIOD = 15000;
 	private static final int JOIN_FINALIZE_PERIOD = 15000;
 	
-	private static final int CHECK_PREDECESSOR_SHORT_PERIOD = 5000;
-	private static final int CHECK_PREDECESSOR_LONG_PERIOD = 50000;
+	//private static final int CHECK_PREDECESSOR_SHORT_PERIOD = 5000;
+	//private static final int CHECK_PREDECESSOR_LONG_PERIOD = 50000;
+	
+	private static final int FIND_PREDECESSOR_PERIOD = 10000;
 	
 	//Actions
 	private static final int ACTION_CONNECT = 1;
 	private static final int ACTION_SHUTDOWN = 2;
 	private static final int ACTION_KEEP_ALIVE = 3;
 	private static final int ACTION_CHECK_PREDECESSOR = 4;
-	private static final int ACTION_CHECK_SUCCESSOR = 5;
+	private static final int ACTION_FIND_PREDECESSOR = 5;
 	
 	//TODO remove
 	private static final int ACTION_KILL = 6;
@@ -220,6 +222,8 @@ public class Node extends Thread implements LookupServiceInterface {
 					this.interrupt();
 					break;
 				case ACTION_CHECK_PREDECESSOR:
+					break;
+				case ACTION_FIND_PREDECESSOR:
 					//Send FIND_PREDECESSOR message to get a better predecessor
 					synchronized(this) {
 						FingerEntry dst = getPredecessor(null);
@@ -228,9 +232,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					}
 					
 					//Reschedule task
-					findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_SHORT_PERIOD);
-					break;
-				case ACTION_CHECK_SUCCESSOR:
+					findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,FIND_PREDECESSOR_PERIOD);
 					break;
 				case ACTION_KEEP_ALIVE:
 					//trigger the keepalive and start period for the next one
@@ -635,7 +637,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					connected = true;
 					
 					//start Precessedessor refresh and keepalive
-					findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+					//TODO this must be checkpredecessor findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
 					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 					
 					//Cancel timer-task
@@ -806,7 +808,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				
 				connected = true;
 				//start Precessedessor refresh and keepalive
-				findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
+				//TODO this must be checkpredecessor findPredecessorTask = startTask(findPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_LONG_PERIOD);
 				keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 			}
 		}
@@ -1009,11 +1011,11 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 			}
 			
-			//updatePredecessor((new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp())));
-			
-			
-			//Restart task
-			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,CHECK_PREDECESSOR_LONG_PERIOD);
+			//We have a predecessor - stop trying to find one
+			if(findPredecessorTask != null) {
+				findPredecessorTask.cancel();
+			}
+				
 		}
 	}
 	
