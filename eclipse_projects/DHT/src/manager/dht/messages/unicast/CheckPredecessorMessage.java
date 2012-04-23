@@ -3,10 +3,10 @@ package manager.dht.messages.unicast;
 import manager.Message;
 import manager.dht.NodeID;
 
-public class FindSuccessorMessage extends Message {
+public class CheckPredecessorMessage extends Message {
 	private NodeID hash;
 	
-	public FindSuccessorMessage(String from,String to,NodeID hash) {
+	public CheckPredecessorMessage(String from,String to,NodeID hash) {
 		super(from,to,FIND_SUCCESSOR);
 		this.hash = hash;
 	}

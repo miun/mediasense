@@ -1,4 +1,4 @@
-       package manager.dht;
+package manager.dht;
 
 import java.util.Random;
 import java.util.Timer;
@@ -30,6 +30,8 @@ import manager.dht.messages.unicast.NotifyLeaveMessage;
 import manager.listener.FingerChangeListener;
 
 public class Node extends Thread implements LookupServiceInterface {
+	private String threadName = null;
+	
 	//Communication
 	private CommunicationInterface communication;
 	private String bootstrapAddress;
@@ -188,6 +190,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	public void run() {
 		int currentAction;
 		
+		threadName = this.getName();
+		
 		//Main loop
 		while(true) {
 			//Get next element from queue
@@ -242,8 +246,10 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 
 		//Shutdown timer
-		timer.cancel();
-		timer.purge();
+		synchronized(this) {
+			timer.cancel();
+			timer.purge();
+		}
 	}
 	
 	
@@ -563,6 +569,12 @@ public class Node extends Thread implements LookupServiceInterface {
 	private void triggerFinalizeTimeout() {
 		//The finalize timed out => Try to reconnect
 		synchronized(this) {
+			if(futureSuccessor == null) {
+				//Timer has not been deactivated yet, but we are already connected!
+				//Do nothing then
+				return; 
+			}
+			
 			futurePredecessor = null;
 			futureSuccessor = null;
 			connected = false;
@@ -661,12 +673,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//If another node tried to enter the DHT with the same key, send duplicate message
-			if(tempFinger != null) {
-				//Skip, if the same node tried again!
-				if(!tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
-					//Key not allowed message
-					answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.getFromIp(),join_msg.getKey());
-				}
+			if(tempFinger != null && !tempFinger.getNetworkAddress().equals(newFingerEntry.getNetworkAddress())) {
+				//Key not allowed message
+				answer = new DuplicateNodeIdMessage(identity.getNetworkAddress(), join_msg.getFromIp(),join_msg.getKey());
 			}
 			else {
 				synchronized(this) {
@@ -690,10 +699,10 @@ public class Node extends Thread implements LookupServiceInterface {
 						}, JOIN_BLOCK_PERIOD);
 					}
 				}
-				
-				//Send
-				sendMessage(answer,join_msg.getKey());
 			}
+				
+			//Send
+			sendMessage(answer,join_msg.getKey());
 		}
 		else {
 			//Forward to the best fitting predecessor
@@ -947,7 +956,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		notify(ACTION_KILL);
 	}
 	
-	private TimerTask startTask(TimerTask timerTask,int action,int period) {
+	private synchronized TimerTask startTask(TimerTask timerTask,int action,int period) {
 		//Stop if appropriate
 		if(timerTask != null) {
 			timerTask.cancel();
@@ -987,7 +996,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			FingerEntry newPredecessor = new FingerEntry(fprm.getPredecessorHash(),fprm.getFromIp());
 			synchronized (this) {
 				if(predecessor == null || !predecessor.equals(newPredecessor)) {
-					//TODO remove dubugging
+					//TODO remove debugging
 					if(predecessor != null) {
 						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, predecessor);
 						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newPredecessor);
@@ -1037,7 +1046,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}
 	
-	//TODO remove debug function
 	public void debugBreak() {
 		assert(false);
 	}

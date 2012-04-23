@@ -3,11 +3,11 @@ package manager.dht.messages.unicast;
 import manager.Message;
 import manager.dht.NodeID;
 
-public class FindSuccessorResponseMessage extends Message {
+public class CheckPredecessorResponseMessage extends Message {
 	private String networkAddress;
 	private NodeID hash;
 	
-	public FindSuccessorResponseMessage(String from,String to,String networkAddress,NodeID hash) {
+	public CheckPredecessorResponseMessage(String from,String to,String networkAddress,NodeID hash) {
 		super(from,to,FIND_SUCCESSOR_RESPONSE);
 		this.networkAddress = networkAddress;
 		this.hash = hash;
