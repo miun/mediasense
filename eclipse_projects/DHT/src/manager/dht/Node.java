@@ -348,7 +348,8 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	//Check if new node can be inserted into finger table
-	public void updateFingerTableEntry(FingerEntry newFinger) {
+	public void updateFingerTable(FingerEntry newFinger) {
+		FingerEntry oldSuccessor;
 		FingerEntry suc;
 		NodeID hash_finger;
 		NodeID hash_suc;
@@ -365,6 +366,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			if(newFinger.equals(successor)) return;
 			if(finger.containsKey(newFinger)) return;
 		}
+		
+		//First check if it is a better successor
+		oldSuccessor = updateSuccessor(newFinger);
+		if(oldSuccessor != null) newFinger = oldSuccessor;
 		
 		//1 - Rotate hash to the "origin"
 		//2 - Then get the logarithm of base 2, rounded down (floor)
@@ -752,12 +757,11 @@ public class Node extends Thread implements LookupServiceInterface {
 			sendBroadcast(new NotifyJoinBroadcastMessage(null,null,null,null,blockJoinFor.getNetworkAddress(),blockJoinFor.getNodeID()),identity.getNodeID(),identity.getNodeID().sub(1));
 			
 			//Update successor and predecessor
-			FingerEntry oldSuccessor = updateSuccessor(blockJoinFor);
+			updateFingerTable(blockJoinFor);
 			FingerEntry oldPredecessor = updatePredecessor(successor);
 			
 			//check if the old ones are good as fingers
-			if(oldSuccessor != null) updateFingerTableEntry(oldSuccessor);
-			if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
+			if(oldPredecessor != null) updateFingerTable(oldPredecessor);
 			
 			//Notify the new node, that it is connected
 			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()),jam.getJoinKey());
@@ -814,11 +818,11 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Check if this node can use the newly added node
 		//for the finger table
 		newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
-		updateFingerTableEntry(newFinger);
+		updateFingerTable(newFinger);
 		FingerEntry oldPredecessor = updatePredecessor(newFinger);
 		
 		//if the predecessor was changed check the old one for the finger table
-		if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
+		if(oldPredecessor != null) updateFingerTable(oldPredecessor);
 		
 		//Send advertisement if we probably are a finger of the joining node
 		int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
@@ -839,11 +843,11 @@ public class Node extends Thread implements LookupServiceInterface {
 
 		//Handle keep-alive message
 		advertisedFinger = new FingerEntry(kam.getAdvertisedID(),kam.getAdvertisedNetworkAddress());
-		updateFingerTableEntry(advertisedFinger);
+		updateFingerTable(advertisedFinger);
 		FingerEntry oldPredecessor = updatePredecessor(advertisedFinger);
 		
 		//if the predecessor was changed check the old one for the finger table
-		if(oldPredecessor != null) updateFingerTableEntry(oldPredecessor);
+		if(oldPredecessor != null) updateFingerTable(oldPredecessor);
 	}
 	
 	private void handleNotifyLeaveMessage(NotifyLeaveMessage nlm) {
@@ -852,7 +856,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Check if our successor is leaving
 		if(nlm.getHash().equals(successor.getNodeID()))  {
 			//Change the successor to the next one
-			updateSuccessor(leavingNodeSuccessor);
+			updateFingerTable(leavingNodeSuccessor);
 		}
 		//If predecessor
 		else if (predecessor != null && nlm.getHash().equals(predecessor.getNodeID())) {
@@ -874,7 +878,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			}
 			
 			//Check if the successor of the leaving node's successor is a possible finger for us
-			updateFingerTableEntry(leavingNodeSuccessor);
+			updateFingerTable(leavingNodeSuccessor);
 		}
 		
 	}
@@ -905,8 +909,6 @@ public class Node extends Thread implements LookupServiceInterface {
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
 		}
 		
-		//Update finger table
-		//updateFingerTableEntry(oldSuccessor);
 		//return the old Successor, maybe we can still use it
 		return oldSuccessor;
 	}
