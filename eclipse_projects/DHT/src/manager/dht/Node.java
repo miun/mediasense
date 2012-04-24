@@ -422,10 +422,6 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	private void sendMessage(Message message,NodeID dstNode) {
-		if(message.getToIp().equals("88")) {
-			System.out.println("HALT");
-		}
-		
 		//Don't send to ourselves
 		if(identity.getNodeID().equals(dstNode)) {
 			return;
@@ -462,7 +458,9 @@ public class Node extends Thread implements LookupServiceInterface {
 
 		//Get first successor
 		suc = getSuccessor(null);
-		if(suc.equals(identity)) return;
+		if(suc.equals(identity)) {
+			return;
+		}
 		next = getSuccessor(suc.getNodeID());
 
 		//For each finger
