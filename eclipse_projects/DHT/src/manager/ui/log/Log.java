@@ -54,15 +54,23 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 		manager.addNodeMessageListener(Message.JOIN_RESPONSE, this);
 		manager.addNodeMessageListener(Message.JOIN_BUSY, this);
 		manager.addNodeMessageListener(Message.JOIN_ACK, this);
+		manager.addNodeMessageListener(Message.JOIN_FINALIZE, this);
 		manager.addNodeMessageListener(Message.DUPLICATE_NODE_ID, this);
+		
 		manager.addNodeMessageListener(Message.KEEPALIVE, this);
+		
 		manager.addNodeMessageListener(Message.NODE_JOIN_NOTIFY, this);
 		manager.addNodeMessageListener(Message.NODE_LEAVE_NOTIFY, this);
 
 		manager.addNodeMessageListener(Message.FIND_PREDECESSOR, this);
 		manager.addNodeMessageListener(Message.FIND_PREDECESSOR_RESPONSE, this);
+
 		manager.addNodeMessageListener(Message.CHECK_PREDECESSOR, this);
 		manager.addNodeMessageListener(Message.CHECK_PREDECESSOR_RESPONSE, this);
+		manager.addNodeMessageListener(Message.CHECK_SUCCESSOR, this);
+		manager.addNodeMessageListener(Message.CHECK_SUCCESSOR_RESPONSE, this);
+
+		manager.addNodeMessageListener(Message.NODE_SUSPICIOUS, this);
 	}
 	
 	private void flush() {
