@@ -1,5 +1,6 @@
 package manager.dht;
 
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,8 +35,6 @@ import manager.dht.messages.unicast.NotifyLeaveMessage;
 import manager.listener.FingerChangeListener;
 
 public class Node extends Thread implements LookupServiceInterface {
-	private String threadName = null;
-	
 	//Communication
 	private CommunicationInterface communication;
 	private String bootstrapAddress;
@@ -89,7 +88,15 @@ public class Node extends Thread implements LookupServiceInterface {
 	private FingerEntry blockJoinFor = null;
 	private FingerEntry futureSuccessor = null;
 	private FingerEntry futurePredecessor = null;
-
+	
+	//Data storage
+	//Own sensors
+	HashSet<NodeID> localSensors;
+	//Own Sensors, already stored at the right place in the DHT
+	DoubleSidedHashMap<FingerEntry, HashSet<NodeID>> sensorsAt;
+	//Foreign Sensor, that this node is responsible for to store
+	DoubleSidedHashMap<FingerEntry, NodeID> sensorsFromOthers;
+	
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
 		
@@ -118,6 +125,15 @@ public class Node extends Thread implements LookupServiceInterface {
 		//notify(ACTION_CONNECT);
 		connectTask = startTask(connectTask,ACTION_CONNECT,0);
 		
+		//Init data storage objects
+		localSensors = new HashSet<NodeID>();
+		
+		sensorsAt = new DoubleSidedHashMap<FingerEntry,HashSet<NodeID>>();
+		// add the entry for identity
+		sensorsAt.put(identity,new HashSet<NodeID>());
+		
+		sensorsFromOthers = new DoubleSidedHashMap<FingerEntry,NodeID>();
+		
 		//Start thread
 		this.start();
 	}
@@ -130,8 +146,20 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	@Override
 	public void register(String uci) {
-		// TODO Auto-generated method stub
+		//Generate the hash value
+		NodeID sensor = new NodeID(SHA1Generator.SHA1(uci));
 		
+		//Put it to the hashset with the local sensors
+		localSensors.add(sensor);
+		
+		FingerEntry predecessorOfSensor = getPredecessor(sensor);
+		
+		//Forward or answer?
+		if(predecessorOfJoiningNode.equals(identity)) {
+			//it is us. Put it to sensorAt.getL(identity)
+		}else {
+			//we have to send a register Message
+		}
 	}
 
 	@Override
@@ -213,8 +241,6 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void run() {
 		int currentAction;
-		
-		threadName = this.getName();
 		
 		//Main loop
 		while(true) {
@@ -298,9 +324,6 @@ public class Node extends Thread implements LookupServiceInterface {
 			timer.purge();
 			timer = null;
 		}
-
-		//TODO remove debug - signal killed status
-		threadName += " - KILLED";
 	}
 	
 	
@@ -612,8 +635,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//start to reconnect
 		//TODO think about a senseful address to reconnect
-		startTask(null,ACTION_SHUTDOWN,0);
-		//notify(ACTION_CONNECT);
+		startTask(null,ACTION_CONNECT,0);
 	}
 
 	synchronized private FingerEntry updatePredecessor(FingerEntry newFinger) {
@@ -847,23 +869,28 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	private void handleNotifyJoinMessage(NotifyJoinMessage njm) {
 		FingerEntry newFinger;
+		FingerEntry oldPredecessor;
 		
 		//Check if this node can use the newly added node
 		//for the finger table
 		newFinger = new FingerEntry(njm.getHash(),njm.getNetworkAddress());
+		oldPredecessor = updatePredecessor(newFinger);
 		updateFingerTable(newFinger);
-		FingerEntry oldPredecessor = updatePredecessor(newFinger);
 		
 		//if the predecessor was changed check the old one for the finger table
 		if(oldPredecessor != null) updateFingerTable(oldPredecessor);
 		
 		//Send advertisement if we probably are a finger of the joining node
-		int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
-		int log2_this = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
-		
-		if(log2_pre < log2_this) {
-			//Send advertisement
-			sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()),newFinger.getNodeID());
+		synchronized(this) {
+			if(predecessor != null) {
+				int log2_pre = NodeID.logTwoFloor(predecessor.getNodeID().sub(newFinger.getNodeID()));
+				int log2_this = NodeID.logTwoFloor(identity.getNodeID().sub(newFinger.getNodeID()));
+				
+				if(log2_pre < log2_this) {
+					//Send advertisement
+					sendMessage(new KeepAliveMessage(identity.getNetworkAddress(),newFinger.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()),newFinger.getNodeID());
+				}
+			}
 		}
 	}
 	

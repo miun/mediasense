@@ -15,8 +15,6 @@ public interface LookupServiceInterface {
 	
 	public abstract void shutdown();
 	
-	
 	public abstract void handleMessage(Message message);
-    
     
 }
