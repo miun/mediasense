@@ -333,11 +333,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 		}
-		
-		if(result == null) {
-			System.out.println("HALT");
-		}
-		
+
 		return result;
 	}
 	
