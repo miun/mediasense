@@ -155,10 +155,14 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry predecessorOfSensor = getPredecessor(sensor);
 		
 		//Forward or answer?
-		if(predecessorOfJoiningNode.equals(identity)) {
+		if(predecessorOfSensor.equals(identity)) {
 			//it is us. Put it to sensorAt.getL(identity)
+			sensorsAt.getL(identity).add(sensor);
 		}else {
-			//we have to send a register Message
+			//we have to send a register Message but only if we are connected
+			if(connected) {
+				
+			}
 		}
 	}
 
