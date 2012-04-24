@@ -62,22 +62,21 @@ public class Network {
 	}
 	
 	public String getRandomClientAddress(boolean mustBeConnected) {
-		if(clients.size() > 0) {
+		List<Communication> randomList;
+		
+		synchronized(clients) {
+			if(clients.size() == 0) return null;
+			
 			//create a list from all keys
-			List<Communication> randomList = new LinkedList<Communication>(clients.values());
-			
-			//shuffle
-			Collections.shuffle(randomList);
-			Node cur = randomList.get(0).getNode();
-			
-			//It does not matter if it is a connected one - return the first
-			return cur.getIdentity().getNetworkAddress();
-			
+			 randomList = new LinkedList<Communication>(clients.values());
 		}
-		else {
-			//There are no clients
-			return null;
-		}
+			
+		//shuffle
+		Collections.shuffle(randomList);
+		Node cur = randomList.get(0).getNode();
+		
+		//It does not matter if it is a connected one - return the first
+		return cur.getIdentity().getNetworkAddress();
 	}
 	
 	public static synchronized String createSequentialAddress() {
@@ -87,9 +86,11 @@ public class Network {
 		return result;
 	}
 	
-	public Collection<Communication> getClients() {
+	public Collection<Communication> getClientList() {
+		//Clone the current list of clients into a new list
+		//This is a snapshot that can be used for analysis
 		synchronized(clients) {
-			return this.clients.values();
+			return new ArrayList<Communication>(clients.values());
 		}
 	}
 	
@@ -253,7 +254,12 @@ public class Network {
 			//return the delay of the network
 			return msg_delay;
 		} else {
-			Communication com = clients.get(networkAddress);
+			Communication com;
+			
+			synchronized(clients) {
+				com = clients.get(networkAddress);
+			}
+			
 			if(com != null) {
 				return com.getMessageDelay();
 			} else {
@@ -322,76 +328,75 @@ public class Network {
 		NodeID start,end;
 		int counter = 0;
 		
+		StringBuffer result;
+		
 		synchronized(clients) {
 			startClient = clients.get(startNodeName);
 			currentClient = startClient;
-		}
 
-		//Test if node exists
-		if(startClient == null) {
-			return "Cannot find node " + startNodeName + "\n"; 
-		}
-		
-		//Set start and end region on DHT circle
-		start  = currentClient.getNodeID();
-		end = start;
-		
-		//Header
-		StringBuffer result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");
-
-		//Loop through the circle
-		while(true) {
-			//Get next node
-			result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
-			alreadyShown.add(currentClient);
+			//Test if node exists
+			if(startClient == null) {
+				return "Cannot find node " + startNodeName + "\n"; 
+			}
 			
-			synchronized(clients) {
+			//Set start and end region on DHT circle
+			start  = currentClient.getNodeID();
+			end = start;
+			
+			//Header
+			result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");
+	
+			//Loop through the circle
+			while(true) {
+				//Get next node
+				result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
+				alreadyShown.add(currentClient);
 				currentClient = clients.get(currentClient.getSuccessorAddress());
-			}
+				
+				//Hole detected!
+				if(currentClient == null) break;
+				
+				//Check for loop
+				if(alreadyShown.contains(currentClient)) break;
+				
+				//Test for loop intersections
+				if(start.compareTo(end) > 0) {
+					if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
+						//Intersection detected!!
+						result.append(">>> Intersection detected <<<\n");
+						intersections.add(counter);
+					}
+				}
+				else {
+					if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
+						//Intersection detected!!
+						result.append(">>> Intersection detected <<<\n");
+						intersections.add(counter);
+					}
+				}
+				
+				//Shift end forward
+				end = currentClient.getNodeID();
+				counter++;
+			};
 			
-			//Hole detected!
-			if(currentClient == null) break;
-			
-			//Check for loop
-			if(alreadyShown.contains(currentClient)) break;
-			
-			//Test for loop intersections
-			if(start.compareTo(end) > 0) {
-				if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
-					//Intersection detected!!
-					result.append(">>> Intersection detected <<<\n");
-					intersections.add(counter);
+			if(currentClient == startClient) {
+				//Circle does not contain side-loop
+				if(alreadyShown.size() < clients.size()) {
+					result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
+				}
+				else {
+					result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
 				}
 			}
-			else {
-				if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
-					//Intersection detected!!
-					result.append(">>> Intersection detected <<<\n");
-					intersections.add(counter);
-				}
-			}
-			
-			//Shift end forward
-			end = currentClient.getNodeID();
-			counter++;
-		};
-		
-		if(currentClient == startClient) {
-			//Circle does not contain side-loop
-			if(alreadyShown.size() < clients.size()) {
-				result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
+			else if(currentClient == null) {
+				//Hole detected
+				result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
 			}
 			else {
-				result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
+				//Circle contains a side-loop! 
+				result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 			}
-		}
-		else if(currentClient == null) {
-			//Hole detected
-			result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
-		}
-		else {
-			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		//Show intersections
@@ -444,11 +449,11 @@ public class Network {
 		synchronized(clients) {
 			client = clients.get(nodeAddress);
 			if(client == null) return "Node " + nodeAddress + " not found!";
-			
-			//Get successor and predecessor from client
-			successorFinger = client.getNode().getSuccessor(null);
-			predecessorFinger = client.getNode().getPredecessor();
 		}
+		
+		//Get successor and predecessor from client
+		successorFinger = client.getNode().getSuccessor(null);
+		predecessorFinger = client.getNode().getPredecessor();
 		
 		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
@@ -624,13 +629,17 @@ public class Network {
 	}
 	
 	public int getNumberOfClients() {
-		return clients.size();
+		synchronized(clients) {
+			return clients.size();
+		}
 	}
 
 	public void breakNode(String address) {
 		Communication client;
 		
-		client = clients.get(address);
-		if(client != null) client.getNode().debugBreak();
+		synchronized(clients) {
+			client = clients.get(address);
+			if(client != null) client.getNode().debugBreak();
+		}
 	}
 }

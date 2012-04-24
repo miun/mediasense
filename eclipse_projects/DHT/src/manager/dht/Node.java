@@ -64,9 +64,11 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int ACTION_CHECK_PREDECESSOR = 4;
 	private static final int ACTION_CHECK_SUCCESSOR = 5;
 	private static final int ACTION_FIND_PREDECESSOR = 6;
+	private static final int ACTION_FINALIZE_TIMEOUT = 7;
+	private static final int ACTION_UNBLOCK_JOINBLOCK = 8;
 	
 	//TODO remove
-	private static final int ACTION_KILL = 7;
+	private static final int ACTION_KILL = 9;
 	
 	//Action-queue
 	BlockingQueue<Integer> actionQueue;
@@ -243,10 +245,6 @@ public class Node extends Thread implements LookupServiceInterface {
 					break;
 				case ACTION_CHECK_PREDECESSOR:
 					synchronized(this) {
-//						if(identity.getNetworkAddress().equals("2")) {
-//							System.out.println("HALT");
-//						}
-						
 						//Send message to check the successor->predecessor link
 						sendMessage(new CheckPredecessorMessage(identity.getNetworkAddress(), getSuccessor(null).getNetworkAddress(), identity.getNodeID()),getSuccessor(null).getNodeID());
 						checkPredecessorTask = startTask(checkPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_PERIOD);
@@ -265,7 +263,6 @@ public class Node extends Thread implements LookupServiceInterface {
 					//Send FIND_PREDECESSOR message to get a better predecessor
 					synchronized(this) {
 						FingerEntry dst = getPredecessor(null);
-						
 						sendMessage(new FindPredecessorMessage(identity.getNetworkAddress(), dst.getNetworkAddress(),identity.getNodeID(),identity.getNetworkAddress()),dst.getNodeID());
 					}
 					
@@ -277,6 +274,16 @@ public class Node extends Thread implements LookupServiceInterface {
 					triggerKeepAliveTimer();
 					keepAlive = startTask(keepAlive, ACTION_KEEP_ALIVE, KEEP_ALIVE_PERIOD + new Random().nextInt(KEEP_ALIVE_RANDOM_PERIOD));
 					//resetKeepAliveTimer();
+					break;
+				
+				case ACTION_FINALIZE_TIMEOUT:
+					//Timeout triggered
+					triggerFinalizeTimeout();
+					break;
+					
+				case ACTION_UNBLOCK_JOINBLOCK:
+					//Unblock timeout
+					triggerUnblockJoinBlock();
 					break;
 					
 				case ACTION_KILL:
@@ -291,6 +298,9 @@ public class Node extends Thread implements LookupServiceInterface {
 			timer.purge();
 			timer = null;
 		}
+
+		//TODO remove debug - signal killed status
+		threadName += " - KILLED";
 	}
 	
 	
@@ -720,14 +730,7 @@ public class Node extends Thread implements LookupServiceInterface {
 						blockJoinFor = newFingerEntry;
 						
 						//Start timer for node unblocking
-						timer.schedule(blockTask = new TimerTask() {
-
-							@Override
-							public void run() {
-								triggerUnblockJoinBlock();
-							}
-							
-						}, JOIN_BLOCK_PERIOD);
+						blockTask = startTask(blockTask,ACTION_UNBLOCK_JOINBLOCK,JOIN_BLOCK_PERIOD);
 					}
 				}
 			}
@@ -757,22 +760,7 @@ public class Node extends Thread implements LookupServiceInterface {
 					sendMessage(new JoinAckMessage(identity.getNetworkAddress(), futurePredecessor.getNetworkAddress(), identity.getNodeID()),futurePredecessor.getNodeID());
 					
 					//Start finalizeTask timer
-					//finalizeTask = startTask(finalizeTask)
-					timer.schedule(finalizeTask = new TimerTask() {
-
-						@Override
-						public void run() {
-							triggerFinalizeTimeout();
-						}
-						
-					}, JOIN_FINALIZE_PERIOD);
-					
-					//Check
-					//updateFingerTableEntry(new FingerEntry(jrm.getPredecessor(),jrm.getFromIp()));
-					
-					//Create finger table the first time
-					//buildFingerTable();
-					//checkFingerTable();
+					finalizeTask = startTask(finalizeTask,ACTION_FINALIZE_TIMEOUT,JOIN_FINALIZE_PERIOD);
 				}
 				else {
 					//Ignore this because the key does not match!!!
@@ -782,7 +770,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 	}
 	
-	private void handleJoinAckMessage(JoinAckMessage jam) {
+	private synchronized void handleJoinAckMessage(JoinAckMessage jam) {
 		//Skip if not blocked or it is a faked message
 		if(blockJoinFor != null && jam.getJoinKey().equals(blockJoinFor.getNodeID())) {
 			//Set successor to new node and update finger-table with old successor
@@ -808,9 +796,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			sendMessage(new JoinFinalizeMessage(identity.getNetworkAddress(), jam.getFromIp(), jam.getJoinKey()),jam.getJoinKey());
 
 			//unblock
-			synchronized(this) {
 				blockJoinFor = null;
-			}
 		}
 	}
 	
@@ -820,7 +806,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			if(connected || futurePredecessor == null || futureSuccessor == null) return;
 			
 			//First, cancel timeout-timer
-			finalizeTask.cancel();
+			if(finalizeTask != null) finalizeTask.cancel();
 			
 			//If the joinKey equals our hash
 			if(jfm.getJoinKey().equals(identity.getNodeID())) {

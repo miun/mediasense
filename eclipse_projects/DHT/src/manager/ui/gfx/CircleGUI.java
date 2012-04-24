@@ -120,7 +120,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.add(circleForNodes);
 		
 		//Add all Nodes and their fingers that are already existing in the network
-		for(Communication com: Network.getInstance().getClients()) {
+		for(Communication com: Network.getInstance().getClientList()) {
 			NodePanel node = addNode(com);
 			Node n = com.getNode();
 			for(FingerEntry fe: n.getFingerTable().keySet()) {
@@ -133,7 +133,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 			}
 		}
 		
-		//A circlePanel which holds all fingerchanges since the last keepAlive initiation
+		//A circlePanel which holds all finger-changes since the last keepAlive initiation
 		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
 		paintingSurface.add(changedFingersSinceLastKeepalive);
 		
