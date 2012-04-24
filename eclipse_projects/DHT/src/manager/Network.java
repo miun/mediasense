@@ -105,7 +105,7 @@ public class Network {
 			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
-			System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
+			//System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
 			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}

@@ -478,7 +478,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Don't do...
 		if(!connected) {
-			System.out.println("NOT CONNECTED " + identity.getNetworkAddress());
+			//System.out.println("NOT CONNECTED " + identity.getNetworkAddress());
 			return;
 		}
 		
