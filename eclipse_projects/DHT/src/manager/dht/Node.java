@@ -289,6 +289,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		synchronized(this) {
 			timer.cancel();
 			timer.purge();
+			timer = null;
 		}
 	}
 	
@@ -993,12 +994,19 @@ public class Node extends Thread implements LookupServiceInterface {
 			timerTask.cancel();
 		}
 		
-		//Schedule new event
-		timerTask = new NotifyTask(action);
-		timer.schedule(timerTask, period);
-		
-		//Return new task
-		return timerTask;
+		//Timer 
+		if(timer != null) {
+			//Schedule new event
+			timerTask = new NotifyTask(action);
+			timer.schedule(timerTask, period);
+			
+			//Return new task
+			return timerTask;
+		}
+		else {
+			//Timer has already been cancelled in the past
+			return null;
+		}
 	}
 	
 	private void handleFindPredecessorMessage(FindPredecessorMessage fpm) {
