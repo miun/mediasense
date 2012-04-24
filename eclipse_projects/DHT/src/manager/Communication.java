@@ -93,7 +93,7 @@ public class Communication extends Thread implements CommunicationInterface {
 	 * Node object that belongs to this Communication object.
 	 */
 	public String getSuccessorAddress() {
-		return node.getSuccessor(node.getIdentity().getNodeID()).getNetworkAddress();
+		return node.getSuccessor(null).getNetworkAddress();
 	}
 	
 	/**

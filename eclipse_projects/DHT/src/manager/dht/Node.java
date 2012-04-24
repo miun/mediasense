@@ -334,6 +334,10 @@ public class Node extends Thread implements LookupServiceInterface {
 			finger.remove(identity);
 		}
 		
+		if(result == null) {
+			System.out.println("HALT");
+		}
+		
 		return result;
 	}
 	
@@ -418,6 +422,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	private void sendMessage(Message message,NodeID dstNode) {
+		if(message.getToIp().equals("88")) {
+			System.out.println("HALT");
+		}
+		
 		//Don't send to ourselves
 		if(identity.getNodeID().equals(dstNode)) {
 			return;
