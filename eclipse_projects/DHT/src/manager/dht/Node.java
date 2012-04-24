@@ -362,11 +362,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			//Remove identity and successor from the finger-table
 			finger.remove(identity);
 		}
-		
-		if(result == null) {
-			System.out.println("HALT");
-		}
-		
+
 		return result;
 	}
 	
@@ -487,7 +483,9 @@ public class Node extends Thread implements LookupServiceInterface {
 
 		//Get first successor
 		suc = getSuccessor(null);
-		if(suc.equals(identity)) return;
+		if(suc.equals(identity)) {
+			return;
+		}
 		next = getSuccessor(suc.getNodeID());
 
 		//For each finger
