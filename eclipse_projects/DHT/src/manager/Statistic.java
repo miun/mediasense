@@ -93,33 +93,33 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		System.out.println("Statistic started for " + filename);
 	}
 	
-	public void start() {
+	public synchronized void start() {
 		//Start the Timer!
-		synchronized(timer) {
-			timer = new Timer();
-			
-			//Start second trigger
-			if(triggerType == TRIGGER_SECOND) {
-				timer.schedule(new TimerTask() {
 		
-					@Override
-					public void run() {
-						triggerSecond();
-					}
-					
-				}, 1000L, 1000L);
-			}
-			
-			//Schedule flush every 3 seconds
+		timer = new Timer();
+		
+		//Start second trigger
+		if(triggerType == TRIGGER_SECOND) {
 			timer.schedule(new TimerTask() {
-				
+	
 				@Override
 				public void run() {
-					triggerFlush();
+					triggerSecond();
 				}
 				
-			}, FLUSH_PERIOD, FLUSH_PERIOD);
+			}, 1000L, 1000L);
 		}
+		
+		//Schedule flush every 3 seconds
+		timer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				triggerFlush();
+			}
+			
+		}, FLUSH_PERIOD, FLUSH_PERIOD);
+		
 	}
 	
 	public void stop() {
