@@ -249,14 +249,14 @@ KeepAliveListener, ActionListener, ChangeListener {
 	//----------------------------------------//
 	
 	@Override
-	public void onNodeAdd(Communication com) {
+	public void onNodeAdd(Date timeStamp,Communication com) {
 		addNode(com);
 		
 		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 	}
 
 	@Override
-	public void onNodeRemove(Communication com) {
+	public void onNodeRemove(Date timeStamp,Communication com) {
 		//Get the objects relating to this Communication
 		NodePanel node = nodeObjects.get(com.getLocalIp());
 		
@@ -396,6 +396,12 @@ KeepAliveListener, ActionListener, ChangeListener {
 			manager.setMessageDelay(value,null);
 		}
 		
+	}
+
+	@Override
+	public void onKillNode(Date timeStamp, Communication com) {
+		// TODO Auto-generated method stub
+		onNodeRemove(timeStamp,com);
 	}
 	
 }

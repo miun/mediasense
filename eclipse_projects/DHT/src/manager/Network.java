@@ -129,7 +129,7 @@ public class Network {
 				
 				//Inform listeners
 				synchronized(nodeListener) {
-					for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
+					for(NodeListener nl: nodeListener) nl.onNodeAdd(new Date(),comm);
 				}
 			} 
 		}
@@ -152,7 +152,7 @@ public class Network {
 	
 			//Inform listeners
 			synchronized(nodeListener) {
-				for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(new Date(),com);
 			}
 		}
 	}
@@ -174,7 +174,7 @@ public class Network {
 	
 			//Inform listeners
 			synchronized(nodeListener) {
-				for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(new Date(),com);
 			}
 		}
 	}

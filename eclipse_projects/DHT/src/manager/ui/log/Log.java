@@ -8,15 +8,17 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import manager.Communication;
 import manager.Manager;
 import manager.Message;
 import manager.dht.FingerEntry;
 import manager.dht.NodeID;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
+import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 
-public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageListener {
+public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageListener,NodeListener {
 	private BufferedWriter bufferedWriter;
 	private FileWriter fileWriter;
 	private Timer flushTimer;
@@ -48,7 +50,7 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 		//Register listener
 		manager.addFingerChangeListener(this);
 		manager.addKeepAliveListener(this);
-		manager.addNodeMessageListener(Message.JOIN, this);
+		//manager.addNodeMessageListener(Message.JOIN, this);
 		manager.addNodeMessageListener(Message.JOIN_RESPONSE, this);
 		manager.addNodeMessageListener(Message.JOIN_BUSY, this);
 		manager.addNodeMessageListener(Message.JOIN_ACK, this);
@@ -57,8 +59,10 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 		manager.addNodeMessageListener(Message.NODE_JOIN_NOTIFY, this);
 		manager.addNodeMessageListener(Message.NODE_LEAVE_NOTIFY, this);
 
-		//TODO more to come
-		//manager.addNodeMessageListener(Message.NODE_JOIN_NOTIFY, this);
+		manager.addNodeMessageListener(Message.FIND_PREDECESSOR, this);
+		manager.addNodeMessageListener(Message.FIND_PREDECESSOR_RESPONSE, this);
+		manager.addNodeMessageListener(Message.CHECK_PREDECESSOR, this);
+		manager.addNodeMessageListener(Message.CHECK_PREDECESSOR_RESPONSE, this);
 	}
 	
 	private void flush() {
@@ -97,12 +101,12 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 
 	@Override
 	public void OnNodeMessage(Date timeStamp, Message msg) {
-		write(new SimpleDateFormat().format(timeStamp) + " | "  + msg.toString());
+		write(new SimpleDateFormat("HH:mm:ss.SSS").format(timeStamp) + " | "  + msg.toString());
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
-		write(new SimpleDateFormat().format(date) + " | Node: " + key.toString() + " Addr: " + networkAddress + " initiated KEEP-ALIVE");
+		write(new SimpleDateFormat("HH:mm:ss.SSS").format(date) + " | Node: " + key.toString() + " Addr: " + networkAddress + " initiated KEEP-ALIVE");
 		
 	}
 
@@ -141,5 +145,20 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 			//We don't care. Just report
 			System.out.println("ERROR closing log " + e.getMessage());
 		}
+	}
+
+	@Override
+	public void onNodeAdd(Date timeStamp, Communication com) {
+		write(new SimpleDateFormat("HH:mm:ss.SSS").format(timeStamp) + " | Node " + com.getNode().toString() + " ADDED");
+	}
+
+	@Override
+	public void onNodeRemove(Date timeStamp, Communication com) {
+		write(new SimpleDateFormat("HH:mm:ss.SSS").format(timeStamp) + " | Node " + com.getNode().toString() + " REMOVED");
+	}
+
+	@Override
+	public void onKillNode(Date timeStamp, Communication com) {
+		write(new SimpleDateFormat("HH:mm:ss.SSS").format(timeStamp) + " | Node " + com.getNode().toString() + " KILLED");
 	}
 }
