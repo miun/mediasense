@@ -98,6 +98,33 @@ public class SensorList {
 		ArrayList<Sensor> result = new ArrayList<Sensor>();
 		Sensor currentSensor;
 		
+		//return empty list if the list is empty
+		if(!allSensors.isEmpty()) {
+		
+			if(start.compareTo(end) > 0) {
+				//Start -> MAX; MIN -> END - 1
+				currentSensor = allSensors.ceilingKey(new Sensor(start,null));
+				while(currentSensor!=null) {
+					result.add(currentSensor);
+					currentSensor = allSensors.higherKey(currentSensor);
+				}
+				currentSensor = allSensors.firstKey();
+				while(currentSensor!=null && currentSensor.compareTo(new Sensor(end, null)) < 0) {
+					result.add(currentSensor);
+					currentSensor = allSensors.higherKey(currentSensor);
+				}
+			}
+			else if(start.compareTo(end) < 0) {
+				//Start -> END - 1
+				currentSensor = allSensors.ceilingKey(new Sensor(start,null));
+				while(currentSensor!=null && currentSensor.compareTo(new Sensor(end, null)) < 0) {
+					result.add(currentSensor);
+					currentSensor = allSensors.higherKey(currentSensor);
+				}
+			}
+		}
+		
+		/*
 		//Sub one from start
 		start = start.sub(1);
 		
@@ -121,8 +148,12 @@ public class SensorList {
 				if(currentSensor == null || currentSensor.compareTo(new Sensor(end,null)) >= 0) break;
 				result.add(currentSensor);
 			}
-		}
+		}*/
 
 		return result;
+	}
+	
+	public synchronized List<Sensor> getAllSensors() {
+		return new ArrayList<Sensor>(allSensors.keySet());
 	}
 }

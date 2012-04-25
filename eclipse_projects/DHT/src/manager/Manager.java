@@ -224,4 +224,12 @@ public final class Manager {
 	public void breakNode(String address) {
 		network.breakNode(address);
 	}
+	
+	public void register(String node, String uci) {
+		network.register(node,uci);
+	}
+	
+	public void resolve(String node, String uci) {
+		network.resolve(node,uci);
+	}
 }

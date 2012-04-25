@@ -70,6 +70,22 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				//Exit
 				return false;
 			}
+			else if(cmd.cmd.toLowerCase().equals("register")) {
+				if(cmd.param == null || cmd.param.length != 2) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					manager.register(cmd.param[0],cmd.param[1]);
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("resolve")) {
+				if(cmd.param == null || cmd.param.length != 2) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					manager.resolve(cmd.param[0],cmd.param[1]);
+				}
+			}
 			else if(cmd.cmd.toLowerCase().equals("node_add")) {
 				if(cmd.param == null) {
 					manager.addNode(null);
@@ -98,7 +114,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				} 
 				else {
 					//Kill all specified nodes
-					for(int i = 1; i < cmd.param.length; i++) {
+					for(int i = 0; i < cmd.param.length; i++) {
 						manager.killNode(cmd.param[i]);
 					}
 				}
@@ -123,7 +139,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					throw new InvalidParamAmountException();
 				}
 				else {
-					for(int i = 1; i < cmd.param.length; i++) {
+					for(int i = 0; i < cmd.param.length; i++) {
 						manager.removeNode(cmd.param[i]);
 					}
 				}

@@ -642,4 +642,24 @@ public class Network {
 			if(client != null) client.getNode().debugBreak();
 		}
 	}
+	
+	public void register(String node, String uci) {
+		Communication com = clients.get(node);
+		if(com!=null) {
+			com.getNode().register(uci);
+		}
+		else {
+			System.out.println("Cant register at node (" + node + ") - no such node");
+		}
+	}
+	
+	public void resolve(String node, String uci) {
+		Communication com = clients.get(node);
+		if(com!=null) {
+			com.getNode().resolve(uci);
+		}
+		else {
+			System.out.println("Cant resolve from node (" + node + ") - no such node");
+		}
+	}
 }
