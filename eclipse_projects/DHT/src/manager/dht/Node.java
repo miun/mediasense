@@ -56,7 +56,7 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int CHECK_SUCCESSOR_PERIOD = 10000;
 	private static final int FIND_PREDECESSOR_PERIOD = 10000;
 	
-	//Actions
+	//Actions TODO protected
 	private static final int ACTION_CONNECT = 1;
 	private static final int ACTION_SHUTDOWN = 2;
 	private static final int ACTION_KEEP_ALIVE = 3;
@@ -90,12 +90,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	private FingerEntry futurePredecessor = null;
 	
 	//Data storage
-	//Own sensors
-	HashSet<NodeID> localSensors;
 	//Own Sensors, already stored at the right place in the DHT
-	DoubleSidedHashMap<FingerEntry, HashSet<NodeID>> sensorsAt;
-	//Foreign Sensor, that this node is responsible for to store
-	DoubleSidedHashMap<FingerEntry, NodeID> sensorsFromOthers;
+	SensorList sensorsAt;
+	//Sensors, that this node is responsible for to store
+	SensorList sensorsResponsibleFor;
 	
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
@@ -126,13 +124,9 @@ public class Node extends Thread implements LookupServiceInterface {
 		connectTask = startTask(connectTask,ACTION_CONNECT,0);
 		
 		//Init data storage objects
-		localSensors = new HashSet<NodeID>();
-		
-		sensorsAt = new DoubleSidedHashMap<FingerEntry,HashSet<NodeID>>();
-		// add the entry for identity
-		sensorsAt.put(identity,new HashSet<NodeID>());
-		
-		sensorsFromOthers = new DoubleSidedHashMap<FingerEntry,NodeID>();
+		sensorsAt = new SensorList();
+				
+		sensorsResponsibleFor = new SensorList();
 		
 		//Start thread
 		this.start();
@@ -140,7 +134,9 @@ public class Node extends Thread implements LookupServiceInterface {
 
 	@Override
 	public void resolve(String uci) {
-		// TODO Auto-generated method stub
+		//Generate the hash value
+		NodeID sensor = new NodeID(SHA1Generator.SHA1(uci));
+		
 		
 	}
 
@@ -149,15 +145,16 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Generate the hash value
 		NodeID sensor = new NodeID(SHA1Generator.SHA1(uci));
 		
-		//Put it to the hashset with the local sensors
-		localSensors.add(sensor);
+		//Put it to the HashSet with the local sensors
+		sensorsAt.put(identity,sensor);
 		
 		FingerEntry predecessorOfSensor = getPredecessor(sensor);
 		
 		//Forward or answer?
 		if(predecessorOfSensor.equals(identity)) {
-			//it is us. Put it to sensorAt.getL(identity)
-			sensorsAt.getL(identity).add(sensor);
+			//We are responsible
+			sensorsResponsibleFor.put(identity, sensor);
+						
 		}else {
 			//we have to send a register Message but only if we are connected
 			if(connected) {

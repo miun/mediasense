@@ -1,5 +1,6 @@
 package manager.dht;
 
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -55,9 +56,40 @@ public class SensorList {
 		return allSensors.containsKey(sensor);
 	}
 	
-	//TODO remove(FingerEntry)
-	//TODO remove(sensor)
-	//TODO Gute nacht
+	//Remove all sensors that belong to this node
+	public synchronized TreeSet<NodeID> remove(FingerEntry node) {
+		//Get the sensors to remove
+		TreeSet<NodeID> toRemove = orderedToFingerEntry.remove(node);
+		if(toRemove != null) {
+			//Remove this sensors also from the allSensors map
+			for(NodeID sensor: toRemove) {
+				allSensors.remove(sensor);
+			}
+		} 
+		return toRemove;
+	}
 	
+	//Remove this sensor
+	public synchronized FingerEntry remove(NodeID sensor) {
+		//Remove the sensor from allSensors and store the FingerEntry
+		FingerEntry removeHereToo = allSensors.remove(sensor);
+		if(removeHereToo != null) {
+			//Remove the sensors also from the reversed ordered set
+			TreeSet<NodeID> nodeSet = orderedToFingerEntry.get(removeHereToo);
+			if(nodeSet != null) {
+				nodeSet.remove(sensor);
+			}
+		}
+		return removeHereToo;
+	}
 	
+	//Returns the TreeSet conatining all sensors that belong to that node
+	public synchronized TreeSet<NodeID> get(FingerEntry node) {
+		return orderedToFingerEntry.get(node);
+	}
+	
+	//Returns the FingerEntry where the sensor belongs to
+	public synchronized FingerEntry get(NodeID sensor) {
+		return allSensors.get(sensor);
+	}
 }
