@@ -86,7 +86,10 @@ public class SensorList {
 	
 	//Returns the TreeSet containing all sensors that belong to that node
 	public synchronized List<Sensor> get(FingerEntry node) {
-		return orderedToFingerEntry.get(node);
+		ArrayList<Sensor> result = new ArrayList<Sensor>();
+		List<Sensor> content = orderedToFingerEntry.get(node);
+		if(content != null) result.addAll(content);
+		return result;
 	}
 	
 	//Returns the FingerEntry where the sensor belongs to

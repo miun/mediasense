@@ -147,12 +147,12 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void resolve(String uci) {
 		//Generate the hash value
-		NodeID sensor = new NodeID(SHA1Generator.SHA1(uci));
+		Sensor sensor = new Sensor(new NodeID(SHA1Generator.SHA1(uci)),null);
 		
 		//TODO check first if we store it already
 		
-		FingerEntry sensorPre = getPredecessor(sensor);
-		sendMessage(new ResolveMessage(identity.getNetworkAddress(), sensorPre.getNetworkAddress(), sensor, identity.getNetworkAddress()), sensorPre.getNodeID());
+		FingerEntry sensorPre = getSensorPredecessor(sensor);
+		sendMessage(new ResolveMessage(identity.getNetworkAddress(), sensorPre.getNetworkAddress(), sensor.getSensorHash(), identity.getNetworkAddress()), sensorPre.getNodeID());
 	}
 
 	@Override
@@ -169,7 +169,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		//Put it to the HashSet with the local sensors
 		sensorsAt.put(identity,sensor);
-		predecessorOfSensor = getPredecessor(sensor.getSensorHash());
+		predecessorOfSensor = getSensorPredecessor(sensor);
 		
 		//Forward or answer?
 		if(predecessorOfSensor.equals(identity)) {
@@ -413,6 +413,11 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 
 		return result;
+	}
+	
+	//For searching a predecessor for a sensor we have to add 1 to its hash...
+	private FingerEntry getSensorPredecessor(Sensor sensor) {
+		return getPredecessor(sensor.getSensorHash().add(1));
 	}
 	
 	//TODO private later !
@@ -1166,16 +1171,14 @@ public class Node extends Thread implements LookupServiceInterface {
 		FingerEntry owner;
 		
 		if(sensors != null) {
-			synchronized (this) {
-				for(Sensor s: sensors) {
-					//put it to the "private sensortable"
-					sensorsAt.put(identity, s);
-					
-					//Send immediate a register message
-					sensorPre = getPredecessor(s.getSensorHash());
-					owner = s.getOwner();
-					sendMessage(new RegisterMessage(identity.getNetworkAddress(),sensorPre.getNetworkAddress(),s.getSensorHash(), owner.getNodeID(),owner.getNetworkAddress()),sensorPre.getNodeID());
-				}
+			for(Sensor s: sensors) {
+				//put it to the "private sensortable"
+				sensorsAt.put(identity, s);
+				
+				//Send immediate a register message
+				sensorPre = getSensorPredecessor(s);
+				owner = s.getOwner();
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(),sensorPre.getNetworkAddress(),s.getSensorHash(), owner.getNodeID(),owner.getNetworkAddress()),sensorPre.getNodeID());
 			}
 		}
 	}
@@ -1229,7 +1232,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		Sensor sensor = new Sensor(rm.getSensor(), registeringNode);
 		
 		//Check if we are responsible
-		FingerEntry responsibleNode = getPredecessor(sensor.getSensorHash());
+		FingerEntry responsibleNode = getSensorPredecessor(sensor);
 		
 		if(responsibleNode.equals(identity)) {
 			//We are responsible
@@ -1268,7 +1271,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		
 		if(sensorFinger == null) {
 			//Forward to best finger
-			sensorPredecessor = getPredecessor(sensor.getSensorHash());
+			sensorPredecessor = getSensorPredecessor(sensor);
 			
 			if(sensorPredecessor != null && !sensorPredecessor.equals(identity)) {
 				//Forward
@@ -1309,7 +1312,7 @@ public class Node extends Thread implements LookupServiceInterface {
 				if(!sensorsSelfResponsible.contains(s)) {
 					//An other node should be responsible for this sensor...
 					//Register it - send to the best fitting finger!
-					FingerEntry sensorPredecessor = getPredecessor(s.getSensorHash());
+					FingerEntry sensorPredecessor = getSensorPredecessor(s);
 					sendMessage(new RegisterMessage(identity.getNetworkAddress(), sensorPredecessor.getNetworkAddress(), s.getSensorHash(), s.getOwner().getNodeID(), s.getOwner().getNetworkAddress()), sensorPredecessor.getNodeID());
 				}
 			}

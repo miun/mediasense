@@ -97,6 +97,17 @@ public class NodeID implements Comparable<NodeID> {
 		if(result.signum() < 0) result = result.add(bigModulo);
 		return new NodeID(result);
 	}
+	
+	//Add integers
+	public NodeID add(int n) {
+		BigInteger result = id.add(BigInteger.valueOf(n));
+		
+		//Test for overflow
+		if(result.compareTo(bigModulo) > 0) result = result.subtract(bigModulo);
+		
+		//TODO implement
+		return new NodeID(result);
+	}
 
 	//TODO figure out if this works!!!
 	public static int logTwoFloor(NodeID nodeID) {
