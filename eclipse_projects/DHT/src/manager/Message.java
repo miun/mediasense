@@ -17,6 +17,7 @@ public abstract class Message {
 	public final static int BROADCAST = 17;
 
 	public final static int REGISTER = 4;
+	public final static int REGISTER_RESPONSE = 30;
 
 	public final static int RESOLVE = 5;
 	public final static int RESOLVE_RESPONSE = 15;

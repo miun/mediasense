@@ -221,11 +221,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious","!check_predecessor","!check_predecessor_response","!check_successor","!check_successor_response"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious","!check_predecessor","!check_predecessor_response","!check_successor","!check_successor_response","!register","!register_response","!resoslve","!resolve_response"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious","check_predecessor","check_predecessor_response","check_successor","check_successor_response"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious","check_predecessor","check_predecessor_response","check_successor","check_successor_response","register","register_response","resoslve","resolve_response"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
 						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave","!node_suspicious"};
@@ -294,6 +294,14 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.CHECK_SUCCESSOR_RESPONSE;
 					} else if(type.equals("node_suspicious")) {
 						msgType = Message.NODE_SUSPICIOUS;
+					} else if(type.equals("register")) {
+						msgType = Message.REGISTER;
+					} else if(type.equals("register_response")) {
+						msgType = Message.REGISTER_RESPONSE;
+					} else if(type.equals("resolve")) {
+						msgType = Message.RESOLVE;
+					} else if(type.equals("resolve_response")) {
+						msgType = Message.RESOLVE_RESPONSE;
 					}
 					
 					//Call the function for every valid message type

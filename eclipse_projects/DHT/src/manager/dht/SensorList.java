@@ -1,27 +1,27 @@
 package manager.dht;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 public class SensorList {
-	private TreeMap<NodeID,FingerEntry> allSensors;
-	private TreeMap<FingerEntry,TreeSet<NodeID>> orderedToFingerEntry;
+	private TreeMap<Sensor,FingerEntry> allSensors;
+	private TreeMap<FingerEntry,List<Sensor>> orderedToFingerEntry;
 	
 	public SensorList() {
-		allSensors = new TreeMap<NodeID,FingerEntry>();
-		orderedToFingerEntry = new TreeMap<FingerEntry, TreeSet<NodeID>>();
+		allSensors = new TreeMap<Sensor,FingerEntry>();
+		orderedToFingerEntry = new TreeMap<FingerEntry, List<Sensor>>();
 	}
 	
-	public synchronized void put(FingerEntry node, NodeID sensor) {
+	public synchronized void put(FingerEntry node, Sensor sensor) {
 		//put sensor to allSensors, remember if it was present before
 		FingerEntry oldNode = allSensors.put(sensor, node);
 		
 		//put it also to the reversed ordered list
-		TreeSet<NodeID> nodeSet = orderedToFingerEntry.get(node);
+		List<Sensor> nodeSet = orderedToFingerEntry.get(node);
 		if(nodeSet == null) {
 			//no sensor from this node yet, allocate new list
-			nodeSet = new TreeSet<NodeID>();
+			nodeSet = new ArrayList<Sensor>();
 			orderedToFingerEntry.put(node, nodeSet);
 		} 
 		
@@ -32,7 +32,7 @@ public class SensorList {
 		//Now check if we have to remove the sensor from an other set
 		if(oldNode != null && !oldNode.equals(node)) {
 			//The sensor is also present in an other set -> remove it from there
-			TreeSet<NodeID> oldN = orderedToFingerEntry.get(oldNode);
+			List<Sensor> oldN = orderedToFingerEntry.get(oldNode);
 			if(oldN != null) {
 				// TODO use these later oldN.remove(sensor);
 				if(!oldN.remove(sensor)) {
@@ -52,17 +52,18 @@ public class SensorList {
 	}
 	
 	//Check if we store that sensor
-	public synchronized boolean contains(NodeID sensor) {
+	public synchronized boolean contains(Sensor sensor) {
 		return allSensors.containsKey(sensor);
 	}
 	
 	//Remove all sensors that belong to this node
-	public synchronized TreeSet<NodeID> remove(FingerEntry node) {
+	public synchronized List<Sensor> remove(FingerEntry node) {
 		//Get the sensors to remove
-		TreeSet<NodeID> toRemove = orderedToFingerEntry.remove(node);
+		List<Sensor> toRemove = orderedToFingerEntry.remove(node);
+		
 		if(toRemove != null) {
 			//Remove this sensors also from the allSensors map
-			for(NodeID sensor: toRemove) {
+			for(Sensor sensor: toRemove) {
 				allSensors.remove(sensor);
 			}
 		} 
@@ -70,12 +71,12 @@ public class SensorList {
 	}
 	
 	//Remove this sensor
-	public synchronized FingerEntry remove(NodeID sensor) {
+	public synchronized FingerEntry remove(Sensor sensor) {
 		//Remove the sensor from allSensors and store the FingerEntry
 		FingerEntry removeHereToo = allSensors.remove(sensor);
 		if(removeHereToo != null) {
 			//Remove the sensors also from the reversed ordered set
-			TreeSet<NodeID> nodeSet = orderedToFingerEntry.get(removeHereToo);
+			List<Sensor> nodeSet = orderedToFingerEntry.get(removeHereToo);
 			if(nodeSet != null) {
 				nodeSet.remove(sensor);
 			}
@@ -83,13 +84,45 @@ public class SensorList {
 		return removeHereToo;
 	}
 	
-	//Returns the TreeSet conatining all sensors that belong to that node
-	public synchronized TreeSet<NodeID> get(FingerEntry node) {
+	//Returns the TreeSet containing all sensors that belong to that node
+	public synchronized List<Sensor> get(FingerEntry node) {
 		return orderedToFingerEntry.get(node);
 	}
 	
 	//Returns the FingerEntry where the sensor belongs to
-	public synchronized FingerEntry get(NodeID sensor) {
+	public synchronized FingerEntry get(Sensor sensor) {
 		return allSensors.get(sensor);
+	}
+	
+	public synchronized List<Sensor> getSensorInRange(NodeID start,NodeID end) {
+		ArrayList<Sensor> result = new ArrayList<Sensor>();
+		Sensor currentSensor;
+		
+		//Sub one from start
+		start = start.sub(1);
+		
+		//Search all nodes in between range
+		if(start.compareTo(end) > 0) {
+			//Start -> MAX; MIN -> END - 1
+			do {
+				currentSensor = allSensors.higherKey(new Sensor(start,null));
+				if(currentSensor != null) result.add(currentSensor);
+			} while(currentSensor != null);
+
+			do {
+				currentSensor = allSensors.lowerKey(new Sensor(end,null));
+				if(currentSensor != null) result.add(currentSensor);
+			} while(currentSensor != null);
+		}
+		else if(start.compareTo(end) < 0) {
+			//Start -> END - 1
+			while(true) {
+				currentSensor = allSensors.higherKey(new Sensor(start,null));
+				if(currentSensor == null || currentSensor.compareTo(new Sensor(end,null)) >= 0) break;
+				result.add(currentSensor);
+			}
+		}
+
+		return result;
 	}
 }

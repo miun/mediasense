@@ -1,6 +1,6 @@
 package manager.dht;
 
-import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -32,6 +32,10 @@ import manager.dht.messages.unicast.KeepAliveMessage;
 import manager.dht.messages.unicast.NodeSuspiciousMessage;
 import manager.dht.messages.unicast.NotifyJoinMessage;
 import manager.dht.messages.unicast.NotifyLeaveMessage;
+import manager.dht.messages.unicast.RegisterMessage;
+import manager.dht.messages.unicast.RegisterResponseMessage;
+import manager.dht.messages.unicast.ResolveMessage;
+import manager.dht.messages.unicast.ResolveResponseMessage;
 import manager.listener.FingerChangeListener;
 
 public class Node extends Thread implements LookupServiceInterface {
@@ -65,9 +69,10 @@ public class Node extends Thread implements LookupServiceInterface {
 	private static final int ACTION_FIND_PREDECESSOR = 6;
 	private static final int ACTION_FINALIZE_TIMEOUT = 7;
 	private static final int ACTION_UNBLOCK_JOINBLOCK = 8;
+	private static final int ACTION_CHECK_REMOTE_SENSORS = 9;
 	
 	//TODO remove
-	private static final int ACTION_KILL = 9;
+	private static final int ACTION_KILL = 10;
 	
 	//Action-queue
 	BlockingQueue<Integer> actionQueue;
@@ -92,13 +97,14 @@ public class Node extends Thread implements LookupServiceInterface {
 	//Data storage
 	//Own Sensors, already stored at the right place in the DHT
 	SensorList sensorsAt;
+	
 	//Sensors, that this node is responsible for to store
 	SensorList sensorsResponsibleFor;
 	
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
 		
-		//Init fingertable
+		//Initialize finger-table
 		finger = new TreeMap<FingerEntry, FingerEntry>();
 		
 		//Generate hash from the local network address
@@ -143,22 +149,23 @@ public class Node extends Thread implements LookupServiceInterface {
 	@Override
 	public void register(String uci) {
 		//Generate the hash value
-		NodeID sensor = new NodeID(SHA1Generator.SHA1(uci));
+		NodeID sensorHash = new NodeID(SHA1Generator.SHA1(uci));
+		Sensor sensor = new Sensor(sensorHash,identity);
+		FingerEntry predecessorOfSensor;
 		
 		//Put it to the HashSet with the local sensors
 		sensorsAt.put(identity,sensor);
-		
-		FingerEntry predecessorOfSensor = getPredecessor(sensor);
+		predecessorOfSensor = getPredecessor(sensorHash);
 		
 		//Forward or answer?
 		if(predecessorOfSensor.equals(identity)) {
 			//We are responsible
-			sensorsResponsibleFor.put(identity, sensor);
-						
-		}else {
+			sensorsResponsibleFor.put(identity, sensor);			
+		}
+		else {
 			//we have to send a register Message but only if we are connected
 			if(connected) {
-				
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(),predecessorOfSensor.getNetworkAddress(),sensorHash,identity.getNodeID(),identity.getNetworkAddress()), predecessorOfSensor.getNodeID());
 			}
 		}
 	}
@@ -224,6 +231,18 @@ public class Node extends Thread implements LookupServiceInterface {
 				break;
 			case Message.CHECK_SUCCESSOR_RESPONSE:
 				handleCheckSuccessorResponseMessage((CheckSuccessorResponseMessage)message);
+				break;
+			case Message.REGISTER:
+				handleRegisterMessage((RegisterMessage)message);
+				break;
+			case Message.REGISTER_RESPONSE:
+				handleRegisterResponseMessage((RegisterResponseMessage)message);
+				break;
+			case Message.RESOLVE:
+				handleResolveMessage((ResolveMessage)message);
+				break;
+			case Message.RESOLVE_RESPONSE:
+				handleResolveResponseMessage((ResolveResponseMessage)message);
 				break;
 			case Message.BROADCAST:
 				BroadcastMessage bcast_msg = (BroadcastMessage)message;
@@ -311,6 +330,10 @@ public class Node extends Thread implements LookupServiceInterface {
 				case ACTION_UNBLOCK_JOINBLOCK:
 					//Unblock timeout
 					triggerUnblockJoinBlock();
+					break;
+					
+				case ACTION_CHECK_REMOTE_SENSORS:
+					checkRemoteSensorMapping();
 					break;
 					
 				case ACTION_KILL:
@@ -424,12 +447,8 @@ public class Node extends Thread implements LookupServiceInterface {
 			if(finger.containsKey(newFinger)) return;
 		}
 		
-		//Add successor to finger-table temporary
-		//finger.pu
-		
-		//First check if it is a better successor
-//		oldSuccessor = updateSuccessor(newFinger);
-		//if(oldSuccessor != null) newFinger = oldSuccessor;
+		//To decide if we have to reorganise the sensors
+		FingerEntry oldSuc;
 		
 		//1 - Rotate hash to the "origin"
 		//2 - Then get the logarithm of base 2, rounded down (floor)
@@ -442,6 +461,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Get previous successor - Shift to original position first
 		synchronized(finger) {
 			suc = getSuccessor(hash_log2.add(identity.getNodeID()));
+			oldSuc = getSuccessor(null);
 		}
 		hash_suc = suc.getNodeID().sub(identity.getNodeID());
 		
@@ -453,6 +473,7 @@ public class Node extends Thread implements LookupServiceInterface {
 			
 			//Fire event
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
+
 		}
 		//Check if the new finger is smaller than the successor
 		else if(hash_finger.compareTo(hash_suc) < 0) {
@@ -477,6 +498,13 @@ public class Node extends Thread implements LookupServiceInterface {
 				//Only fire ADD event, because nothing was removed in change
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 			}
+			
+		}
+		
+		//Re-register sensors that belong to new successor if it changed
+		synchronized (this) {
+			FingerEntry newSuc = getSuccessor(null);
+			if(!oldSuc.equals(newSuc)) rearrangeLocalSensorMapping(oldSuc, newSuc);
 		}
 	}
 	
@@ -921,13 +949,6 @@ public class Node extends Thread implements LookupServiceInterface {
 		}
 		//If predecessor
 		else if (predecessor != null && nlm.getHash().equals(predecessor.getNodeID())) {
-			/*synchronized(this) {
-				//TODO remove DEBUG fire event
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);				
-				
-				predecessor = null;
-				notify(ACTION_CHECK_PREDECESSOR);
-			}*/
 			updatePredecessor(null);
 		}
 		else { 
@@ -1103,6 +1124,31 @@ public class Node extends Thread implements LookupServiceInterface {
 			//TODO remove debugging
 			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
+		
+		//-----
+		//Handle sensors that are involed with the failed node
+		//-----
+		FingerEntry failedFinger = new FingerEntry(dst,null);
+		
+		//Remove sensors, that do not longer exist
+		sensorsResponsibleFor.remove(failedFinger);
+		
+		//Re-register nodes that got lost
+		List<Sensor> sensors = sensorsAt.get(failedFinger);
+		FingerEntry sensorPre;
+		FingerEntry owner;
+		
+		if(sensors != null) {
+			for(Sensor s: sensors) {
+				//put it to the "private sensortable"
+				sensorsAt.put(identity, s);
+				
+				//Send immediate a register message
+				sensorPre = getPredecessor(s.getSensorHash());
+				owner = s.getOwner();
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(),sensorPre.getNetworkAddress(),s.getSensorHash(), owner.getNodeID(),owner.getNetworkAddress()),sensorPre.getNodeID());
+			}
+		}
 	}
 	
 	public void debugBreak() {
@@ -1146,6 +1192,96 @@ public class Node extends Thread implements LookupServiceInterface {
 			
 			//Check if the successor if a better one
 			updatePredecessor(newPredecessor);
+		}
+	}
+	
+	private void handleRegisterMessage(RegisterMessage rm) {
+		FingerEntry registeringNode = new FingerEntry(rm.getOrigHash(), rm.getOrigAddress());
+		Sensor sensor = new Sensor(rm.getSensor(), registeringNode);
+		
+		//Check if we are responsible
+		FingerEntry responsibleNode = getPredecessor(sensor.getSensorHash());
+		
+		if(responsibleNode.equals(identity)) {
+			//We are responsible
+			sensorsResponsibleFor.put(registeringNode, sensor);
+			
+			//send response message
+			sendMessage(new RegisterResponseMessage(identity.getNetworkAddress(),rm.getOrigAddress(),rm.getSensor(),identity.getNodeID()), rm.getOrigHash());
+		}
+		else {
+			//Forward the message
+			sendMessage(rm.cloneWithNewAddress(identity.getNetworkAddress(), responsibleNode.getNetworkAddress()) , responsibleNode.getNodeID());
+		}
+	}
+	
+	private void handleRegisterResponseMessage(RegisterResponseMessage rrm) {
+		FingerEntry storage = new FingerEntry(rrm.getOrigHash(), rrm.getFromIp());
+		Sensor sensor = new Sensor(rrm.getSensor(),identity);
+		
+		//Is it one of our sensors
+		if(sensorsAt.contains(sensor)) {
+			//Enter it with its storage link
+			sensorsAt.put(storage, sensor);
+		}
+	}
+	
+	private void handleResolveMessage(ResolveMessage rm) {
+		FingerEntry sensorFinger;
+		FingerEntry sensorPredecessor;
+		Sensor sensor = new Sensor(rm.getSensorHash(),null);
+		
+		//Check sensor responsibility
+		sensorFinger = sensorsAt.get(sensor);
+		if(sensorFinger == null) {
+			sensorFinger = sensorsResponsibleFor.get(sensor);
+		}
+		
+		if(sensorFinger == null) {
+			//Forward to best finger
+			sensorPredecessor = getPredecessor(sensor.getSensorHash());
+			
+			if(sensorPredecessor != null && !sensorPredecessor.equals(identity)) {
+				//Forward
+				sendMessage(rm.cloneWithNewAddress(identity.getNetworkAddress(), sensorPredecessor.getNetworkAddress()),sensorPredecessor.getNodeID());
+			}
+		}
+		else {
+			//Answer with response message
+			sendMessage(new RegisterResponseMessage(identity.getNetworkAddress(), rm.getOrigAddress(), sensor.getSensorHash(), identity.getNodeID()),null);
+		}
+	}
+	
+	private void handleResolveResponseMessage(ResolveResponseMessage rrm) {
+		//TODO forward to dissemination core
+	}
+	
+	private void rearrangeLocalSensorMapping(FingerEntry oldSuc, FingerEntry newSuc) {
+		List<Sensor> sensors;
+		
+		if(!newSuc.equals(identity)) {
+			//Get sensors we have to change
+			sensors = sensorsResponsibleFor.getSensorInRange(oldSuc.getNodeID(),newSuc.getNodeID());
+			
+			//Re-register all
+			for(Sensor sensor: sensors) {
+				FingerEntry owner = sensor.getOwner();
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(),newSuc.getNetworkAddress(),sensor.getSensorHash(),owner.getNodeID(),owner.getNetworkAddress()),newSuc.getNodeID());
+			}
+		}
+	}
+	
+	private void checkRemoteSensorMapping() {
+		List<Sensor> sensors = sensorsAt.get(identity);
+		List<Sensor> sensorsSelfResponsible = sensorsResponsibleFor.get(identity);
+		
+		for(Sensor s: sensors) {
+			if(!sensorsSelfResponsible.contains(s)) {
+				//An other node should be responsible for this sensor...
+				//Register it - send to the best fitting finger!
+				FingerEntry sensorPredecessor = getPredecessor(s.getSensorHash());
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(), sensorPredecessor.getNetworkAddress(), s.getSensorHash(), s.getOwner().getNodeID(), s.getOwner().getNetworkAddress()), sensorPredecessor.getNodeID());
+			}
 		}
 	}
 }
