@@ -1,9 +1,12 @@
 package manager;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Timer;
 
+import manager.dht.FingerEntry;
 import manager.dht.Node;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -231,5 +234,9 @@ public final class Manager {
 	
 	public void resolve(String node, String uci) {
 		network.resolve(node,uci);
+	}
+	
+	public Map<Sensor,FingerEntry> showSensors(String networkAddress) {
+		return network.showSensors(networkAddress);
 	}
 }

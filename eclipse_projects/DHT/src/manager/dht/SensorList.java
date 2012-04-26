@@ -2,6 +2,7 @@ package manager.dht;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 public class SensorList {
@@ -132,5 +133,10 @@ public class SensorList {
 	
 	public synchronized List<Sensor> getAllSensors() {
 		return new ArrayList<Sensor>(allSensors.keySet());
+	}
+	
+	//TODO remove debug
+	public synchronized Map<Sensor,FingerEntry> getCopyOfAll() {
+		return (Map<Sensor,FingerEntry>) allSensors.clone();
 	}
 }
