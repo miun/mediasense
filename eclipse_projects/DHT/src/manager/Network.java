@@ -112,7 +112,7 @@ public class Network {
 	}
 
 	public void addNode(String address,String bootstrap) {
-		Communication comm;
+		Communication comm = null;
 		Node node;
 		
 		//Add node to list
@@ -127,12 +127,14 @@ public class Network {
 				
 				//start the Communication object
 				comm.start(node);
-				
-				//Inform listeners
-				synchronized(nodeListener) {
-					for(NodeListener nl: nodeListener) nl.onNodeAdd(new Date(),comm);
-				}
 			} 
+		}
+		
+		//Inform listeners
+		if(comm != null) {
+			synchronized(nodeListener) {
+				for(NodeListener nl: nodeListener) nl.onNodeAdd(new Date(),comm);
+			}
 		}
 	}
 	

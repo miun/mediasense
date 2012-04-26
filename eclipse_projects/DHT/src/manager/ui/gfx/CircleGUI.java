@@ -11,6 +11,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -76,6 +78,11 @@ KeepAliveListener, ActionListener, ChangeListener {
 	
 	private JCheckBox clearOnKeepalive;
 	
+	//Timer for DHT health visualization
+	Timer healthTimer;
+	TimerTask healthTask;
+	Object healthTaskLock = new Object();
+	
 	/**
 	 * Create the frame.
 	 */
@@ -118,6 +125,9 @@ KeepAliveListener, ActionListener, ChangeListener {
 		//Add the circle for nodes
 		circleForNodes = new CirclePanel(circleRadius,BORDER, Color.cyan, Color.cyan);
 		paintingSurface.add(circleForNodes);
+		
+		//Create health timer
+		healthTimer = new Timer();
 		
 		//Add all Nodes and their fingers that are already existing in the network
 		for(Communication com: Network.getInstance().getClientList()) {
@@ -252,7 +262,8 @@ KeepAliveListener, ActionListener, ChangeListener {
 	public void onNodeAdd(Date timeStamp,Communication com) {
 		addNode(com);
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		scheduleHealthTimer();		
 	}
 
 	@Override
@@ -269,7 +280,8 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.validate();
 		paintingSurface.repaint();
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		scheduleHealthTimer();
 	}
 
 	@Override
@@ -341,7 +353,8 @@ KeepAliveListener, ActionListener, ChangeListener {
 		changedFingersSinceLastKeepalive.validate();
 		changedFingersSinceLastKeepalive.repaint();
 		
-		healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+		scheduleHealthTimer();
 	}
 
 	@Override
@@ -354,7 +367,8 @@ KeepAliveListener, ActionListener, ChangeListener {
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
 			
-			healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+			//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+			scheduleHealthTimer();
 		}
 	}
 
@@ -404,4 +418,25 @@ KeepAliveListener, ActionListener, ChangeListener {
 		onNodeRemove(timeStamp,com);
 	}
 	
+	private void scheduleHealthTimer() {
+		synchronized(healthTaskLock) {
+			if(healthTask == null) {
+				healthTask = new TimerTask() {
+
+					@Override
+					public void run() {
+						//Update health
+						healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+						
+						synchronized(healthTaskLock) {
+							healthTask = null;
+						}
+					}
+				};
+				
+				//Schedule timer
+				healthTimer.schedule(healthTask,1000);
+			}
+		}
+	}
 }

@@ -126,32 +126,6 @@ public class SensorList {
 				}
 			}
 		}
-		
-		/*
-		//Sub one from start
-		start = start.sub(1);
-		
-		//Search all nodes in between range
-		if(start.compareTo(end) > 0) {
-			//Start -> MAX; MIN -> END - 1
-			do {
-				currentSensor = allSensors.higherKey(new Sensor(start,null));
-				if(currentSensor != null) result.add(currentSensor);
-			} while(currentSensor != null);
-
-			do {
-				currentSensor = allSensors.lowerKey(new Sensor(end,null));
-				if(currentSensor != null) result.add(currentSensor);
-			} while(currentSensor != null);
-		}
-		else if(start.compareTo(end) < 0) {
-			//Start -> END - 1
-			while(true) {
-				currentSensor = allSensors.higherKey(new Sensor(start,null));
-				if(currentSensor == null || currentSensor.compareTo(new Sensor(end,null)) >= 0) break;
-				result.add(currentSensor);
-			}
-		}*/
 
 		return result;
 	}

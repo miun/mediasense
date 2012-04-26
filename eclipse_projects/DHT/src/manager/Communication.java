@@ -136,7 +136,6 @@ public class Communication extends Thread implements CommunicationInterface {
 				break;
 			}
 		}
-		
 	}
 
 	@Override
