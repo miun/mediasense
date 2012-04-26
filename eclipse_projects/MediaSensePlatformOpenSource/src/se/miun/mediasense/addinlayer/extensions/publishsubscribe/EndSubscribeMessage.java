@@ -8,12 +8,9 @@ public class EndSubscribeMessage extends Message {
 
 	
 	public EndSubscribeMessage(String uci, String toIp, String fromIp) {
+		super(fromIp,toIp,ENDSUBSCRIBE);
 		
-		this.type = Message.ENDSUBSCRIBE;
 		this.uci = uci;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
-		
 		
 	}
 	

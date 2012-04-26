@@ -1,7 +1,6 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -9,11 +8,14 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.Message;
+import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.KeepAliveBroadcastMessage;
@@ -44,12 +46,12 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 public class Node extends Thread implements LookupServiceInterface,ResolveFailListener {
 	//Communication
 	private CommunicationInterface communication;
+	private DisseminationCore disseminationCore;
 	private String bootstrapAddress;
 
 	//Own state in the DHT
 	private TreeMap<FingerEntry,FingerEntry> finger;
 	private FingerEntry identity;
-	//private FingerEntry successor;
 	private FingerEntry predecessor;
 	
 	//Keep alive
@@ -113,8 +115,9 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	//Remember resolves, until they got an response, or failed
 	private HashMap<Sensor,ResolveService> activeResolves;
 	
-	public Node(CommunicationInterface communication,String bootstrapAddress) {
+	public Node(CommunicationInterface communication,DisseminationCore disseminationCore,String bootstrapAddress) {
 		this.communication = communication;
+		this.disseminationCore = disseminationCore;
 		
 		//Initialize finger-table
 		finger = new TreeMap<FingerEntry, FingerEntry>();
@@ -156,13 +159,15 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	public void resolve(String uci) {
 		//Generate the hash value
 		Sensor sensor = new Sensor(new NodeID(SHA1Generator.SHA1(uci)),null);
+		TreeSet<Sensor> sensors = new TreeSet<Sensor>();
 		
-		//TODO check first if we store it already
-		Set<Sensor> sensors = new HashSet<Sensor>();
+		//TODO think about this again, because i changed the type from hashset to treeset
 		sensors.addAll(sensorsAt.getAllSensors());
 		sensors.addAll(sensorsResponsibleFor.getAllSensors());
 		
 		if(sensors.contains(sensor)) {
+			sensor = sensors.c
+			disseminationCore.callResolveResponseListener(uci, sensor.)
 			//TODO Inform dissemination core
 			System.out.println("OUT");
 		}
@@ -293,7 +298,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 				sendBroadcast(bcast_msg,bcast_msg.getStartKey(),bcast_msg.getEndKey());
 				break;
 			default:
-				//TODO Throw a Exception for a unsupported message?!
+				//TODO Throw an exception for a unsupported message?!
 		}
 	}
 	
@@ -420,12 +425,12 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	}
 	
 	//TODO just for UI purposes
-	public FingerEntry getPredecessor() {
+/*	public FingerEntry getPredecessor() {
 		return predecessor;
-	}
+	}*/
 	
 	//TODO private later !
-	public FingerEntry getPredecessor(NodeID nodeID) {
+	private FingerEntry getPredecessor(NodeID nodeID) {
 		FingerEntry hash;
 		FingerEntry result;
 		
@@ -540,8 +545,8 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 				finger.put(newFinger,newFinger);
 			}
 			
-			//Fire event
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
+			//TODO debug Fire event
+			//fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 
 		}
 		//Check if the new finger is smaller than the successor
@@ -560,12 +565,12 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 				}
 				
 				//Fire events
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, suc);
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newFinger);
+				//fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, suc);
+				//fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newFinger);
 			}
 			else {
 				//Only fire ADD event, because nothing was removed in change
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
+				//fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newFinger);
 			}
 			
 		}
@@ -648,9 +653,9 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	}
 	
 	//TODO for DEBUG
-	private void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
+/*	private void fireFingerChangeEvent(int eventType,FingerEntry node,FingerEntry finger) {
 		communication.fireFingerChangeEvent(eventType,node,finger);
-	}
+	}*/
 	
 	//TODO for DEBUG
 	//Remove later
@@ -671,7 +676,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 		
 		//Fire event at network layer
 		//TODO remove! only for debugging
-		communication.fireKeepAliveEvent(identity.getNodeID(),identity.getNetworkAddress());
+		//communication.fireKeepAliveEvent(identity.getNodeID(),identity.getNetworkAddress());
 		
 		//Send broadcast
 		msg = new KeepAliveBroadcastMessage(null,null,null,null,identity.getNodeID(),identity.getNetworkAddress());
@@ -741,7 +746,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 		if(newFinger == null) {
 			//TODO remove debug stuff
 			//Fire event ...
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);
+			//fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);
 			
 			//...and set to null.
 			predecessor = null;
@@ -759,13 +764,13 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			predecessor = newFinger;
 						
 			//Fire fingerChange event
-			if(oldPredecessor == null || oldPredecessor.equals(identity)) {
+/*			if(oldPredecessor == null || oldPredecessor.equals(identity)) {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD,identity, predecessor);
 			}
 			else {
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE,identity, oldPredecessor);
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER,identity, predecessor);
-			}
+			}*/
 			
 			//Check if it might be a finger
 			//updateFingerTableEntry(oldPredecessor);
@@ -1029,10 +1034,10 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			//Remove leaving finger
 			FingerEntry removedFinger = finger.remove(new FingerEntry(nlm.getHash(),null));
 			
-			if(removedFinger != null) {
+/*			if(removedFinger != null) {
 				//TODO remove debug
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, removedFinger);
-			}
+			}*/
 			
 			//Check if the successor of the leaving node's successor is a possible finger for us
 			updateFingerTable(leavingNodeSuccessor);
@@ -1171,8 +1176,8 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	private synchronized void handleFailingNode(NodeID dst) {
 		if(getSuccessor(null).getNodeID().equals(dst)) {
 			//TODO remove later fire events
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, getSuccessor(null));
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, getSuccessor(getSuccessor(null).getNodeID()));
+//			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, getSuccessor(null));
+//			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, getSuccessor(getSuccessor(null).getNodeID()));
 			
 			//Successor failed
 			//Remove successor the next in the list will
@@ -1196,7 +1201,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			FingerEntry removedFinger = finger.remove(new FingerEntry(dst, null));
 			
 			//TODO remove debugging
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
+//			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE,identity, removedFinger);
 		}
 		
 		//-----
@@ -1339,6 +1344,8 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			//Abort timer and remove from list
 			rs.abort();
 		}
+		
+		//Forward
 	}
 	
 	private void rearrangeLocalSensorMapping() {
@@ -1460,16 +1467,16 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 					}
 					
 					//Resolve failed event
-					listener.OnResolveFail(sensor);
+					listener.OnResolveFail(sensor,uci);
 				}
 			}
 		}
 	}
 
 	@Override
-	public void OnResolveFail(Sensor sensor) {
+	public void OnResolveFail(Sensor sensor,String uci) {
 		//Forward fail to dissemination layer
-		System.out.println("Resolve failed");
+		disseminationCore.callResolveResponseListener(uci,null);
 		
 		//Remove failed resolveService entry
 		activeResolves.remove(sensor);

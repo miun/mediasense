@@ -7,6 +7,7 @@ import se.miun.mediasense.disseminationlayer.communication.tcp.TcpCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.TcpProxyCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.Node;
 import se.miun.mediasense.disseminationlayer.lookupservice.server.ServerLookup;
 
 
@@ -104,13 +105,13 @@ public class MediaSensePlatform {
 			//Uses the public bootstrap node
 			//lookupService = new DistributedLookup(disseminationCore, communication, "193.10.119.33"); //Public 
 			//lookupService = new DistributedLookup(disseminationCore, communication, "10.14.1.76"); //Andra datorn
-			lookupService = new DistributedLookup(disseminationCore, communication, "10.14.1.214"); //Min dator
+			lookupService = new Node(communication,disseminationCore, "10.14.1.214"); //Min dator
 
 			break;
 			
 			
 		case LookupServiceInterface.DISTRIBUTED_BOOTSTRAP:
-			lookupService = new DistributedLookup(disseminationCore, communication);			
+			lookupService = new Node(communication,disseminationCore, null); //Min dator
 			break;
 
 		case LookupServiceInterface.DHT_CHORD:

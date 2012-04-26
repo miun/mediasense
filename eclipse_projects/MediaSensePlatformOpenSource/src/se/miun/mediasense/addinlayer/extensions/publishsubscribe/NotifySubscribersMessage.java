@@ -8,12 +8,10 @@ public class NotifySubscribersMessage extends Message {
 	public String value;
 	
 	public NotifySubscribersMessage(String uci, String value, String toIp, String fromIp) {
-		
-		this.type = Message.NOTIFYSUBSCRIBERS;
+		super(fromIp,toIp,NOTIFYSUBSCRIBERS);
+
 		this.value = value;
 		this.uci = uci;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
 		
 	}
 	

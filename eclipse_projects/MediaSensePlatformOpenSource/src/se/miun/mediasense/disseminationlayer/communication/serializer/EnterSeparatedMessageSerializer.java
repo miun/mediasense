@@ -21,62 +21,63 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 	@Override
 	public String serializeMessage(Message message) {
 						
-		switch (message.type) {
+		switch (message.getType()) {
 		case Message.GET:			
 			GetMessage getMsg = (GetMessage) message;
-			return "" + getMsg.type + "\n" + getMsg.toIp + "\n" + getMsg.fromIp + "\n" + getMsg.uci + "\n";
+			return "" + getMsg.getType() + "\n" + getMsg.getToIp() + "\n" + getMsg.getFromIp() + "\n" + getMsg.uci + "\n";
 
 		case Message.ENDSUBSCRIBE:			
 			EndSubscribeMessage endSubMsg = (EndSubscribeMessage) message;			
-			return "" + endSubMsg.type + "\n" + endSubMsg.toIp + "\n" + endSubMsg.fromIp + "\n" + endSubMsg.uci + "\n";
+			return "" + endSubMsg.getType() + "\n" + endSubMsg.getToIp() + "\n" + endSubMsg.getFromIp() + "\n" + endSubMsg.uci + "\n";
 		
 		case Message.NOTIFY:			
 			NotifyMessage notifyMsg = (NotifyMessage) message;			
-			return "" + notifyMsg.type + "\n" + notifyMsg.toIp + "\n" + notifyMsg.fromIp + "\n" + notifyMsg.uci + "\n" + notifyMsg.value + "\n";
+			return "" + notifyMsg.getType() + "\n" + notifyMsg.getToIp() + "\n" + notifyMsg.getFromIp() + "\n" + notifyMsg.uci + "\n" + notifyMsg.value + "\n";
 		
 		case Message.REGISTER:			
 			RegisterMessage regMsg = (RegisterMessage) message;
-			return "" + regMsg.type + "\n" + regMsg.toIp + "\n" + regMsg.fromIp + "\n" + regMsg.uci + "\n";
+			//return "" + regMsg.getType() + "\n" + regMsg.getToIp() + "\n" + regMsg.getFromIp() + "\n";
+			return "";
 			
 		case Message.RESOLVE:			
 			ResolveMessage resMsg = (ResolveMessage) message;			
-			return "" + resMsg.type + "\n" + resMsg.toIp + "\n" + resMsg.fromIp + "\n" + resMsg.uci + "\n" + resMsg.ttl + "\n";
+			return "";// + resMsg.getType() + "\n" + resMsg.getToIp() + "\n" + resMsg.getFromIp() + "\n";
 			
 		case Message.RESOLVE_RESPONSE:		
-		ResolveResponseMessage resRespMsg = (ResolveResponseMessage) message;			
-			return "" + resRespMsg.type + "\n" + resRespMsg.toIp + "\n" + resRespMsg.fromIp + "\n" + resRespMsg.uci + "\n" + resRespMsg.resolvedIp + "\n";
+			ResolveResponseMessage resRespMsg = (ResolveResponseMessage) message;			
+			return "";// + resRespMsg.getType() + "\n" + resRespMsg.getToIp() + "\n" + resRespMsg.getFromIp();
 				
 		case Message.SET:			
 			SetMessage setMsg = (SetMessage) message;			
-			return "" + setMsg.type + "\n" + setMsg.toIp + "\n" + setMsg.fromIp + "\n" + setMsg.uci + "\n" + setMsg.value + "\n";
+			return "" + setMsg.getType() + "\n" + setMsg.getToIp() + "\n" + setMsg.getFromIp() + "\n" + setMsg.uci + "\n" + setMsg.value + "\n";
 			
 		case Message.STARTSUBSCRIBE:			
 			StartSubscribeMessage startSubMsg = (StartSubscribeMessage) message;			
-			return "" + startSubMsg.type + "\n" + startSubMsg.toIp + "\n" + startSubMsg.fromIp + "\n" + startSubMsg.uci + "\n";
+			return "" + startSubMsg.getType() + "\n" + startSubMsg.getToIp() + "\n" + startSubMsg.getFromIp() + "\n" + startSubMsg.uci + "\n";
 					
 		case Message.NOTIFYSUBSCRIBERS:			
 			NotifySubscribersMessage notifysubMsg = (NotifySubscribersMessage) message;			
-			return "" + notifysubMsg.type + "\n" + notifysubMsg.toIp + "\n" + notifysubMsg.fromIp + "\n" + notifysubMsg.uci + "\n" + notifysubMsg.value + "\n";
+			return "" + notifysubMsg.getType() + "\n" + notifysubMsg.getToIp() + "\n" + notifysubMsg.getFromIp() + "\n" + notifysubMsg.uci + "\n" + notifysubMsg.value + "\n";
 		
 		case Message.ACK:			
 			AcknowledgementMessage ackMsg = (AcknowledgementMessage) message;			
-			return "" + ackMsg.type + "\n" + ackMsg.toIp + "\n" + ackMsg.fromIp + "\n" + ackMsg.seqNr + "\n";
+			return "" + ackMsg.getType() + "\n" + ackMsg.getToIp() + "\n" + ackMsg.getFromIp() + "\n" + ackMsg.seqNr + "\n";
 		
 		case Message.JOIN:
 			JoinMessage joinMsg = (JoinMessage) message;
-			return "" + joinMsg.type + "\n" + joinMsg.toIp + "\n" + joinMsg.fromIp + "\n";
+			return "";// + joinMsg.getType() + "\n" + joinMsg.getToIp() + "\n" + joinMsg.getFromIp() + "\n";
 			
 		case Message.JOIN_RESPONSE: 
 			JoinResponseMessage joinRespMsg = (JoinResponseMessage) message;
-			return "" + joinRespMsg.type + "\n" + joinRespMsg.toIp + "\n" + joinRespMsg.fromIp + "\n" + joinRespMsg.grandGrandParent + "\n" + joinRespMsg.grandParent + "\n" + joinRespMsg.parent + "\n" + joinRespMsg.self + "\n" + joinRespMsg.child + "\n" + joinRespMsg.grandChild + "\n" + joinRespMsg.grandGrandChild + "\n";
+			return "";// + joinRespMsg.getType() + "\n" + joinRespMsg.getToIp() + "\n" + joinRespMsg.getFromIp() + "\n" + joinRespMsg.grandGrandParent + "\n" + joinRespMsg.grandParent + "\n" + joinRespMsg.parent + "\n" + joinRespMsg.self + "\n" + joinRespMsg.child + "\n" + joinRespMsg.grandChild + "\n" + joinRespMsg.grandGrandChild + "\n";
 			
 		case Message.KEEPALIVE:
 			KeepAliveMessage keepAliceMsg = (KeepAliveMessage) message;
-			return "" + keepAliceMsg.type + "\n" + keepAliceMsg.toIp + "\n" + keepAliceMsg.fromIp + "\n";
+			return "";// + keepAliceMsg.getType() + "\n" + keepAliceMsg.getToIp() + "\n" + keepAliceMsg.getFromIp() + "\n";
 			
-		case Message.KEEPALIVE_RESPONSE: 
-			KeepAliveResponseMessage keepAliveRespMsg = (KeepAliveResponseMessage) message;
-			return "" + keepAliveRespMsg.type + "\n" + keepAliveRespMsg.toIp + "\n" + keepAliveRespMsg.fromIp + "\n" + keepAliveRespMsg.grandGrandParent + "\n" + keepAliveRespMsg.grandParent + "\n" + keepAliveRespMsg.parent + "\n" + keepAliveRespMsg.self + "\n" + keepAliveRespMsg.child + "\n" + keepAliveRespMsg.grandChild + "\n" + keepAliveRespMsg.grandGrandChild + "\n";
+		//case Message.KEEPALIVE_RESPONSE: 
+			//KeepAliveResponseMessage keepAliveRespMsg = (KeepAliveResponseMessage) message;
+			//return "" + keepAliveRespMsg.getType() + "\n" + keepAliveRespMsg.getToIp() + "\n" + keepAliveRespMsg.getFromIp() + "\n" + keepAliveRespMsg.grandGrandParent + "\n" + keepAliveRespMsg.grandParent + "\n" + keepAliveRespMsg.parent + "\n" + keepAliveRespMsg.self + "\n" + keepAliveRespMsg.child + "\n" + keepAliveRespMsg.grandChild + "\n" + keepAliveRespMsg.grandGrandChild + "\n";
 			
 		}
 		
@@ -108,16 +109,16 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				return notifyMsg;
 
 			case Message.REGISTER:
-				RegisterMessage registerMsg = new RegisterMessage(split[3], split[1], split[2]);			
-				return registerMsg;
+				//RegisterMessage registerMsg = new RegisterMessage(split[3], split[1], split[2]);			
+				//return registerMsg;
 
 			case Message.RESOLVE:
-				ResolveMessage resolveMsg = new ResolveMessage(split[3], split[4], split[1], split[2]);			
-				return resolveMsg;
+				//ResolveMessage resolveMsg = new ResolveMessage(split[3], split[4], split[1], split[2]);			
+				//return resolveMsg;
 				
 			case Message.RESOLVE_RESPONSE:
-				ResolveResponseMessage resRespMsg = new ResolveResponseMessage(split[3], split[4], split[1], split[2]);
-				return resRespMsg;
+				//ResolveResponseMessage resRespMsg = new ResolveResponseMessage(split[3], split[4], split[1], split[2]);
+				//return resRespMsg;
 
 			case Message.SET:
 				SetMessage setMsg = new SetMessage(split[3], split[4], split[1], split[2]);			
@@ -136,20 +137,20 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				return ackMsg;	
 				
 			case Message.JOIN:
-				JoinMessage joinMsg = new JoinMessage(split[1], split[2]);
-				return joinMsg;
+				//JoinMessage joinMsg = new JoinMessage(split[1], split[2]);
+				//return joinMsg;
 				
 			case Message.JOIN_RESPONSE:
-				JoinResponseMessage joinRspMsg = new JoinResponseMessage(split[3], split[4], split[5], split[5], split[6], split[7], split[8], split[1], split[2]);
-				return joinRspMsg;
+				//JoinResponseMessage joinRspMsg = new JoinResponseMessage(split[3], split[4], split[5], split[5], split[6], split[7], split[8], split[1], split[2]);
+				//return joinRspMsg;
 			
 			case Message.KEEPALIVE:
-				KeepAliveMessage keepAliveMsg = new KeepAliveMessage(split[1], split[2]);
-				return keepAliveMsg;
+				//KeepAliveMessage keepAliveMsg = new KeepAliveMessage(split[1], split[2]);
+				//return keepAliveMsg;
 				
 			case Message.KEEPALIVE_RESPONSE:
-				KeepAliveResponseMessage keepAliveRespMsg = new KeepAliveResponseMessage(split[3], split[4], split[5], split[6], split[7], split[8], split[9], split[1], split[2]);
-				return keepAliveRespMsg;
+				//KeepAliveResponseMessage keepAliveRespMsg = new KeepAliveResponseMessage(split[3], split[4], split[5], split[6], split[7], split[8], split[9], split[1], split[2]);
+				//return keepAliveRespMsg;
 			
 
 				

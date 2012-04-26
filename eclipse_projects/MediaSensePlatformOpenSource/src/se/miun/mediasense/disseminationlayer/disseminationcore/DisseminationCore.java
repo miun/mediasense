@@ -1,6 +1,7 @@
 package se.miun.mediasense.disseminationlayer.disseminationcore;
 
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
@@ -218,8 +219,14 @@ public class DisseminationCore {
     public void get(String uci, String ip){
     	if(communication != null){    		
     		GetMessage message = new GetMessage(uci, ip, communication.getLocalIp());    		
-    		communication.sendMessage(message);
+    		
+    		try {
+    			communication.sendMessage(message);
     		}
+    		catch (DestinationNotReachableException e) {
+    			//TODO handle this if you like
+    		}
+    	}
     }    
     /**
      * The SET primitive action, which pushes a value to another entity.
@@ -231,7 +238,13 @@ public class DisseminationCore {
     public void set(String uci, String value, String ip){
     	if(communication != null){
     		SetMessage message = new SetMessage(uci, value, ip, communication.getLocalIp());
-    		communication.sendMessage(message);
+    		
+    		try {
+    			communication.sendMessage(message);
+    		}
+    		catch (DestinationNotReachableException e) {
+    			//TODO handle if you like
+    		}
     	}
     }    
     /**
@@ -246,7 +259,13 @@ public class DisseminationCore {
     	
     	if(communication != null){
     		NotifyMessage  message = new NotifyMessage(uci, value, ip, communication.getLocalIp());
-    		communication.sendMessage(message);    		
+    		
+    		try {
+    			communication.sendMessage(message);
+    		}
+    		catch (DestinationNotReachableException e) {
+    			//TODO handle if you like
+    		}
     	}  
     }
 }

@@ -1,5 +1,6 @@
 package se.miun.mediasense.disseminationlayer.communication.tcp;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -8,6 +9,7 @@ import java.net.Socket;
 
 import se.miun.mediasense.addinlayer.AddInManager;
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
@@ -55,9 +57,9 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 	
 
 	@Override
-	public void sendMessage(Message message) {
+	public void sendMessage(Message message) throws DestinationNotReachableException {
 		try {
-			Socket s = new Socket(message.toIp, communicationPort);
+			Socket s = new Socket(message.getToIp(), communicationPort);
 			
 			String data = messageSerializer.serializeMessage(message);
 	
@@ -68,8 +70,8 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 			os.close();
 			s.close();
 			
-		} catch (Exception e) {
-			//e.printStackTrace();
+		} catch (IOException e) {
+			throw new DestinationNotReachableException(e.getMessage());
 		}
 	}
 
@@ -82,7 +84,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 				return address.getHostAddress();
 			}
 			else {				
-				//Workaround because Linux is stupid...		    	
+				//Workaround because Linux is stupid...	
 				Socket s = new Socket("www.google.com", 80);
 				String ip = s.getLocalAddress().getHostAddress();
 				s.close();
@@ -139,8 +141,8 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 				});
 				t.start();
 				
-            } catch (Exception e) {
-                //e.printStackTrace();
+            } catch (IOException e) {
+                //throw new DestinationNotReachableException(e.getMessage());
             }
         }				
 		
@@ -162,13 +164,13 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 			Message message = messageSerializer.deserializeMessage(stringRepresentation);
 
-			switch (message.type) {
+			switch (message.getType()) {
 
 				
 			case Message.GET:				
 				//Fire off the getEvent!
 				GetMessage getMessage = (GetMessage) message;
-				disseminationCore.callGetEventListener(getMessage.fromIp, getMessage.uci);				
+				disseminationCore.callGetEventListener(getMessage.getFromIp(), getMessage.uci);				
 				break;
 										
 			case Message.SET:				

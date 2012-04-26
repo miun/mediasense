@@ -120,18 +120,18 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 			if (seqNr != 0){			
 				
 				//Send back the Ack message!				
-				AcknowledgementMessage ack = new AcknowledgementMessage(seqNr + "", message.fromIp, getLocalIp());				
+				AcknowledgementMessage ack = new AcknowledgementMessage(seqNr + "", message.getFromIp(), getLocalIp());				
 				RudpMessageContainer msg = new RudpMessageContainer(ack);
 				msg.seqNr = 0; //To not get acks on the acks!				
 				sendRudpMessage(msg);		
 				
 				// Handle the message content as usual				
-				switch (message.type) {
+				switch (message.getType()) {
 				
 				case Message.GET:				
 					//Fire off the getEvent!
 					GetMessage getMessage = (GetMessage) message;
-					disseminationCore.callGetEventListener(getMessage.fromIp, getMessage.uci);				
+					disseminationCore.callGetEventListener(getMessage.getFromIp(), getMessage.uci);				
 					break;
 											
 				case Message.SET:				
@@ -197,7 +197,7 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 			data = queuedMessage.seqNr + ";" + data;
 			
 			//Send!
-			DatagramPacket packet = new DatagramPacket(data.getBytes(),	data.length(), InetAddress.getByName(queuedMessage.message.toIp), overlayPort);
+			DatagramPacket packet = new DatagramPacket(data.getBytes(),	data.length(), InetAddress.getByName(queuedMessage.message.getToIp()), overlayPort);
 			sendSocket.send(packet);
 
 		} catch (Exception e) {

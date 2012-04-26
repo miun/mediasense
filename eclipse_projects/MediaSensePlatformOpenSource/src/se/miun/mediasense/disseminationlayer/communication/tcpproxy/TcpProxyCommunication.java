@@ -79,7 +79,7 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 	public void sendMessage(Message message) {
 		synchronized (socket) {
 			// TODO Auto-generated method stub
-			String SendString = "ROUTE|" + message.toIp + "|"
+			String SendString = "ROUTE|" + message.getToIp() + "|"
 					+ encode(messageSerializer.serializeMessage(message));
 			OutputStream out;
 			try {
@@ -184,12 +184,12 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 			Message message = messageSerializer
 					.deserializeMessage(stringRepresentation);
 
-			switch (message.type) {
+			switch (message.getType()) {
 
 			case Message.GET:
 				// Fire off the getEvent!
 				GetMessage getMessage = (GetMessage) message;
-				core.callGetEventListener(getMessage.fromIp, getMessage.uci);
+				core.callGetEventListener(getMessage.getFromIp(), getMessage.uci);
 				break;
 
 			case Message.SET:

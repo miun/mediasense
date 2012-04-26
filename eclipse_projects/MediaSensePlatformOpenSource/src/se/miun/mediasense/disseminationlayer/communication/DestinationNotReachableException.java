@@ -1,4 +1,4 @@
-package se.miun.mediasense.disseminationlayer.lookupservice.distributed;
+package se.miun.mediasense.disseminationlayer.communication;
 
 @SuppressWarnings("serial")
 public class DestinationNotReachableException extends Exception {
