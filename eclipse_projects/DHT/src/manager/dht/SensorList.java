@@ -1,17 +1,19 @@
 package manager.dht;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class SensorList {
 	private TreeMap<Sensor,FingerEntry> allSensors;
-	private TreeMap<FingerEntry,List<Sensor>> orderedToFingerEntry;
+	private TreeMap<FingerEntry,Set<Sensor>> orderedToFingerEntry;
 	
 	public SensorList() {
 		allSensors = new TreeMap<Sensor,FingerEntry>();
-		orderedToFingerEntry = new TreeMap<FingerEntry, List<Sensor>>();
+		orderedToFingerEntry = new TreeMap<FingerEntry, Set<Sensor>>();
 	}
 	
 	public synchronized void put(FingerEntry node, Sensor sensor) {
@@ -19,10 +21,10 @@ public class SensorList {
 		FingerEntry oldNode = allSensors.put(sensor, node);
 		
 		//put it also to the reversed ordered list
-		List<Sensor> nodeSet = orderedToFingerEntry.get(node);
+		Set<Sensor> nodeSet = orderedToFingerEntry.get(node);
 		if(nodeSet == null) {
 			//no sensor from this node yet, allocate new list
-			nodeSet = new ArrayList<Sensor>();
+			nodeSet = new HashSet<Sensor>();
 			orderedToFingerEntry.put(node, nodeSet);
 		} 
 		
@@ -33,7 +35,7 @@ public class SensorList {
 		//Now check if we have to remove the sensor from an other set
 		if(oldNode != null && !oldNode.equals(node)) {
 			//The sensor is also present in an other set -> remove it from there
-			List<Sensor> oldN = orderedToFingerEntry.get(oldNode);
+			Set<Sensor> oldN = orderedToFingerEntry.get(oldNode);
 			if(oldN != null) {
 				// TODO use these later oldN.remove(sensor);
 				if(!oldN.remove(sensor)) {
@@ -58,9 +60,9 @@ public class SensorList {
 	}
 	
 	//Remove all sensors that belong to this node
-	public synchronized List<Sensor> remove(FingerEntry node) {
+	public synchronized Set<Sensor> remove(FingerEntry node) {
 		//Get the sensors to remove
-		List<Sensor> toRemove = orderedToFingerEntry.remove(node);
+		Set<Sensor> toRemove = orderedToFingerEntry.remove(node);
 		
 		if(toRemove != null) {
 			//Remove this sensors also from the allSensors map
@@ -77,7 +79,7 @@ public class SensorList {
 		FingerEntry removeHereToo = allSensors.remove(sensor);
 		if(removeHereToo != null) {
 			//Remove the sensors also from the reversed ordered set
-			List<Sensor> nodeSet = orderedToFingerEntry.get(removeHereToo);
+			Set<Sensor> nodeSet = orderedToFingerEntry.get(removeHereToo);
 			if(nodeSet != null) {
 				nodeSet.remove(sensor);
 			}
@@ -86,9 +88,9 @@ public class SensorList {
 	}
 	
 	//Returns the TreeSet containing all sensors that belong to that node
-	public synchronized List<Sensor> get(FingerEntry node) {
-		ArrayList<Sensor> result = new ArrayList<Sensor>();
-		List<Sensor> content = orderedToFingerEntry.get(node);
+	public synchronized Set<Sensor> get(FingerEntry node) {
+		Set<Sensor> result = new HashSet<Sensor>();
+		Set<Sensor> content = orderedToFingerEntry.get(node);
 		if(content != null) result.addAll(content);
 		return result;
 	}
@@ -131,8 +133,8 @@ public class SensorList {
 		return result;
 	}
 	
-	public synchronized List<Sensor> getAllSensors() {
-		return new ArrayList<Sensor>(allSensors.keySet());
+	public synchronized Set<Sensor> getAllSensors() {
+		return new HashSet<Sensor>(allSensors.keySet());
 	}
 	
 	//TODO remove debug

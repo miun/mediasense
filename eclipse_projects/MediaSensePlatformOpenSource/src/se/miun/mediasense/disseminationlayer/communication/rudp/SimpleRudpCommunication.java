@@ -3,8 +3,9 @@ package se.miun.mediasense.disseminationlayer.communication.rudp;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Enumeration;
 
 import se.miun.mediasense.addinlayer.AddInManager;
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
@@ -232,9 +233,27 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 
 	@Override
 	public String getLocalIp() {
-		try {
+		try {			
+			//Workaround because Linux is stupid...		    	
+	    	Enumeration<NetworkInterface> ni = NetworkInterface.getNetworkInterfaces();
+	    	
+	    	while (ni.hasMoreElements()) {
+	    		NetworkInterface networkInterface = ni.nextElement();
+	    			    		
+	    		Enumeration<InetAddress> ias = networkInterface.getInetAddresses();
+		    	while (ias.hasMoreElements()) {
+		    		 InetAddress address = ias.nextElement();
+		    		 
+		    		 if(!address.isLoopbackAddress()){
+		        		return address.getHostAddress();
+		        	}		    		 
+		    	}	    		
+	    	}  
+
+	    	//In windows it is this simple...
 			return InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
+			
+		} catch (Exception e) {
 			return "127.0.0.1";
 		}
 	}

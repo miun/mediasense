@@ -1,9 +1,11 @@
 package manager.dht;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -40,7 +42,7 @@ import manager.dht.messages.unicast.ResolveMessage;
 import manager.dht.messages.unicast.ResolveResponseMessage;
 import manager.listener.FingerChangeListener;
 
-public class Node extends Thread implements LookupServiceInterface {
+public class Node extends Thread implements LookupServiceInterface,ResolveFailListener {
 	//Communication
 	private CommunicationInterface communication;
 	private String bootstrapAddress;
@@ -104,16 +106,21 @@ public class Node extends Thread implements LookupServiceInterface {
 	
 	//Data storage
 	//Own Sensors, already stored at the right place in the DHT
-	SensorList sensorsAt;
+	private SensorList sensorsAt;
 	
 	//Sensors, that this node is responsible for to store
-	SensorList sensorsResponsibleFor;
+	private SensorList sensorsResponsibleFor;
+	
+	//Remember resolves, until they got an response, or failed
+	private HashMap<Sensor,ResolveService> activeResolves;
 	
 	public Node(CommunicationInterface communication,String bootstrapAddress) {
 		this.communication = communication;
 		
 		//Initialize finger-table
 		finger = new TreeMap<FingerEntry, FingerEntry>();
+		
+		activeResolves = new HashMap<Sensor,ResolveService>();
 		
 		//Generate hash from the local network address
 		//TODO ask stefan if inclusion of port address is reasonable
@@ -152,9 +159,25 @@ public class Node extends Thread implements LookupServiceInterface {
 		Sensor sensor = new Sensor(new NodeID(SHA1Generator.SHA1(uci)),null);
 		
 		//TODO check first if we store it already
+		Set<Sensor> sensors = new HashSet<Sensor>();
+		sensors.addAll(sensorsAt.getAllSensors());
+		sensors.addAll(sensorsResponsibleFor.getAllSensors());
 		
-		FingerEntry sensorPre = getSensorPredecessor(sensor);
-		sendMessage(new ResolveMessage(identity.getNetworkAddress(), sensorPre.getNetworkAddress(), sensor.getSensorHash(), identity.getNetworkAddress()), sensorPre.getNodeID());
+		if(sensors.contains(sensor)) {
+			//TODO Inform dissemination core
+			System.out.println("OUT");
+		}
+		else {
+			//Send resolve message
+			ResolveService rs;
+			
+			synchronized(activeResolves) {
+				if((rs = activeResolves.get(sensor)) == null || rs.hasFailed()) {
+					//Remember resolve message
+					activeResolves.put(sensor, new ResolveService(sensor,uci,timer,this));
+				}
+			}
+		}
 	}
 
 	@Override
@@ -163,14 +186,15 @@ public class Node extends Thread implements LookupServiceInterface {
 		NodeID sensorHash = new NodeID(SHA1Generator.SHA1(uci));
 		Sensor sensor = new Sensor(sensorHash,identity);
 		
+		//Put it to the HashSet with the local sensors
+		sensorsAt.put(identity,sensor);
 		register(sensor);
 	}
 	
 	private void register(Sensor sensor) {
 		FingerEntry predecessorOfSensor;
 		
-		//Put it to the HashSet with the local sensors
-		sensorsAt.put(identity,sensor);
+		
 		predecessorOfSensor = getSensorPredecessor(sensor);
 		
 		//Forward or answer?
@@ -302,6 +326,20 @@ public class Node extends Thread implements LookupServiceInterface {
 					//Close gently by sending a NOTIFY_LEAVE_BROADCAST and than exiting the thread
 					sendBroadcast(new NotifyLeaveBroadcastMessage(null, null, null, null,identity.getNodeID(),getSuccessor(null).getNodeID(),getSuccessor(null).getNetworkAddress()),identity.getNodeID(),identity.getNodeID().sub(1));
 					
+					//Register all sensor we are responsible for to our predecessor
+					if(predecessor != null) {
+						FingerEntry suc = getSuccessor(null);
+						
+						//Send notify leave message to inform our predecessor first, so it will not try to send back the message
+						//The predecessor may get the message twice, which does not matter 
+						sendMessage(new NotifyLeaveMessage(identity.getNetworkAddress(),predecessor.getNetworkAddress(),identity.getNodeID(),suc.getNodeID(),suc.getNetworkAddress()),null);
+						
+						for(Sensor s: sensorsResponsibleFor.getAllSensors()) {
+							FingerEntry owner = s.getOwner();
+							sendMessage(new RegisterMessage(identity.getNetworkAddress(),predecessor.getNetworkAddress(),s.getSensorHash(),owner.getNodeID(),owner.getNetworkAddress()),null);
+						}
+					}
+					
 					//Discontinue thread
 					this.interrupt();
 					break;
@@ -349,7 +387,11 @@ public class Node extends Thread implements LookupServiceInterface {
 					break;
 					
 				case ACTION_CHECK_REMOTE_SENSORS:
+					//Check sensor mappings
 					checkRemoteSensorMapping();
+					rearrangeLocalSensorMapping();
+					
+					//Restart task
 					checkRemoteSensorsTask = startTask(checkRemoteSensorsTask, ACTION_CHECK_REMOTE_SENSORS, CHECK_REMOTE_SENSORS_PERIOD);
 					break;
 					
@@ -373,7 +415,6 @@ public class Node extends Thread implements LookupServiceInterface {
 			timer = null;
 		}
 	}
-	
 	
 	public FingerEntry getIdentity() {
 		return identity;
@@ -533,7 +574,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		//Re-register sensors that belong to new successor if it changed
 		synchronized (this) {
 			FingerEntry newSuc = getSuccessor(null);
-			if(!oldSuc.equals(newSuc)) rearrangeLocalSensorMapping(oldSuc, newSuc);
+			if(!oldSuc.equals(newSuc)) rearrangeLocalSensorMapping();
 		}
 	}
 	
@@ -1168,7 +1209,7 @@ public class Node extends Thread implements LookupServiceInterface {
 		sensorsResponsibleFor.remove(failedFinger);
 		
 		//Re-register nodes that got lost
-		List<Sensor> sensors = sensorsAt.get(failedFinger);
+		Set<Sensor> sensors = sensorsAt.get(failedFinger);
 		FingerEntry sensorPre;
 		FingerEntry owner;
 		
@@ -1287,27 +1328,42 @@ public class Node extends Thread implements LookupServiceInterface {
 	}
 	
 	private void handleResolveResponseMessage(ResolveResponseMessage rrm) {
-		//TODO forward to dissemination core
+		//Abort all other attempts
+		ResolveService rs;
+		
+		//Cancel resolve timer
+		synchronized(activeResolves) {
+			rs = activeResolves.remove(new Sensor(rrm.getSensor(),null));
+		}
+		
+		if(rs != null) {
+			//Abort timer and remove from list
+			rs.abort();
+		}
 	}
 	
-	private void rearrangeLocalSensorMapping(FingerEntry oldSuc, FingerEntry newSuc) {
+	private void rearrangeLocalSensorMapping() {
 		List<Sensor> sensors;
+		FingerEntry suc;
 		
-		if(!newSuc.equals(identity)) {
+		synchronized (this) {
+			suc = getSuccessor(null);
 			//Get sensors we have to change
-			sensors = sensorsResponsibleFor.getSensorInRange(oldSuc.getNodeID(),newSuc.getNodeID());
+			sensors = sensorsResponsibleFor.getSensorInRange(getSuccessor(null).getNodeID(),identity.getNodeID());
 			
 			//Re-register all
 			for(Sensor sensor: sensors) {
 				FingerEntry owner = sensor.getOwner();
-				sendMessage(new RegisterMessage(identity.getNetworkAddress(),newSuc.getNetworkAddress(),sensor.getSensorHash(),owner.getNodeID(),owner.getNetworkAddress()),newSuc.getNodeID());
+				sendMessage(new RegisterMessage(identity.getNetworkAddress(),suc.getNetworkAddress(),sensor.getSensorHash(),owner.getNodeID(),owner.getNetworkAddress()),suc.getNodeID());
+				sensorsResponsibleFor.remove(sensor);
 			}
 		}
+		
 	}
 	
 	private void checkRemoteSensorMapping() {
-		List<Sensor> sensors = sensorsAt.get(identity);
-		List<Sensor> sensorsSelfResponsible = sensorsResponsibleFor.get(identity);
+		Set<Sensor> sensors = sensorsAt.get(identity);
+		Set<Sensor> sensorsSelfResponsible = sensorsResponsibleFor.get(identity);
 		
 		if(sensors != null && sensorsSelfResponsible != null) {
 			for(Sensor s: sensors) {
@@ -1327,5 +1383,96 @@ public class Node extends Thread implements LookupServiceInterface {
 		res.putAll(sensorsAt.getCopyOfAll());
 		res.putAll(sensorsResponsibleFor.getCopyOfAll());
 		return res;
+	}
+	
+	//-----
+	//Private helper class to resolve a sensor several times
+	//with different timeouts
+	//TODO find a better way to not have a big private class like this
+	//-----
+	
+	private class ResolveService {
+		
+		//Maximum number of attempts
+		private final static int ATTEMPTS = 4;
+		private int attempt;
+		
+		private Timer timer;
+		private Sensor sensor;
+		private String uci;
+		
+		private TimerTask currentTask;
+		private ResolveFailListener listener;
+		
+		public ResolveService(Sensor sensor, String uci, Timer timer,ResolveFailListener listener) {
+			//Init variables
+			this.attempt = 0;
+			this.uci = uci;
+			this.sensor = sensor;
+			this.timer = timer;
+			this.listener = listener; 
+			
+			//Start the chain
+			currentTask = new ResolveTask();
+		}
+		
+		public synchronized void abort() {
+			if(currentTask != null) {
+				currentTask.cancel();
+				currentTask = null;
+			}
+		}
+		
+		public synchronized boolean hasFailed() {
+			return currentTask == null;
+		}
+		
+		private class ResolveTask extends TimerTask {
+			public ResolveTask() {
+				if(attempt == 0) {
+					//Send directly at first resolve request
+					FingerEntry sensorPre = getSensorPredecessor(sensor);
+					sendMessage(new ResolveMessage(identity.getNetworkAddress(), sensorPre.getNetworkAddress(), sensor.getSensorHash(), identity.getNetworkAddress()), sensorPre.getNodeID());
+				}
+				
+				//Schedule timer
+				timer.schedule(this,(1 << attempt) * 1000);
+			}
+			
+			@Override
+			public void run() {
+				//Shall we try another attempt?
+				if(++attempt < ATTEMPTS) {
+					//Send new resolve request
+					FingerEntry sensorPre = getSensorPredecessor(sensor);
+					sendMessage(new ResolveMessage(identity.getNetworkAddress(), sensorPre.getNetworkAddress(), sensor.getSensorHash(), identity.getNetworkAddress()), sensorPre.getNodeID());
+
+					//Start new ResolveTask
+					synchronized(this) {
+						//Re-schedule timer
+						currentTask = new ResolveTask();
+					}
+				}
+				else {
+					//Object might remain
+					//currentTask = null means that resolve failed in the last try
+					synchronized(this) {
+						currentTask = null;
+					}
+					
+					//Resolve failed event
+					listener.OnResolveFail(sensor);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void OnResolveFail(Sensor sensor) {
+		//Forward fail to dissemination layer
+		System.out.println("Resolve failed");
+		
+		//Remove failed resolveService entry
+		activeResolves.remove(sensor);
 	}
 }

@@ -39,7 +39,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 			t.start();
 			
 		} catch (Exception e){
-			//e.printStackTrace();			
+			e.printStackTrace();			
 		}		
 	}
 	
@@ -75,11 +75,52 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 	@Override
 	public String getLocalIp() {
-		try {
-			return InetAddress.getLocalHost().getHostAddress();			
-		} catch (Exception e) {
+		try {			
+						
+			InetAddress address = InetAddress.getLocalHost();			
+			if(!address.isLoopbackAddress() && !address.isLinkLocalAddress()){
+				return address.getHostAddress();
+			}
+			else {				
+				//Workaround because Linux is stupid...		    	
+				Socket s = new Socket("www.google.com", 80);
+				String ip = s.getLocalAddress().getHostAddress();
+				s.close();
+				return ip;
+			}
+			
+			
+
+			
+			
+			/*
+	    	Enumeration<NetworkInterface> ni = NetworkInterface.getNetworkInterfaces();
+	    	
+	    	while (ni.hasMoreElements()) {
+	    		NetworkInterface networkInterface = ni.nextElement();
+	    			    		
+	    		Enumeration<InetAddress> ias = networkInterface.getInetAddresses();
+		    	while (ias.hasMoreElements()) {
+		    		 InetAddress address = ias.nextElement();
+		    		 
+		    		 if(!address.isLoopbackAddress() && !address.isLinkLocalAddress()){
+		        		return address.getHostAddress();
+		        	}		    		 
+		    	}	    		
+	    	}  
+		*/	
+		} catch (Exception e1) {
 			return "127.0.0.1";
 		}
+		/*
+			try{
+		    	//In windows it is this simple...
+				return 
+			} catch (Exception e2) {
+			}
+		}
+		*/
+		
 	}
 
 	@Override
@@ -112,7 +153,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 	private void handleConnection(Socket s) {
 		try {
 
-			byte[] buffer = new byte[1024];
+			byte[] buffer = new byte[1048576];
 
 			InputStream is = s.getInputStream();
 			is.read(buffer);
@@ -151,7 +192,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 				//This forwards any unknown messages to the AddInManager and the addIns
 				AddInManager addInManager = disseminationCore.getMediaSensePlatform().getAddInManager();
-				addInManager.forwardMessageToAddIns(message);				
+				addInManager.forwardMessageToAddIns(message);
 				break;
 			
 			}
