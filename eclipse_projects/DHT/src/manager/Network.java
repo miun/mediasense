@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
@@ -16,6 +17,7 @@ import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -660,6 +662,16 @@ public class Network {
 		}
 		else {
 			System.out.println("Cant resolve from node (" + node + ") - no such node");
+		}
+	}
+	
+	public Map<Sensor,FingerEntry> showSensors(String networkAddress) {
+		Communication com = clients.get(networkAddress);
+		if(com != null) {
+			return com.getNode().getSensors();
+		}
+		else {
+			return null;
 		}
 	}
 }

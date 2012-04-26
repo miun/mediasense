@@ -7,15 +7,18 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import manager.Manager;
 import manager.Message;
 import manager.dht.FingerEntry;
 import manager.dht.NodeID;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
@@ -181,6 +184,32 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						System.out.println(manager.showNodeInfo(p));
 					}
 				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("sensor")) {
+				if(cmd.param == null) throw new InvalidParamAmountException();
+				Map<Sensor,FingerEntry> sen = manager.showSensors(cmd.param[0]);
+				if(!sen.isEmpty()) {
+					//Only if there are sensors
+					Collection<Sensor> sensors = sen.keySet();
+					System.out.println("My sensors:");
+					for(Sensor s: sensors) {
+						//Show the sensors that belong to the node
+						if(s.getOwner().getNetworkAddress().equals(cmd.param[0])) {
+							System.out.println(s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")");
+							//Delete those the node is not responsible for from the set
+							if(!sen.get(s).getNetworkAddress().equals(cmd.param[0])) {
+								sen.remove(s);
+							}
+						}
+					}
+				
+					System.out.println("Responsible for:");
+					for(Sensor s: sensors) {
+						//Show the sensors that the node is responsible for
+						System.out.println(s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")");
+					}
+				}
+				
 			}
 			else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 				//Add node to watcher

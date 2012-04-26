@@ -1,6 +1,8 @@
 package manager.dht;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -1317,5 +1319,13 @@ public class Node extends Thread implements LookupServiceInterface {
 				}
 			}
 		}
+	}
+	
+	//TODO remove
+	public Map<Sensor,FingerEntry> getSensors() {
+		HashMap<Sensor, FingerEntry> res = new HashMap<Sensor, FingerEntry>();
+		res.putAll(sensorsAt.getCopyOfAll());
+		res.putAll(sensorsResponsibleFor.getCopyOfAll());
+		return res;
 	}
 }
