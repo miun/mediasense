@@ -7,7 +7,6 @@ import se.miun.mediasense.disseminationlayer.communication.tcp.TcpCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.TcpProxyCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.DistributedLookup;
 import se.miun.mediasense.disseminationlayer.lookupservice.server.ServerLookup;
 
 

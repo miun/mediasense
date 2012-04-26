@@ -9,13 +9,12 @@ import se.miun.mediasense.disseminationlayer.communication.MessageSerializer;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
 import se.miun.mediasense.disseminationlayer.communication.rudp.AcknowledgementMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.JoinMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.JoinResponseMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.KeepAliveMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.KeepAliveResponseMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.RegisterMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.ResolveMessage;
-import se.miun.mediasense.disseminationlayer.lookupservice.distributed.ResolveResponseMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinResponseMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.KeepAliveMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.RegisterMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveResponseMessage;
 
 public class EnterSeparatedMessageSerializer implements MessageSerializer{
 
