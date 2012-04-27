@@ -3,8 +3,9 @@ package se.miun.mediasense.disseminationlayer.communication.rudp;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Enumeration;
 
 import se.miun.mediasense.addinlayer.AddInManager;
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
@@ -114,23 +115,23 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 			seqNr= Integer.parseInt(split[0]);
 			
 			// Parse the rest of the packet into a Message
-			Message message = messageSerializer.deserializeMessage(split[1]);
+			Message message = messageSerializer.deserializeMessage(split[1].getBytes());
 				
 			if (seqNr != 0){			
 				
 				//Send back the Ack message!				
-				AcknowledgementMessage ack = new AcknowledgementMessage(seqNr + "", message.fromIp, getLocalIp());				
+				AcknowledgementMessage ack = new AcknowledgementMessage(seqNr + "", message.getFromIp(), getLocalIp());				
 				RudpMessageContainer msg = new RudpMessageContainer(ack);
 				msg.seqNr = 0; //To not get acks on the acks!				
 				sendRudpMessage(msg);		
 				
 				// Handle the message content as usual				
-				switch (message.type) {
+				switch (message.getType()) {
 				
 				case Message.GET:				
 					//Fire off the getEvent!
 					GetMessage getMessage = (GetMessage) message;
-					disseminationCore.callGetEventListener(getMessage.fromIp, getMessage.uci);				
+					disseminationCore.callGetEventListener(getMessage.getFromIp(), getMessage.uci);				
 					break;
 											
 				case Message.SET:				
@@ -190,13 +191,13 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 		try {
 
 			//Serialize
-			String data = messageSerializer.serializeMessage(queuedMessage.message);
+			String data = new String(messageSerializer.serializeMessage(queuedMessage.message));
 			
 			//Add the seqNr 
 			data = queuedMessage.seqNr + ";" + data;
 			
 			//Send!
-			DatagramPacket packet = new DatagramPacket(data.getBytes(),	data.length(), InetAddress.getByName(queuedMessage.message.toIp), overlayPort);
+			DatagramPacket packet = new DatagramPacket(data.getBytes(),	data.length(), InetAddress.getByName(queuedMessage.message.getToIp()), overlayPort);
 			sendSocket.send(packet);
 
 		} catch (Exception e) {
@@ -232,9 +233,27 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 
 	@Override
 	public String getLocalIp() {
-		try {
+		try {			
+			//Workaround because Linux is stupid...		    	
+	    	Enumeration<NetworkInterface> ni = NetworkInterface.getNetworkInterfaces();
+	    	
+	    	while (ni.hasMoreElements()) {
+	    		NetworkInterface networkInterface = ni.nextElement();
+	    			    		
+	    		Enumeration<InetAddress> ias = networkInterface.getInetAddresses();
+		    	while (ias.hasMoreElements()) {
+		    		 InetAddress address = ias.nextElement();
+		    		 
+		    		 if(!address.isLoopbackAddress()){
+		        		return address.getHostAddress();
+		        	}		    		 
+		    	}	    		
+	    	}  
+
+	    	//In windows it is this simple...
 			return InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
+			
+		} catch (Exception e) {
 			return "127.0.0.1";
 		}
 	}

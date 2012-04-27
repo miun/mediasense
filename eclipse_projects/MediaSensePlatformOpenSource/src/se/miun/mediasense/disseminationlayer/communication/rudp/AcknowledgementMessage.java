@@ -7,12 +7,9 @@ public class AcknowledgementMessage extends Message {
 	public int seqNr;
 	
 	public AcknowledgementMessage(String seqNr, String toIp, String fromIp) {
+		super(fromIp,toIp,ACK);
 		
-		this.type = Message.ACK;
 		this.seqNr = Integer.parseInt(seqNr);
-		this.fromIp = fromIp;
-		this.toIp = toIp;
-		
 	}
 	
 

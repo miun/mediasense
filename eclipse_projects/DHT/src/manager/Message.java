@@ -17,6 +17,7 @@ public abstract class Message {
 	public final static int BROADCAST = 17;
 
 	public final static int REGISTER = 4;
+	public final static int REGISTER_RESPONSE = 30;
 
 	public final static int RESOLVE = 5;
 	public final static int RESOLVE_RESPONSE = 15;
@@ -34,13 +35,16 @@ public abstract class Message {
 	public final static int NODE_JOIN_NOTIFY = 18;
 	public final static int NODE_LEAVE_NOTIFY = 19;
 	
-	public final static int NODE_SUSPICIOUS = 27;
+	public final static int NODE_SUSPICIOUS = 29;
 	
 	public final static int FIND_PREDECESSOR = 20;
 	public final static int FIND_PREDECESSOR_RESPONSE = 21;
 
-	public final static int FIND_SUCCESSOR = 25;
-	public final static int FIND_SUCCESSOR_RESPONSE = 26;
+	public final static int CHECK_PREDECESSOR = 25;
+	public final static int CHECK_PREDECESSOR_RESPONSE = 26;
+
+	public final static int CHECK_SUCCESSOR = 27;
+	public final static int CHECK_SUCCESSOR_RESPONSE = 28;
 
 	//These were public first, the so called I-LIKE-TO-SOLVE-TRICKY-PROBLEMS-IN-THE-MIDDLE-OF-THE-NIGHT design pattern
 	//Changed to something better (someone owns me a beer for that)

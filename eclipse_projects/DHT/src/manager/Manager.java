@@ -1,18 +1,18 @@
 package manager;
 
 import java.io.IOException;
-import java.util.Random;
+import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 
+import manager.dht.FingerEntry;
 import manager.dht.Node;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
 import manager.listener.NodeMessageListener;
 import manager.ui.console.Console;
 import manager.ui.log.Log;
-
 
 public final class Manager {
 	private static final String LOG_FILE = "../../../../media_sense.log";
@@ -30,9 +30,6 @@ public final class Manager {
 	
 	//UI classes
 	private Console console;
-	
-	//To create nodes in ascending order
-	private int newNodeCounter = -1;
 	
 	//Timer for Random Events
 	private Timer timer;
@@ -87,46 +84,12 @@ public final class Manager {
 		return null;
 	}
 	
-	public int addNode() {
-		//No bootstrapping!
-		return addNode(null);
-	}
-	
-	public int addNode(String bootstrapAddress) {
-		Communication comm;
-		Node node;
-		
-		if(bootstrapAddress == null) {
-			String adr;
-			do {
-				//Create a "IP"
-				adr = String.valueOf(new Random().nextInt(10000));
-				comm = new Communication(network, adr);
-				
-				//Get a bootstrapaddress
-				bootstrapAddress = network.getRandomAddress();
-				if(bootstrapAddress == null) {
-					//No nodes in network, open it with bootstrap on us
-					bootstrapAddress = adr;
-				}
-				
-				// create node
-				node = new Node(comm, bootstrapAddress);
-			} while(!network.addNode(comm, node)); //Retry with new values if fails
-			
-			return Integer.valueOf(adr);
-		}
-		else {
-			//Add node with communication interface adopted from MediaSense
-			comm = new Communication(network,new Integer(++newNodeCounter).toString());
-			node = new Node(comm,bootstrapAddress);
-			
-			//Give control to the network //Also starts the communication
-			//TODO allow to create nodes with delayed starting capability
-			network.addNode(comm,node);
-			
-			return newNodeCounter;
-		}
+	//Add node function
+	public String addNode(String bootstrap) {
+		String address = Network.createSequentialAddress();
+		if(bootstrap == null) bootstrap = network.getRandomClientAddress(true);
+		Network.getInstance().addNode(address,bootstrap);
+		return address;
 	}
 	
 	public void removeNode(String networkAddress) {
@@ -134,9 +97,9 @@ public final class Manager {
 		network.removeNode(networkAddress);
 	}
 	
-	public String killNode(String networkAddress) {
+	public void killNode(String networkAddress) {
 		//Forward to network
-		return network.killNode(networkAddress);
+		network.killNode(networkAddress);
 	}
 	
 	public boolean setMessageDelay(int delay,String networkAddress) {
@@ -235,48 +198,45 @@ public final class Manager {
 		}
 	}
 	
-	
-	/**
-	 * Kills random clients in a random time until there are minClients or less
-	 * @param minClients
-	 */
-	public void startRandomKill(int minClients) {
-		if(network.getNumberOfClients() > minClients) {
-			timer.schedule(new RandomKillTimerTask(minClients), new Random().nextInt(10000));
-			killNode(null);
+	//Add multiple nodes at once
+	public void addNodeN(int count) {
+		//Add count nodes
+		for(int i = 0; i < count; i++) {
+			addNode(network.getRandomClientAddress(true));
 		}
 	}
 	
-	public void startRandomAdd(int maxClients) {
-		if(network.getNumberOfClients() < maxClients) {
-			timer.schedule(new RandomAddTimerTask(maxClients), new Random().nextInt(10000));
-			addNode(null);
+	public void killNodeN(int count) {
+		String address;
+		
+		for(int i = 0; i < count; i++) {
+			address = network.getRandomClientAddress(false);
+			if(address != null) network.killNode(address);
+		}
+	}
+
+	public void removeNodeN(int count) {
+		String address;
+		
+		for(int i = 0; i < count; i++) {
+			address = network.getRandomClientAddress(false);
+			if(address != null) network.removeNode(address);
 		}
 	}
 	
-	private class RandomKillTimerTask extends TimerTask {
-		private int minClients;
-		
-		public RandomKillTimerTask(int minClients) {
-			this.minClients = minClients;
-		}
-		
-		@Override
-		public void run() {
-			startRandomKill(minClients);
-		}
+	public void breakNode(String address) {
+		network.breakNode(address);
 	}
 	
-	private class RandomAddTimerTask extends TimerTask {
-		private int maxClients;
-		
-		public RandomAddTimerTask(int maxClients) {
-			this.maxClients = maxClients;
-		}
-		
-		@Override
-		public void run() {
-			startRandomAdd(maxClients);
-		}
+	public void register(String node, String uci) {
+		network.register(node,uci);
+	}
+	
+	public void resolve(String node, String uci) {
+		network.resolve(node,uci);
+	}
+	
+	public Map<Sensor,FingerEntry> showSensors(String networkAddress) {
+		return network.showSensors(networkAddress);
 	}
 }

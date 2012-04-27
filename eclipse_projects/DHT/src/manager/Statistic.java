@@ -76,6 +76,7 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		}
 		
 		this.triggerType = triggerType;
+		
 		timer = new Timer();
 
 		//Create map for packet details
@@ -93,37 +94,34 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		System.out.println("Statistic started for " + filename);
 	}
 	
-	public void start() {
-		//Start the Timer!
-		synchronized(timer) {
-			timer = new Timer();
-			
-			//Start second trigger
-			if(triggerType == TRIGGER_SECOND) {
-				timer.schedule(new TimerTask() {
-		
-					@Override
-					public void run() {
-						triggerSecond();
-					}
-					
-				}, 1000L, 1000L);
-			}
-			
-			//Schedule flush every 3 seconds
+	public synchronized void start() {
+
+		//Start second trigger
+		if(triggerType == TRIGGER_SECOND) {
 			timer.schedule(new TimerTask() {
-				
+	
 				@Override
 				public void run() {
-					triggerFlush();
+					triggerSecond();
 				}
 				
-			}, FLUSH_PERIOD, FLUSH_PERIOD);
+			}, 1000L, 1000L);
 		}
+		
+		//Schedule flush every 3 seconds
+		timer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				triggerFlush();
+			}
+			
+		}, FLUSH_PERIOD, FLUSH_PERIOD);
+		
 	}
 	
 	public void stop() {
-		synchronized(timer) {
+		synchronized(this) {
 			//Stop all tasks
 			timer.cancel();
 			timer.purge();
@@ -169,19 +167,20 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 				txData += msg.getDataAmount();
 				txDataD += msg.getDataAmount();
 			}
-		}
-		
-		//Trigger connect event
-		if(msg.getType() == Message.JOIN_ACK) {
-			//Increment connected counter
-			connected++;
-			connectedD++;
+			
+			//Trigger connect event
+			if(msg.getType() == Message.JOIN_FINALIZE) {
+				//Increment connected counter
+				connected++;
+				connectedD++;
 
-			//Trigger write event
-			if(triggerType == TRIGGER_CONNECT) {
-				writeDataSet();
+				//Trigger write event
+				if(triggerType == TRIGGER_CONNECT) {
+					writeDataSet();
+				}
 			}
 		}
+		
 	}
 
 	@Override

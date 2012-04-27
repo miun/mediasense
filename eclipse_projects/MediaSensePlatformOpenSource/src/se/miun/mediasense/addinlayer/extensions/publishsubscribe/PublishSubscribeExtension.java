@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import se.miun.mediasense.addinlayer.extensions.Extension;
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.interfacelayer.MediaSensePlatform;
 
@@ -43,18 +44,18 @@ public class PublishSubscribeExtension implements Extension {
 	@Override
 	public void handleMessage(Message message) {
 		
-		switch (message.type) {
+		switch (message.getType()) {
 
 		case Message.STARTSUBSCRIBE:			
 			//Start the subscription in the addIn
 			StartSubscribeMessage startSubMessage = (StartSubscribeMessage) message;				
-			subscriptions.put(startSubMessage.uci, startSubMessage.fromIp);					
+			subscriptions.put(startSubMessage.uci, startSubMessage.getFromIp());					
 			break;
 		
 		case Message.ENDSUBSCRIBE:
 			//End the subscription
 			EndSubscribeMessage endSubMessage = (EndSubscribeMessage) message;						
-	    	subscriptions.remove(endSubMessage.uci, endSubMessage.fromIp);
+	    	subscriptions.remove(endSubMessage.uci, endSubMessage.getFromIp());
 			break;
 			
 		case Message.NOTIFYSUBSCRIBERS:
@@ -83,7 +84,13 @@ public class PublishSubscribeExtension implements Extension {
 		//Send out the startSubscribe Message
 		CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();		
 		StartSubscribeMessage message = new StartSubscribeMessage(uci, ip, communication.getLocalIp());
-		communication.sendMessage(message);
+
+		try {
+			communication.sendMessage(message);
+		}
+		catch(DestinationNotReachableException e) {
+			//TODO handle if you like
+		}
 	}
 	
 	/**
@@ -98,8 +105,13 @@ public class PublishSubscribeExtension implements Extension {
 		//Send out the endSubscribe Message
 		CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();		
 		EndSubscribeMessage message = new EndSubscribeMessage(uci, ip, communication.getLocalIp());
-		communication.sendMessage(message);
-		
+
+		try {
+			communication.sendMessage(message);
+		}
+		catch(DestinationNotReachableException e) {
+			//TODO handle if you like
+		}
 	}
 	
 	/**
@@ -117,7 +129,13 @@ public class PublishSubscribeExtension implements Extension {
 		for(int i = 0; i != subsriberIp.length; i++){				
 			CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();					
 			NotifySubscribersMessage message = new NotifySubscribersMessage(uci, value, subsriberIp[i], communication.getLocalIp());
-			communication.sendMessage(message);						
+
+			try {
+				communication.sendMessage(message);						
+			}
+			catch(DestinationNotReachableException e) {
+				//TODO handle if you like
+			}
 		}
 		
 	}

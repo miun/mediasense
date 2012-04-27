@@ -7,12 +7,10 @@ public class SetMessage extends Message {
 
 	
 	public SetMessage(String uci, String value, String toIp, String fromIp) {
+		super(fromIp,toIp,SET);
 		
-		this.type = Message.SET;
 		this.uci = uci;
 		this.value = value;
-		this.fromIp = fromIp;
-		this.toIp = toIp;
 		
 	}
 	

@@ -1,10 +1,10 @@
 package se.miun.mediasense.disseminationlayer.communication.tcpproxy;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.BufferedReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
@@ -79,8 +79,8 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 	public void sendMessage(Message message) {
 		synchronized (socket) {
 			// TODO Auto-generated method stub
-			String SendString = "ROUTE|" + message.toIp + "|"
-					+ encode(messageSerializer.serializeMessage(message));
+			String SendString = "ROUTE|" + message.getToIp() + "|"
+					+ encode(new String(messageSerializer.serializeMessage(message)));
 			OutputStream out;
 			try {
 				out = socket.getOutputStream();
@@ -182,14 +182,14 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 		try {
 
 			Message message = messageSerializer
-					.deserializeMessage(stringRepresentation);
+					.deserializeMessage(stringRepresentation.getBytes());
 
-			switch (message.type) {
+			switch (message.getType()) {
 
 			case Message.GET:
 				// Fire off the getEvent!
 				GetMessage getMessage = (GetMessage) message;
-				core.callGetEventListener(getMessage.fromIp, getMessage.uci);
+				core.callGetEventListener(getMessage.getFromIp(), getMessage.uci);
 				break;
 
 			case Message.SET:

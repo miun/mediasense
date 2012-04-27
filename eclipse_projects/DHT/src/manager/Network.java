@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeMap;
@@ -16,6 +17,7 @@ import manager.dht.DestinationNotReachableException;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -25,7 +27,11 @@ public class Network {
 	private static Network instance = null;
 	public static int msg_delay = 250;
 	
+	//Timer for package transmission
 	private Timer timer;
+	
+	//Counter for sequential addresses
+	private static int sequential_address = 0;
 	
 	//Listener lists
 	private HashMap<Integer,Set<NodeMessageListener>> nodeMessageListener;
@@ -57,25 +63,36 @@ public class Network {
 		return instance;
 	}
 	
-	public String getRandomAddress() {
-		if(clients.size()>0) {
+	public String getRandomClientAddress(boolean mustBeConnected) {
+		List<Communication> randomList;
+		
+		synchronized(clients) {
+			if(clients.size() == 0) return null;
+			
 			//create a list from all keys
-			List<String> randomList = new LinkedList<String>(clients.keySet());
-			
-			//shuffle
-			Collections.shuffle(randomList);
-			
-			return randomList.get(0);
+			 randomList = new LinkedList<Communication>(clients.values());
 		}
-		else {
-			//There are no clients
-			return null;
-		}
+			
+		//shuffle
+		Collections.shuffle(randomList);
+		Node cur = randomList.get(0).getNode();
+		
+		//It does not matter if it is a connected one - return the first
+		return cur.getIdentity().getNetworkAddress();
 	}
 	
-	public Collection<Communication> getClients() {
+	public static synchronized String createSequentialAddress() {
+		//Create an address 
+		String result = new Integer(sequential_address).toString(); 
+		sequential_address++;
+		return result;
+	}
+	
+	public Collection<Communication> getClientList() {
+		//Clone the current list of clients into a new list
+		//This is a snapshot that can be used for analysis
 		synchronized(clients) {
-			return this.clients.values();
+			return new ArrayList<Communication>(clients.values());
 		}
 	}
 	
@@ -91,28 +108,35 @@ public class Network {
 			timer.schedule(new MessageForwarder(receiver, m, nodeMessageListener, nodeMessageListenerAll), msg_delay+receiver.getMessageDelay()+senderDelay);
 		}
 		else {
-			System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
+			//System.out.println("!!!!! UNKNOWN DESTINATION !!!!! " + m.toString());
 			throw new DestinationNotReachableException("The destination: ("+m.getToIp()+") is not reachable");
 		}
 	}
 
-	public boolean addNode(Communication comm, Node node) {
+	public void addNode(String address,String bootstrap) {
+		Communication comm = null;
+		Node node;
+		
 		//Add node to list
 		synchronized(clients) {
-			if(!clients.containsKey(comm.getLocalIp())) {
-				clients.put(comm.getLocalIp(), comm);
+			if(!clients.containsKey(address)) {
+				//Create new DHT client
+				comm = new Communication(getInstance(), address);
+				node = new Node(comm, bootstrap);
+
+				//Insert
+				clients.put(address, comm);
 				
 				//start the Communication object
 				comm.start(node);
-				
-				//Inform listeners
-				synchronized(nodeListener) {
-					for(NodeListener nl: nodeListener) nl.onNodeAdd(comm);
-				}
-				
-				return true;
-			} else 
-				return false;
+			} 
+		}
+		
+		//Inform listeners
+		if(comm != null) {
+			synchronized(nodeListener) {
+				for(NodeListener nl: nodeListener) nl.onNodeAdd(new Date(),comm);
+			}
 		}
 	}
 	
@@ -122,51 +146,40 @@ public class Network {
 		//Remove and shutdown
 		synchronized (clients) {
 			com = clients.remove(networkAddress);
-			if(com != null) com.shutdown();
 		}
+		
+		if(com != null) {
+			//Shutdown
+			com.shutdown();
 
-		//Inform listeners
-		synchronized(nodeListener) {
-			for(NodeListener nl: nodeListener) nl.onNodeRemove(com);
+			//Print
+			System.out.println("Shut down " + com.getLocalIp());
+	
+			//Inform listeners
+			synchronized(nodeListener) {
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(new Date(),com);
+			}
 		}
 	}
 	
-	public String killNode(String networkAddress) {
-		//Can not kill any node if there is no node
-		if (clients.size() <1) return "Cannot kill a node, because there are no nodes";
+	public void killNode(String networkAddress) {
+		Communication com;
 		
-		if(networkAddress == null) {
-			String randomClient = getRandomAddress();
-			Communication client = clients.remove(randomClient);
-			
-			//kill the client
-			client.kill();
-			
+		//Remove and shutdown
+		synchronized (clients) {
+			com = clients.remove(networkAddress);
+		}
+		
+		if(com != null) {
+			//Kill
+			com.kill();
+
+			//Print
+			System.out.println("Killed " + com.getLocalIp());
+	
 			//Inform listeners
 			synchronized(nodeListener) {
-				for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
-			}
-			
-			//return the address
-			return "killed (" + randomClient +")";
-		} 
-		else {
-			Communication client = clients.remove(networkAddress);
-			if(client!=null) {
-				//kill the client
-				client.kill();
-				
-				//Inform listeners
-				synchronized(nodeListener) {
-					for(NodeListener nl: nodeListener) nl.onNodeRemove(client);
-				}
-				
-				//return success
-				return "killed (" + networkAddress +")";
-			}
-			else {
-				//return fail
-				return "can not kill (" + networkAddress +") because there is no node with that address";
+				for(NodeListener nl: nodeListener) nl.onNodeRemove(new Date(),com);
 			}
 		}
 	}
@@ -245,7 +258,12 @@ public class Network {
 			//return the delay of the network
 			return msg_delay;
 		} else {
-			Communication com = clients.get(networkAddress);
+			Communication com;
+			
+			synchronized(clients) {
+				com = clients.get(networkAddress);
+			}
+			
 			if(com != null) {
 				return com.getMessageDelay();
 			} else {
@@ -314,76 +332,75 @@ public class Network {
 		NodeID start,end;
 		int counter = 0;
 		
+		StringBuffer result;
+		
 		synchronized(clients) {
 			startClient = clients.get(startNodeName);
 			currentClient = startClient;
-		}
 
-		//Test if node exists
-		if(startClient == null) {
-			return "Cannot find node " + startNodeName + "\n"; 
-		}
-		
-		//Set start and end region on DHT circle
-		start  = currentClient.getNodeID();
-		end = start;
-		
-		//Header
-		StringBuffer result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");
-
-		//Loop through the circle
-		while(true) {
-			//Get next node
-			result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
-			alreadyShown.add(currentClient);
+			//Test if node exists
+			if(startClient == null) {
+				return "Cannot find node " + startNodeName + "\n"; 
+			}
 			
-			synchronized(clients) {
+			//Set start and end region on DHT circle
+			start  = currentClient.getNodeID();
+			end = start;
+			
+			//Header
+			result = new StringBuffer("Pos\tNetworkAddress\t||  NodeID\n");
+	
+			//Loop through the circle
+			while(true) {
+				//Get next node
+				result.append(new Integer(counter).toString() + "\t" + currentClient.showNodeInfo()+"\n");
+				alreadyShown.add(currentClient);
 				currentClient = clients.get(currentClient.getSuccessorAddress());
-			}
+				
+				//Hole detected!
+				if(currentClient == null) break;
+				
+				//Check for loop
+				if(alreadyShown.contains(currentClient)) break;
+				
+				//Test for loop intersections
+				if(start.compareTo(end) > 0) {
+					if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
+						//Intersection detected!!
+						result.append(">>> Intersection detected <<<\n");
+						intersections.add(counter);
+					}
+				}
+				else {
+					if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
+						//Intersection detected!!
+						result.append(">>> Intersection detected <<<\n");
+						intersections.add(counter);
+					}
+				}
+				
+				//Shift end forward
+				end = currentClient.getNodeID();
+				counter++;
+			};
 			
-			//Hole detected!
-			if(currentClient == null) break;
-			
-			//Check for loop
-			if(alreadyShown.contains(currentClient)) break;
-			
-			//Test for loop intersections
-			if(start.compareTo(end) > 0) {
-				if(currentClient.getNodeID().compareTo(start) >= 0 || currentClient.getNodeID().compareTo(end) <= 0) {
-					//Intersection detected!!
-					result.append(">>> Intersection detected <<<\n");
-					intersections.add(counter);
+			if(currentClient == startClient) {
+				//Circle does not contain side-loop
+				if(alreadyShown.size() < clients.size()) {
+					result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
+				}
+				else {
+					result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
 				}
 			}
-			else {
-				if(currentClient.getNodeID().compareTo(start) >= 0 && currentClient.getNodeID().compareTo(end) <= 0) {
-					//Intersection detected!!
-					result.append(">>> Intersection detected <<<\n");
-					intersections.add(counter);
-				}
-			}
-			
-			//Shift end forward
-			end = currentClient.getNodeID();
-			counter++;
-		};
-		
-		if(currentClient == startClient) {
-			//Circle does not contain side-loop
-			if(alreadyShown.size() < clients.size()) {
-				result.append("DHT has orphaned nodes!\nIterated over " + alreadyShown.size() + " of " + clients.size());
+			else if(currentClient == null) {
+				//Hole detected
+				result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
 			}
 			else {
-				result.append("DHT is OK!\nIterated over all " + alreadyShown.size() + " nodes!");
+				//Circle contains a side-loop! 
+				result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 			}
-		}
-		else if(currentClient == null) {
-			//Hole detected
-			result.append("Hole detected! Successor is NULL. Iterated over " + alreadyShown.size() + " nodes of " + clients.size());
-		}
-		else {
-			//Circle contains a side-loop! 
-			result.append("Aborting iteration! DHT contains side-loop!\nLoop destination is: " + currentClient.showNodeInfo() + "\nIterated over " + alreadyShown.size() + " Nodes of " + clients.size());
 		}
 		
 		//Show intersections
@@ -436,15 +453,14 @@ public class Network {
 		synchronized(clients) {
 			client = clients.get(nodeAddress);
 			if(client == null) return "Node " + nodeAddress + " not found!";
-			
-			//Get successor and predecessor from client
-			successorFinger = client.getNode().getSuccessor(null);
-			predecessorFinger = client.getNode().getPredecessor(null);
 		}
+		
+		//Get successor and predecessor from client
+		successorFinger = client.getNode().getSuccessor(null);
+		predecessorFinger = client.getNode().getPredecessor();
 		
 		//Get list from client
 		fingerTable = client.getNode().getFingerTable();
-		fingerTable.remove(predecessorFinger);
 		
 		//Transform table
 		showTable = new TreeMap<Integer,FingerEntry>();
@@ -473,9 +489,13 @@ public class Network {
 			}
 		}
 		
-		//Add the predecessor at the very end
-		log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
-		result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
+		//Add the predecessor at the very end if there is a predecessor
+		if(predecessorFinger!=null) {
+			log2 = NodeID.logTwoFloor(predecessorFinger.getNodeID().sub(client.getNodeID()));
+			result = result + "Addr: " + predecessorFinger.getNetworkAddress() + " | hash:{" + predecessorFinger.getNodeID().toString() + "} | log2: " + new Integer(log2).toString() + " PRE\n";
+		} else {
+			result = result + "currently no predeccessor\n";
+		}
 		return result;
 	}
 	
@@ -613,7 +633,47 @@ public class Network {
 	}
 	
 	public int getNumberOfClients() {
-		return clients.size();
+		synchronized(clients) {
+			return clients.size();
+		}
+	}
+
+	public void breakNode(String address) {
+		Communication client;
+		
+		synchronized(clients) {
+			client = clients.get(address);
+			if(client != null) client.getNode().debugBreak();
+		}
 	}
 	
+	public void register(String node, String uci) {
+		Communication com = clients.get(node);
+		if(com!=null) {
+			com.getNode().register(uci);
+		}
+		else {
+			System.out.println("Cant register at node (" + node + ") - no such node");
+		}
+	}
+	
+	public void resolve(String node, String uci) {
+		Communication com = clients.get(node);
+		if(com!=null) {
+			com.getNode().resolve(uci);
+		}
+		else {
+			System.out.println("Cant resolve from node (" + node + ") - no such node");
+		}
+	}
+	
+	public Map<Sensor,FingerEntry> showSensors(String networkAddress) {
+		Communication com = clients.get(networkAddress);
+		if(com != null) {
+			return com.getNode().getSensors();
+		}
+		else {
+			return null;
+		}
+	}
 }

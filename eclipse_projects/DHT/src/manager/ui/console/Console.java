@@ -7,12 +7,18 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import manager.Manager;
 import manager.Message;
 import manager.dht.FingerEntry;
 import manager.dht.NodeID;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeMessageListener;
@@ -67,38 +73,97 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				//Exit
 				return false;
 			}
+			else if(cmd.cmd.toLowerCase().equals("register")) {
+				if(cmd.param == null || cmd.param.length != 2) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					manager.register(cmd.param[0],cmd.param[1]);
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("resolve")) {
+				if(cmd.param == null || cmd.param.length != 2) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					manager.resolve(cmd.param[0],cmd.param[1]);
+				}
+			}
 			else if(cmd.cmd.toLowerCase().equals("node_add")) {
 				if(cmd.param == null) {
 					manager.addNode(null);
 				} 
 				else {
-					manager.startRandomAdd(Integer.valueOf(cmd.param[0]));
-					/*
-					for(String bsa: cmd.param) {
-						manager.addNode(bsa);
-					}*/
+					manager.addNode(cmd.param[0]);
 				}
-				
 			}
-			else if(cmd.cmd.toLowerCase().equals("kill")) {
-				if(cmd.param == null) {
-					System.out.println(manager.killNode(null));
+			else if(cmd.cmd.toLowerCase().equals("node_add_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
 				} 
 				else {
-					for(String bsa: cmd.param) {
-						System.out.println(manager.killNode(bsa));
+					try {
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.addNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
 					}
 				}
-				
 			}
-			else if(cmd.cmd.toLowerCase().equals("node_del")) {
-				if(cmd.param == null) throw new InvalidParamAmountException();
-				for(String address : cmd.param) {
-					manager.removeNode(address);
+			else if(cmd.cmd.toLowerCase().equals("node_kill")) {
+				if(cmd.param == null) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					//Kill all specified nodes
+					for(int i = 0; i < cmd.param.length; i++) {
+						manager.killNode(cmd.param[i]);
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_kill_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					try {
+						//Kill specified amount of nodes
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.killNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_remove")) {
+				if(cmd.param == null) {
+					throw new InvalidParamAmountException();
+				}
+				else {
+					for(int i = 0; i < cmd.param.length; i++) {
+						manager.removeNode(cmd.param[i]);
+					}
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("node_remove_n")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					throw new InvalidParamAmountException();
+				} 
+				else {
+					try {
+						//Kill specified amount of nodes
+						int count = Integer.parseInt(cmd.param[0]);
+						manager.removeNodeN(count);
+					}
+					catch(NumberFormatException e) {
+						System.out.println("Invalid number!");
+					}
 				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("g")) {
-				if(cmd.param == null) { 
+				if(cmd.param == null) {
 					new CircleGUI(manager,0);
 				}
 				else {
@@ -119,6 +184,32 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						System.out.println(manager.showNodeInfo(p));
 					}
 				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("sensor")) {
+				if(cmd.param == null) throw new InvalidParamAmountException();
+				Map<Sensor,FingerEntry> sen = manager.showSensors(cmd.param[0]);
+				if(!sen.isEmpty()) {
+					//Only if there are sensors
+					Collection<Sensor> sensors = sen.keySet();
+					System.out.println("My sensors:");
+					for(Sensor s: sensors) {
+						//Show the sensors that belong to the node
+						if(s.getOwner().getNetworkAddress().equals(cmd.param[0])) {
+							System.out.println(s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")");
+							//Delete those the node is not responsible for from the set
+							if(!sen.get(s).getNetworkAddress().equals(cmd.param[0])) {
+								sen.remove(s);
+							}
+						}
+					}
+				
+					System.out.println("Responsible for:");
+					for(Sensor s: sensors) {
+						//Show the sensors that the node is responsible for
+						System.out.println(s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")");
+					}
+				}
+				
 			}
 			else if(cmd.cmd.toLowerCase().equals("node_watch")) {
 				//Add node to watcher
@@ -175,11 +266,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious","!check_predecessor","!check_predecessor_response","!check_successor","!check_successor_response","!register","!register_response","!resoslve","!resolve_response"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious","check_predecessor","check_predecessor_response","check_successor","check_successor_response","register","register_response","resoslve","resolve_response"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
 						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave","!node_suspicious"};
@@ -238,12 +329,24 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.FIND_PREDECESSOR;
 					} else if(type.equals("find_predecessor_response")) {
 						msgType = Message.FIND_PREDECESSOR_RESPONSE;
-					} else if(type.equals("find_successor")) {
-						msgType = Message.FIND_SUCCESSOR;
-					} else if(type.equals("find_successor_response")) {
-						msgType = Message.FIND_SUCCESSOR_RESPONSE;
+					} else if(type.equals("check_predecessor")) {
+						msgType = Message.CHECK_PREDECESSOR;
+					} else if(type.equals("check_predecessor_response")) {
+						msgType = Message.CHECK_PREDECESSOR_RESPONSE;
+					} else if(type.equals("check_successor")) {
+						msgType = Message.CHECK_SUCCESSOR;
+					} else if(type.equals("check_successor_response")) {
+						msgType = Message.CHECK_SUCCESSOR_RESPONSE;
 					} else if(type.equals("node_suspicious")) {
 						msgType = Message.NODE_SUSPICIOUS;
+					} else if(type.equals("register")) {
+						msgType = Message.REGISTER;
+					} else if(type.equals("register_response")) {
+						msgType = Message.REGISTER_RESPONSE;
+					} else if(type.equals("resolve")) {
+						msgType = Message.RESOLVE;
+					} else if(type.equals("resolve_response")) {
+						msgType = Message.RESOLVE_RESPONSE;
 					}
 					
 					//Call the function for every valid message type
@@ -287,24 +390,48 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			else if(cmd.cmd.toLowerCase().equals("wait")) {
 				//Wait for the specified time in ms
-				if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
+				if(cmd.param == null || cmd.param.length > 2) throw new InvalidParamAmountException();
+				
+				long wait,wait_rand;
 				
 				//Wait
-				long wait = Long.parseLong(cmd.param[0]);
-				if(wait > 0) {
-					System.out.println("Wait for " + wait + " ms...");
-					
-					try {
-						Thread.sleep(wait);
-					}
-					catch (InterruptedException e) {
-						System.out.println("Sleep interrupted by exception!");
-						return false;
-					}
-
-					System.out.println("Wait done");
+				try {
+					wait = Long.parseLong(cmd.param[0]);
+					wait_rand = cmd.param.length > 1 ? Long.parseLong(cmd.param[1]) : 0;
+				}
+				catch (NumberFormatException e) {
+					System.out.println("Invalid number!");
+					return true;
 				}
 				
+				if(wait > 0) {
+					if(wait_rand > 0) {
+						System.out.println("Wait between " + wait + " and " + (wait + wait_rand) + " ms...");
+						
+						try {
+							Thread.sleep(wait + (new Random()).nextInt((int)wait_rand));
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							return false;
+						}
+
+						System.out.println("Wait done");
+					}
+					else {
+						System.out.println("Wait for " + wait + " ms...");
+						
+						try {
+							Thread.sleep(wait);
+						}
+						catch (InterruptedException e) {
+							System.out.println("Sleep interrupted by exception!");
+							return false;
+						}
+	
+						System.out.println("Wait done");
+					}
+				}
 			}
 			else if(cmd.cmd.toLowerCase().equals("statistic")) {
 				String filename = "";
@@ -334,6 +461,17 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 
 					//Exec script
 					execScript(filename);
+				}
+			}
+			else if(cmd.cmd.toLowerCase().equals("break")) {
+				if(cmd.param == null || cmd.param.length > 1) {
+					//No filename specified
+					throw new InvalidParamAmountException();
+				}
+				else {
+					//Stop node for inspection
+					//Works only in debug mode
+					manager.breakNode(cmd.param[0]);
 				}
 			}
 			else if(!cmd.cmd.equals("")) { 
@@ -370,7 +508,13 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		}
 
 		//Return list if it contains elements
-		if(temp.size() > 0) params = temp.toArray(params);
+		if(temp.size() > 0) {
+			params = temp.toArray(params);
+		}
+		else {
+			params = null;
+		}
+		
 		return new Command(cmd,params);
 	}
 	
@@ -418,13 +562,16 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 		BufferedReader reader;
 		String line = null;
 		
+		List<String> lines = new ArrayList<String>();
+		HashMap<String,Integer> gotos = new HashMap<String,Integer>();
+
 		try {
 			//Open file
 			fstream = new FileInputStream(filename);
 			reader = new BufferedReader(new InputStreamReader(fstream));
 			
 			//GO!
-			System.out.println("Executing script file " + filename);
+			System.out.println("Loading script file " + filename);
 
 			//Execute each line
 			while((line = reader.readLine()) != null) {
@@ -433,18 +580,53 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 				
 				//Ignore comments
 				if(line.length() > 0 && !line.substring(0,1).equals("#")) {
-					if(handleCommand(line) == false) break;
+					if(line.substring(0,1).equals(":")) {
+						//Goto mark
+						gotos.put(line.substring(1,line.length()).trim().toLowerCase(), lines.size() - 1);
+					}
+					else {
+						//Normal script line
+						lines.add(line.trim());
+					}
 				}
 			}
 			
 			//Close file
 			reader.close();
 			fstream.close();
-			
-			System.out.println(" --- script done ---");
 		}
 		catch (IOException e) {
 			System.out.println("Cannot load script " + filename);
+			return;
 		}
+		
+		//Execute
+		System.out.println("Executing script file...");
+		for(int i = 0; i < lines.size(); i++) {
+			//Get current line
+			line = lines.get(i);
+			
+			//Special handling of goto lines
+			if(line.length() >= 4 && line.substring(0,4).toLowerCase().equals("goto")) {
+				//Get line link
+				String link = line.substring(4,line.length()).trim().toLowerCase();
+				Integer line_number = gotos.get(link);
+				
+				if(line_number == null) {
+					System.out.println("Invalid goto reference " + link + "! Ignoring...");
+				}
+				else {
+					System.out.println("GOTO line " + line_number.toString());
+					i = line_number < 0 ? 0 : line_number;
+				}
+			}
+			else {
+				//Handle normal command
+				System.out.println(line);
+				if(handleCommand(line) == false) break;
+			}
+		}
+		
+		System.out.println(" --- script done ---");
 	}
 }
