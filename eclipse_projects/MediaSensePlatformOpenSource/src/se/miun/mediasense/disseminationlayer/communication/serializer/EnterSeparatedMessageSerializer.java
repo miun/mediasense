@@ -1,5 +1,7 @@
 package se.miun.mediasense.disseminationlayer.communication.serializer;
 
+import java.io.UnsupportedEncodingException;
+
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.EndSubscribeMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.NotifySubscribersMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.StartSubscribeMessage;
@@ -18,8 +20,7 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 
 public class EnterSeparatedMessageSerializer implements MessageSerializer{
 
-	@Override
-	public String serializeMessage(Message message) {
+	public String serializeMessageToString(Message message) {
 						
 		switch (message.getType()) {
 		case Message.GET:			
@@ -84,8 +85,7 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		return "Unknown\n";
 	}
 
-	@Override
-	public Message deserializeMessage(String stringRepresentation) {
+	public Message deserializeMessageFromString(String stringRepresentation) {
 		try {
 			
 			//Split on token
@@ -148,7 +148,7 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				//KeepAliveMessage keepAliveMsg = new KeepAliveMessage(split[1], split[2]);
 				//return keepAliveMsg;
 				
-			case Message.KEEPALIVE_RESPONSE:
+			//case Message.KEEPALIVE_RESPONSE:
 				//KeepAliveResponseMessage keepAliveRespMsg = new KeepAliveResponseMessage(split[3], split[4], split[5], split[6], split[7], split[8], split[9], split[1], split[2]);
 				//return keepAliveRespMsg;
 			
@@ -162,4 +162,25 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		return null;
 	}
 
+	@Override
+	public byte[] serializeMessage(Message message) {
+		try {
+			return serializeMessageToString(message).getBytes("iso-8859-1");
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public Message deserializeMessage(byte[] stringRepresentation) {
+		try {
+			return deserializeMessageFromString(new String(stringRepresentation,"iso-8859-1"));
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

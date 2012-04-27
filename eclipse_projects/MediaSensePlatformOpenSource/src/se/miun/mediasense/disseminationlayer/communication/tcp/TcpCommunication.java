@@ -61,10 +61,10 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 		try {
 			Socket s = new Socket(message.getToIp(), communicationPort);
 			
-			String data = messageSerializer.serializeMessage(message);
+			byte[] data = messageSerializer.serializeMessage(message);
 	
 			OutputStream os = s.getOutputStream();
-			os.write(data.getBytes());
+			os.write(data);
 
 			os.flush();
 			os.close();
@@ -160,9 +160,9 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 			InputStream is = s.getInputStream();
 			is.read(buffer);
 
-			String stringRepresentation = new String(buffer);
+			//String stringRepresentation = new String(buffer);
 
-			Message message = messageSerializer.deserializeMessage(stringRepresentation);
+			Message message = messageSerializer.deserializeMessage(buffer);
 
 			switch (message.getType()) {
 

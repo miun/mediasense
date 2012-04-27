@@ -115,7 +115,7 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 			seqNr= Integer.parseInt(split[0]);
 			
 			// Parse the rest of the packet into a Message
-			Message message = messageSerializer.deserializeMessage(split[1]);
+			Message message = messageSerializer.deserializeMessage(split[1].getBytes());
 				
 			if (seqNr != 0){			
 				
@@ -191,7 +191,7 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 		try {
 
 			//Serialize
-			String data = messageSerializer.serializeMessage(queuedMessage.message);
+			String data = new String(messageSerializer.serializeMessage(queuedMessage.message));
 			
 			//Add the seqNr 
 			data = queuedMessage.seqNr + ";" + data;
