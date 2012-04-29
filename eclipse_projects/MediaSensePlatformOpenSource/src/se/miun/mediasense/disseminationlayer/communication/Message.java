@@ -1,5 +1,6 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+
 public abstract class Message {
 
 	public final static int UNKNOWN = 0;

@@ -33,20 +33,7 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		case Message.NOTIFY:			
 			NotifyMessage notifyMsg = (NotifyMessage) message;			
 			return "" + notifyMsg.getType() + "\n" + notifyMsg.getToIp() + "\n" + notifyMsg.getFromIp() + "\n" + notifyMsg.uci + "\n" + notifyMsg.value + "\n";
-		
-		case Message.REGISTER:			
-			RegisterMessage regMsg = (RegisterMessage) message;
-			//return "" + regMsg.getType() + "\n" + regMsg.getToIp() + "\n" + regMsg.getFromIp() + "\n";
-			return "";
-			
-		case Message.RESOLVE:			
-			ResolveMessage resMsg = (ResolveMessage) message;			
-			return "";// + resMsg.getType() + "\n" + resMsg.getToIp() + "\n" + resMsg.getFromIp() + "\n";
-			
-		case Message.RESOLVE_RESPONSE:		
-			ResolveResponseMessage resRespMsg = (ResolveResponseMessage) message;			
-			return "";// + resRespMsg.getType() + "\n" + resRespMsg.getToIp() + "\n" + resRespMsg.getFromIp();
-				
+						
 		case Message.SET:			
 			SetMessage setMsg = (SetMessage) message;			
 			return "" + setMsg.getType() + "\n" + setMsg.getToIp() + "\n" + setMsg.getFromIp() + "\n" + setMsg.uci + "\n" + setMsg.value + "\n";
@@ -63,21 +50,85 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 			AcknowledgementMessage ackMsg = (AcknowledgementMessage) message;			
 			return "" + ackMsg.getType() + "\n" + ackMsg.getToIp() + "\n" + ackMsg.getFromIp() + "\n" + ackMsg.seqNr + "\n";
 		
-		case Message.JOIN:
-			JoinMessage joinMsg = (JoinMessage) message;
-			return "";// + joinMsg.getType() + "\n" + joinMsg.getToIp() + "\n" + joinMsg.getFromIp() + "\n";
+		case Message.CHECK_PREDECESSOR:
 			
-		case Message.JOIN_RESPONSE: 
-			JoinResponseMessage joinRespMsg = (JoinResponseMessage) message;
-			return "";// + joinRespMsg.getType() + "\n" + joinRespMsg.getToIp() + "\n" + joinRespMsg.getFromIp() + "\n" + joinRespMsg.grandGrandParent + "\n" + joinRespMsg.grandParent + "\n" + joinRespMsg.parent + "\n" + joinRespMsg.self + "\n" + joinRespMsg.child + "\n" + joinRespMsg.grandChild + "\n" + joinRespMsg.grandGrandChild + "\n";
+			return "";
+			
+		case Message.CHECK_PREDECESSOR_RESPONSE:
+			
+			return "";
+		
+		case Message.CHECK_SUCCESSOR:
+			
+			return "";
+			
+		case Message.CHECK_SUCCESSOR_RESPONSE:
+			
+			return "";
+			
+		case Message.DUPLICATE_NODE_ID:
+			
+			return "";
+			
+		case Message.FIND_PREDECESSOR:
+			
+			return "";
+			
+		case Message.FIND_PREDECESSOR_RESPONSE:
+			
+			return "";
+			
+		case Message.JOIN_ACK:
+			
+			return "";
+			
+		case Message.JOIN_BUSY:
+			
+			return "";
+			
+		case Message.JOIN_FINALIZE:
+			
+			return "";
+			
+		case Message.JOIN:
+			
+			return "";
+			
+		case Message.JOIN_RESPONSE:
+			
+			return "";
 			
 		case Message.KEEPALIVE:
-			KeepAliveMessage keepAliceMsg = (KeepAliveMessage) message;
-			return "";// + keepAliceMsg.getType() + "\n" + keepAliceMsg.getToIp() + "\n" + keepAliceMsg.getFromIp() + "\n";
 			
-		//case Message.KEEPALIVE_RESPONSE: 
-			//KeepAliveResponseMessage keepAliveRespMsg = (KeepAliveResponseMessage) message;
-			//return "" + keepAliveRespMsg.getType() + "\n" + keepAliveRespMsg.getToIp() + "\n" + keepAliveRespMsg.getFromIp() + "\n" + keepAliveRespMsg.grandGrandParent + "\n" + keepAliveRespMsg.grandParent + "\n" + keepAliveRespMsg.parent + "\n" + keepAliveRespMsg.self + "\n" + keepAliveRespMsg.child + "\n" + keepAliveRespMsg.grandChild + "\n" + keepAliveRespMsg.grandGrandChild + "\n";
+			return "";
+			
+		case Message.NODE_SUSPICIOUS:
+			
+			return "";
+			
+		case Message.NODE_JOIN_NOTIFY:
+			
+			return "";
+			
+		case Message.NODE_LEAVE_NOTIFY:
+			
+			return "";
+			
+		case Message.REGISTER:
+			
+			return "";
+			
+		case Message.REGISTER_RESPONSE:
+			
+			return "";
+			
+		case Message.RESOLVE:
+			
+			return "";
+			
+		case Message.RESOLVE_RESPONSE:
+			
+			return "";
 			
 		}
 		
