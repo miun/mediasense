@@ -162,7 +162,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 			//String stringRepresentation = new String(buffer);
 
-			Message message = messageSerializer.deserializeMessage(buffer,s.getRemoteSocketAddress().toString(),getLocalIp());
+			Message message = messageSerializer.deserializeMessage(buffer,s.getInetAddress().getHostAddress(),getLocalIp());
 
 			switch (message.getType()) {
 
