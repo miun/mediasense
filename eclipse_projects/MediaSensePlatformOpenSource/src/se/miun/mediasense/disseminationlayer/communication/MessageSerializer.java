@@ -2,7 +2,7 @@ package se.miun.mediasense.disseminationlayer.communication;
 
 
 /**
- * @author 	Jonas Bäckström & Henrik Hagsved
+ * @author 	Jonas Bï¿½ckstrï¿½m & Henrik Hagsved
  * 			Institution of Information Technology and Media
  * 			Mid Sweden University
  *
@@ -15,7 +15,7 @@ public interface MessageSerializer {
 	 * @param message
 	 * @return String representation of Message
 	 */
-	public String serializeMessage( Message message );
+	public byte[] serializeMessage( Message message );
 	
 	
 	/**
@@ -23,6 +23,6 @@ public interface MessageSerializer {
 	 * @param stringRepresentation 
 	 * @return Message object
 	 */
-	public Message deserializeMessage( String stringRepresentation );
+	public Message deserializeMessage( byte[] stringRepresentation );
 
 }

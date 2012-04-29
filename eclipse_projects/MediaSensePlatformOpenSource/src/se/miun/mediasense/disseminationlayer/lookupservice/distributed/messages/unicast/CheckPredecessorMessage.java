@@ -24,4 +24,13 @@ public class CheckPredecessorMessage extends Message {
 	public int getDataAmount() {
 		return super.getDataAmount() + NodeID.ADDRESS_SIZE;
 	}
+	
+	@Override
+	public byte[] toByteArray() {
+		byte[] array = super.toByteArray();
+		byte[] result = new byte[array.length + NodeID.ADDRESS_SIZE];
+		
+		System.arraycopy(hash.getID(), 0, result, 1, NodeID.ADDRESS_SIZE);
+		return result;
+	}
 }

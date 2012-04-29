@@ -1,44 +1,0 @@
-10
-
-dir
-386
-https://193.10.119.45:50708/svn/stefor/MediaSensePlatformOpenSource/src/se/miun/mediasense/disseminationlayer
-https://193.10.119.45:50708/svn/stefor
-
-
-
-2012-02-28T10:00:01.732104Z
-386
-stefor
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-0924f8a9-66d3-8547-8bbd-b01a642b7e30
-
-
-
-
-
-
-0
-
-communication
-dir
-
-disseminationcore
-dir
-
-lookupservice
-dir
-

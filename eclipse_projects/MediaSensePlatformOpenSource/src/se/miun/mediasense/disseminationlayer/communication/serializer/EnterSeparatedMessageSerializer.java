@@ -1,5 +1,7 @@
 package se.miun.mediasense.disseminationlayer.communication.serializer;
 
+import java.io.UnsupportedEncodingException;
+
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.EndSubscribeMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.NotifySubscribersMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.StartSubscribeMessage;
@@ -9,18 +11,35 @@ import se.miun.mediasense.disseminationlayer.communication.MessageSerializer;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
 import se.miun.mediasense.disseminationlayer.communication.rudp.AcknowledgementMessage;
+import se.miun.mediasense.disseminationlayer.communication.tcpproxy.Base64;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorResponseMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckSuccessorMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckSuccessorResponseMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.DuplicateNodeIdMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.FindPredecessorMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.FindPredecessorResponseMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinAckMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinBusyMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinFinalizeMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.KeepAliveMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.NodeSuspiciousMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.NotifyJoinMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.NotifyLeaveMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.RegisterMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.RegisterResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveResponseMessage;
 
 public class EnterSeparatedMessageSerializer implements MessageSerializer{
 
-	@Override
-	public String serializeMessage(Message message) {
-						
+	public String serializeMessageToString(Message message) {
+		String standard = "" + message.getType() + "\n" + message.getToIp() + "\n" + message.getFromIp() + "\n";
+		
 		switch (message.getType()) {
 		case Message.GET:			
 			GetMessage getMsg = (GetMessage) message;
@@ -51,83 +70,88 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 			return "" + ackMsg.getType() + "\n" + ackMsg.getToIp() + "\n" + ackMsg.getFromIp() + "\n" + ackMsg.seqNr + "\n";
 		
 		case Message.CHECK_PREDECESSOR:
-			
-			return "";
+			CheckPredecessorMessage cpMsg = (CheckPredecessorMessage) message;
+			return standard + Base64.encodeBytes(cpMsg.getHash().getID()) + "\n";
 			
 		case Message.CHECK_PREDECESSOR_RESPONSE:
-			
-			return "";
+			CheckPredecessorResponseMessage cprMsg = (CheckPredecessorResponseMessage) message;
+			return standard + cprMsg.getPreNetworkAddress() + "\n" + Base64.encodeBytes(cprMsg.getPreHash().getID()) + "\n";
 		
 		case Message.CHECK_SUCCESSOR:
-			
-			return "";
+			CheckSuccessorMessage csMsg = (CheckSuccessorMessage) message;
+			return standard + Base64.encodeBytes(csMsg.getHash().getID()) + "\n";
 			
 		case Message.CHECK_SUCCESSOR_RESPONSE:
-			
-			return "";
+			CheckSuccessorResponseMessage csrMsg = (CheckSuccessorResponseMessage) message;
+			return standard + csrMsg.getSucNetworkAddress() + "\n" + Base64.encodeBytes(csrMsg.getSucHash().getID()) + "\n";
 			
 		case Message.DUPLICATE_NODE_ID:
-			
-			return "";
+			DuplicateNodeIdMessage dMsg = (DuplicateNodeIdMessage) message;
+			return standard + Base64.encodeBytes(dMsg.getDuplicateKey().getID()) + "\n";
 			
 		case Message.FIND_PREDECESSOR:
-			
-			return "";
+			FindPredecessorMessage fpMsg = (FindPredecessorMessage) message;
+			return standard + Base64.encodeBytes(fpMsg.getHash().getID()) + "\n" + fpMsg.getOrigAddress() + "\n";
 			
 		case Message.FIND_PREDECESSOR_RESPONSE:
-			
-			return "";
+			FindPredecessorResponseMessage fprMsg = (FindPredecessorResponseMessage) message;
+			return standard + Base64.encodeBytes(fprMsg.getPredecessorHash().getID()) + "\n" + Base64.encodeBytes(fprMsg.getOrigHash().getID()) + "\n";
 			
 		case Message.JOIN_ACK:
-			
-			return "";
+			JoinAckMessage jaMsg = (JoinAckMessage) message;
+			return standard + Base64.encodeBytes(jaMsg.getJoinKey().getID()) + "\n";
 			
 		case Message.JOIN_BUSY:
-			
-			return "";
+			JoinBusyMessage jbMsg = (JoinBusyMessage) message;
+			return standard;
 			
 		case Message.JOIN_FINALIZE:
-			
-			return "";
+			JoinFinalizeMessage jfMsg = (JoinFinalizeMessage) message;
+			return standard + Base64.encodeBytes(jfMsg.getJoinKey().getID()) + "\n";
 			
 		case Message.JOIN:
-			
-			return "";
+			JoinMessage jMsg = (JoinMessage) message;
+			return standard + jMsg.getOriginatorAddress() + "\n" + Base64.encodeBytes(jMsg.getKey().getID()) + "\n";
 			
 		case Message.JOIN_RESPONSE:
-			
-			return "";
+			JoinResponseMessage jrMsg = (JoinResponseMessage) message;
+			//TODO predecessor might be null
+			return standard + Base64.encodeBytes(jrMsg.getJoinKey().getID()) + "\n" + jrMsg.getSuccessorAddress() + "\n" + Base64.encodeBytes(jrMsg.getSuccessor().getID()) + "\n" + Base64.encodeBytes(jrMsg.getPredecessor().getID()) + "\n";
 			
 		case Message.KEEPALIVE:
-			
-			return "";
+			KeepAliveMessage kaMsg = (KeepAliveMessage) message;
+			return standard + Base64.encodeBytes(kaMsg.getAdvertisedID().getID()) + "\n" + kaMsg.getAdvertisedNetworkAddress() + "\n"; 
 			
 		case Message.NODE_SUSPICIOUS:
-			
+			NodeSuspiciousMessage nsMsg = (NodeSuspiciousMessage) message;
 			return "";
 			
 		case Message.NODE_JOIN_NOTIFY:
-			
+			NotifyJoinMessage njMsg = (NotifyJoinMessage) message;
 			return "";
 			
 		case Message.NODE_LEAVE_NOTIFY:
-			
+			NotifyLeaveMessage nlMsg = (NotifyLeaveMessage) message;
 			return "";
 			
 		case Message.REGISTER:
-			
+			RegisterMessage rMsg = (RegisterMessage) message;
 			return "";
 			
 		case Message.REGISTER_RESPONSE:
-			
+			RegisterResponseMessage rrMsg = (RegisterResponseMessage) message;
 			return "";
 			
 		case Message.RESOLVE:
-			
+			ResolveMessage reMsg = (ResolveMessage) message;
 			return "";
 			
 		case Message.RESOLVE_RESPONSE:
-			
+			ResolveResponseMessage rerMsg = (ResolveResponseMessage) message;
+			return "";
+		
+		case Message.BROADCAST:
+			BroadcastMessage bMsg = (BroadcastMessage) message;
 			return "";
 			
 		}
@@ -135,8 +159,7 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		return "Unknown\n";
 	}
 
-	@Override
-	public Message deserializeMessage(String stringRepresentation) {
+	public Message deserializeMessageFromString(String stringRepresentation) {
 		try {
 			
 			//Split on token
@@ -159,18 +182,6 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				NotifyMessage notifyMsg = new NotifyMessage(split[3], split[4], split[1], split[2]);		
 				return notifyMsg;
 
-			case Message.REGISTER:
-				//RegisterMessage registerMsg = new RegisterMessage(split[3], split[1], split[2]);			
-				//return registerMsg;
-
-			case Message.RESOLVE:
-				//ResolveMessage resolveMsg = new ResolveMessage(split[3], split[4], split[1], split[2]);			
-				//return resolveMsg;
-				
-			case Message.RESOLVE_RESPONSE:
-				//ResolveResponseMessage resRespMsg = new ResolveResponseMessage(split[3], split[4], split[1], split[2]);
-				//return resRespMsg;
-
 			case Message.SET:
 				SetMessage setMsg = new SetMessage(split[3], split[4], split[1], split[2]);			
 				return setMsg;
@@ -187,24 +198,91 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				AcknowledgementMessage ackMsg = new AcknowledgementMessage(split[3], split[1], split[2]);		
 				return ackMsg;	
 				
+			case Message.CHECK_PREDECESSOR:
+				CheckPredecessorMessage cpMsg = new CheckPredecessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				return cpMsg;
+				
+			case Message.CHECK_PREDECESSOR_RESPONSE:
+				CheckPredecessorResponseMessage cprMsg = new CheckPredecessorResponseMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				return cprMsg;
+			
+			case Message.CHECK_SUCCESSOR:
+				CheckSuccessorMessage csMsg = new CheckSuccessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				return csMsg;
+				
+			case Message.CHECK_SUCCESSOR_RESPONSE:
+				CheckSuccessorResponseMessage csrMsg = new CheckSuccessorResponseMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				return csrMsg;
+				
+			case Message.DUPLICATE_NODE_ID:
+				DuplicateNodeIdMessage dMsg = new DuplicateNodeIdMessage(split[1], split[2],  new NodeID(Base64.decode(split[3])));
+				return dMsg;
+				
+			case Message.FIND_PREDECESSOR:
+				FindPredecessorMessage fpMsg = new FindPredecessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				return fpMsg;
+				
+			case Message.FIND_PREDECESSOR_RESPONSE:
+				FindPredecessorResponseMessage fprMsg = new FindPredecessorResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
+				return fprMsg;
+				
+			case Message.JOIN_ACK:
+				JoinAckMessage jaMsg = new JoinAckMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				return jaMsg;
+				
+			case Message.JOIN_BUSY:
+				JoinBusyMessage jbMsg = new JoinBusyMessage(split[1], split[2]);
+				return jbMsg;
+				
+			case Message.JOIN_FINALIZE:
+				JoinFinalizeMessage jfMsg = new JoinFinalizeMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				return jfMsg;
+				
 			case Message.JOIN:
-				//JoinMessage joinMsg = new JoinMessage(split[1], split[2]);
-				//return joinMsg;
+				JoinMessage jMsg = new JoinMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				return jMsg;
 				
 			case Message.JOIN_RESPONSE:
-				//JoinResponseMessage joinRspMsg = new JoinResponseMessage(split[3], split[4], split[5], split[5], split[6], split[7], split[8], split[1], split[2]);
-				//return joinRspMsg;
-			
+				//TODO split[6] might be null
+				JoinResponseMessage jrMsg = new JoinResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4], new NodeID(Base64.decode(split[5])), new NodeID(Base64.decode(split[6])));
+				return jrMsg;
+			/*	
 			case Message.KEEPALIVE:
-				//KeepAliveMessage keepAliveMsg = new KeepAliveMessage(split[1], split[2]);
-				//return keepAliveMsg;
+				KeepAliveMessage kaMsg = new KeepAliveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				return "";
 				
-			case Message.KEEPALIVE_RESPONSE:
-				//KeepAliveResponseMessage keepAliveRespMsg = new KeepAliveResponseMessage(split[3], split[4], split[5], split[6], split[7], split[8], split[9], split[1], split[2]);
-				//return keepAliveRespMsg;
+			case Message.NODE_SUSPICIOUS:
+				NodeSuspiciousMessage nsMsg = (NodeSuspiciousMessage) message;
+				return "";
+				
+			case Message.NODE_JOIN_NOTIFY:
+				NotifyJoinMessage njMsg = (NotifyJoinMessage) message;
+				return "";
+				
+			case Message.NODE_LEAVE_NOTIFY:
+				NotifyLeaveMessage nlMsg = (NotifyLeaveMessage) message;
+				return "";
+				
+			case Message.REGISTER:
+				RegisterMessage rMsg = (RegisterMessage) message;
+				return "";
+				
+			case Message.REGISTER_RESPONSE:
+				RegisterResponseMessage rrMsg = (RegisterResponseMessage) message;
+				return "";
+				
+			case Message.RESOLVE:
+				ResolveMessage reMsg = (ResolveMessage) message;
+				return "";
+				
+			case Message.RESOLVE_RESPONSE:
+				ResolveResponseMessage rerMsg = (ResolveResponseMessage) message;
+				return "";
 			
-
-				
+			case Message.BROADCAST:
+				BroadcastMessage bMsg = (BroadcastMessage) message;
+				return "";
+			*/	
 				
 			}						
 		} catch (Exception e) {
@@ -213,4 +291,25 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		return null;
 	}
 
+	@Override
+	public byte[] serializeMessage(Message message) {
+		try {
+			return serializeMessageToString(message).getBytes("iso-8859-1");
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public Message deserializeMessage(byte[] stringRepresentation) {
+		try {
+			return deserializeMessageFromString(new String(stringRepresentation,"iso-8859-1"));
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

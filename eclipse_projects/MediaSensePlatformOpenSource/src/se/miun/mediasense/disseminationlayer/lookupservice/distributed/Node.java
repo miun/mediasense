@@ -166,10 +166,9 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 		sensors.addAll(sensorsResponsibleFor.getAllSensors());
 		
 		if(sensors.contains(sensor)) {
-			sensor = sensors.c
-			disseminationCore.callResolveResponseListener(uci, sensor.)
-			//TODO Inform dissemination core
-			System.out.println("OUT");
+			//Ceiling is a workaround to return the element
+			sensor = sensors.ceiling(sensor);
+			disseminationCore.callResolveResponseListener(uci, sensor.getOwner().getNetworkAddress());
 		}
 		else {
 			//Send resolve message

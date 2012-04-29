@@ -80,7 +80,7 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 		synchronized (socket) {
 			// TODO Auto-generated method stub
 			String SendString = "ROUTE|" + message.getToIp() + "|"
-					+ encode(messageSerializer.serializeMessage(message));
+					+ encode(new String(messageSerializer.serializeMessage(message)));
 			OutputStream out;
 			try {
 				out = socket.getOutputStream();
@@ -182,7 +182,7 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 		try {
 
 			Message message = messageSerializer
-					.deserializeMessage(stringRepresentation);
+					.deserializeMessage(stringRepresentation.getBytes());
 
 			switch (message.getType()) {
 
