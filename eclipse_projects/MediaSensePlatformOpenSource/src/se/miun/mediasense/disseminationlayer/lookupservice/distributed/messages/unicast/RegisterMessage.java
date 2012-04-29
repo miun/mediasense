@@ -1,5 +1,9 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
 
@@ -39,5 +43,35 @@ public class RegisterMessage extends Message {
 	//Return packet size for statistic
 	public int getDataAmount() {
 		return super.getDataAmount() + 2 * NodeID.ADDRESS_SIZE + 4;
+	}
+	
+	@Override
+	public void serializeMessage(ObjectOutputStream oos) {
+		try {
+			super.serializeMessage(oos);
+			oos.write(sensor.getID());
+			oos.write(origHash.getID());
+			oos.writeUTF(origAddress);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static Message deserializeMessage(ObjectInputStream ois,String fromIp,String toIp) {
+		try {
+			byte[] sensor = new byte[NodeID.ADDRESS_SIZE];
+			byte[] origHash = new byte[NodeID.ADDRESS_SIZE];
+
+			ois.readFully(sensor, 0, NodeID.ADDRESS_SIZE);
+			ois.readFully(origHash, 0, NodeID.ADDRESS_SIZE);
+			
+			String origAddr = ois.readUTF();
+			
+			return new RegisterMessage(fromIp,toIp,new NodeID(sensor),new NodeID(origHash),origAddr);
+		}
+		catch (IOException e) {
+			return null;
+		}
 	}
 }
