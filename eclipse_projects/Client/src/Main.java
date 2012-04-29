@@ -1,4 +1,5 @@
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -69,17 +70,14 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 	 */
 	private void initialize() {
 		frame = new JFrame();
-		frame.setBounds(100, 100, 450, 300);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().setLayout(null);
+		frame.getContentPane().setLayout(new FlowLayout());
 		
 		textField = new JTextField();
-		textField.setBounds(30, 46, 272, 28);
 		frame.getContentPane().add(textField);
 		textField.setColumns(10);
 		
 		JButton btnResolve = new JButton("resolve");
-		btnResolve.setBounds(40, 86, 117, 29);
 		btnResolve.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -93,7 +91,6 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 		frame.getContentPane().add(btnResolve);
 		
 		JButton btnRegister = new JButton("register");
-		btnRegister.setBounds(185, 86, 117, 29);
 		btnRegister.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -105,6 +102,7 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 			}
 		});
 		frame.getContentPane().add(btnRegister);
+		frame.pack();
 	}
 
 	@Override
