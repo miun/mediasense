@@ -105,6 +105,7 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 			}
 		});
 		frame.getContentPane().add(btnRegister);
+		frame.pack();
 	}
 
 	@Override
