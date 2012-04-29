@@ -115,7 +115,7 @@ public class SimpleRudpCommunication extends Thread implements CommunicationInte
 			seqNr= Integer.parseInt(split[0]);
 			
 			// Parse the rest of the packet into a Message
-			Message message = messageSerializer.deserializeMessage(split[1].getBytes());
+			Message message = messageSerializer.deserializeMessage(split[1].getBytes(),"","");
 				
 			if (seqNr != 0){			
 				

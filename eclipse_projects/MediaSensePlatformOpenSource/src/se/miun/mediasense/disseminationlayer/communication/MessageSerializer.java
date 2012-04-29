@@ -23,6 +23,6 @@ public interface MessageSerializer {
 	 * @param stringRepresentation 
 	 * @return Message object
 	 */
-	public Message deserializeMessage( byte[] stringRepresentation );
+	public Message deserializeMessage( byte[] stringRepresentation,String fromIp,String toIp );
 
 }

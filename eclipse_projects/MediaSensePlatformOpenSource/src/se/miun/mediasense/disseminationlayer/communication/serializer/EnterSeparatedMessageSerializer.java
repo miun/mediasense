@@ -159,9 +159,8 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		return "Unknown\n";
 	}
 
-	public Message deserializeMessageFromString(String stringRepresentation) {
+	public Message deserializeMessageFromString(String stringRepresentation,String fromIp,String toIp) {
 		try {
-			
 			//Split on token
 			String split[] = stringRepresentation.split("\n");
 			
@@ -303,9 +302,9 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 	}
 
 	@Override
-	public Message deserializeMessage(byte[] stringRepresentation) {
+	public Message deserializeMessage(byte[] stringRepresentation,String fromIp,String toIp) {
 		try {
-			return deserializeMessageFromString(new String(stringRepresentation,"iso-8859-1"));
+			return deserializeMessageFromString(new String(stringRepresentation,"iso-8859-1"),fromIp,toIp);
 		}
 		catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
