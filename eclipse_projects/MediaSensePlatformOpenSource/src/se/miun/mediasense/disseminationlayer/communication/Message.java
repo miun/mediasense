@@ -1,5 +1,7 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+import java.io.Serializable;
+
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.EndSubscribeMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.NotifySubscribersMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.StartSubscribeMessage;
@@ -21,7 +23,8 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.ResolveResponseMessage;
 
-public abstract class Message {
+@SuppressWarnings("serial")
+public abstract class Message implements Serializable {
 
 	public final static int UNKNOWN = 0;
 	public final static int GET = 1;

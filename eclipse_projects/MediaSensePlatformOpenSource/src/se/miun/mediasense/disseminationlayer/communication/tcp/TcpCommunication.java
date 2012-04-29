@@ -14,6 +14,7 @@ import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
+import se.miun.mediasense.disseminationlayer.communication.serializer.BBinaryMessageSerializer;
 import se.miun.mediasense.disseminationlayer.communication.serializer.EnterSeparatedMessageSerializer;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 
@@ -21,7 +22,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 	private DisseminationCore disseminationCore = null;
 	
-	private EnterSeparatedMessageSerializer messageSerializer = new EnterSeparatedMessageSerializer();
+	private BBinaryMessageSerializer messageSerializer = new BBinaryMessageSerializer();
 	
 	private ServerSocket ss;
 	private int communicationPort = 9009;
