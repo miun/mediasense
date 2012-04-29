@@ -15,7 +15,6 @@ import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
 import se.miun.mediasense.disseminationlayer.communication.serializer.BinaryMessageSerializer;
-import se.miun.mediasense.disseminationlayer.communication.serializer.EnterSeparatedMessageSerializer;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 
 public class TcpCommunication implements Runnable, CommunicationInterface{
@@ -163,7 +162,7 @@ public class TcpCommunication implements Runnable, CommunicationInterface{
 
 			//String stringRepresentation = new String(buffer);
 
-			Message message = messageSerializer.deserializeMessage(buffer,s.getRemoteSocketAddress().toString(),getLocalIp());
+			Message message = messageSerializer.deserializeMessage(buffer,s.getInetAddress().getHostAddress(),getLocalIp());
 
 			switch (message.getType()) {
 

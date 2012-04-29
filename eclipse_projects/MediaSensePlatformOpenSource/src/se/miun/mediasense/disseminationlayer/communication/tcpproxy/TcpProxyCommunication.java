@@ -217,6 +217,7 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 						.getAddInManager();
 				addInManager.forwardMessageToAddIns(message);
 				break;
+				
 
 			}
 
