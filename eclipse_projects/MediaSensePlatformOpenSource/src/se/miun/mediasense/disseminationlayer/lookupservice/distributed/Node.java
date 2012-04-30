@@ -1344,9 +1344,11 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 		if(rs != null) {
 			//Abort timer and remove from list
 			rs.abort();
+			
+			//Trigger successful resolve event
+			disseminationCore.callResolveResponseListener(rs.uci, rrm.getSensorAddress());
 		}
 		
-		//Forward
 	}
 	
 	private void rearrangeLocalSensorMapping() {
