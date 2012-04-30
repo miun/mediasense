@@ -1,8 +1,8 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
@@ -50,7 +50,7 @@ public abstract class BroadcastMessage extends Message {
 	
 	//Abstract methods for serialization
 	@Override
-	public void serializeMessage(ObjectOutputStream oos) {
+	public void serializeMessage(DataOutputStream oos) {
 		try {
 			oos.writeInt(MAGIC_WORD_BROADCAST);
 			oos.writeByte(getInternalType());
@@ -62,7 +62,7 @@ public abstract class BroadcastMessage extends Message {
 		}
 	}
 	
-	public static Message deserializeMessage(ObjectInputStream ois,String fromIp,String toIp) {
+	public static Message deserializeMessage(DataInputStream ois,String fromIp,String toIp) {
 		int type;
 		byte[] startKeyArray;
 		byte[] endKeyArray;

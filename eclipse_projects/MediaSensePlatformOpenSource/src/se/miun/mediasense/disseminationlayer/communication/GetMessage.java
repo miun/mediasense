@@ -1,8 +1,8 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 public class GetMessage extends Message {
 	
@@ -15,7 +15,7 @@ public class GetMessage extends Message {
 	}
 
 	@Override
-	public void serializeMessage(ObjectOutputStream oos) {
+	public void serializeMessage(DataOutputStream oos) {
 		try {
 			super.serializeMessage(oos);
 			oos.writeUTF(uci);
@@ -25,7 +25,7 @@ public class GetMessage extends Message {
 		}
 	}
 
-	public static Message deserializeMessage(ObjectInputStream ois,String fromIp,String toIp) {
+	public static Message deserializeMessage(DataInputStream ois,String fromIp,String toIp) {
 		try {
 			String uci = ois.readUTF();
 			return new GetMessage(uci,toIp,fromIp);

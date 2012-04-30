@@ -1,8 +1,8 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
@@ -37,7 +37,7 @@ public class NotifyLeaveBroadcastMessage extends BroadcastMessage {
 
 	
 	@Override
-	public void serializeMessage(ObjectOutputStream oos) {
+	public void serializeMessage(DataOutputStream oos) {
 		try {
 			super.serializeMessage(oos);
 			oos.write(hash.getID());
@@ -49,7 +49,7 @@ public class NotifyLeaveBroadcastMessage extends BroadcastMessage {
 		}
 	}
 
-	public static Message deserializeMessage(ObjectInputStream ois,String fromIp,String toIp,NodeID startKey,NodeID endKey) {
+	public static Message deserializeMessage(DataInputStream ois,String fromIp,String toIp,NodeID startKey,NodeID endKey) {
 		try {
 			byte[] hash = new byte[NodeID.ADDRESS_SIZE];
 			byte[] successorHash = new byte[NodeID.ADDRESS_SIZE];

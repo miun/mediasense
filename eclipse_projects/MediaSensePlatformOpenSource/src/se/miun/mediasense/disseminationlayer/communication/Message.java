@@ -1,8 +1,8 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.EndSubscribeMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.NotifySubscribersMessage;
@@ -117,17 +117,17 @@ public abstract class Message {
 	}
 	
 	//Abstract methods for serialization
-	public void serializeMessage(ObjectOutputStream oos) {
+	public void serializeMessage(DataOutputStream dos) {
 		try {
-			oos.writeInt(MAGIC_WORD_UNICAST);
-			oos.writeByte(type);
+			dos.writeInt(MAGIC_WORD_UNICAST);
+			dos.writeByte(type);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public static Message deserializeMessage(ObjectInputStream ois,String fromIp,String toIp) {
+	public static Message deserializeMessage(DataInputStream ois,String fromIp,String toIp) {
 		int type;
 		int magic_word;
 		
