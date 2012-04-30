@@ -12,11 +12,13 @@ public abstract class BroadcastMessage extends Message {
 	//Definition of the region the broadcast is responsible for
 	private NodeID startKey;
 	private NodeID endKey;
+	private int internalType;
 	
 	public BroadcastMessage(String from, String to,NodeID startKey,NodeID endKey,int internalType) {
 		super(from,to,Message.BROADCAST);
 		this.startKey = startKey;
 		this.endKey = endKey;
+		this.internalType = internalType;
 	}
 	
 	public NodeID getStartKey() {
@@ -25,6 +27,10 @@ public abstract class BroadcastMessage extends Message {
 
 	public NodeID getEndKey() {
 		return endKey;
+	}
+	
+	public int getInternalType() {
+		return internalType;
 	}
 
 	protected String toString(String text) {
@@ -47,7 +53,7 @@ public abstract class BroadcastMessage extends Message {
 	public void serializeMessage(ObjectOutputStream oos) {
 		try {
 			oos.writeInt(MAGIC_WORD_BROADCAST);
-			oos.writeByte(getType());
+			oos.writeByte(getInternalType());
 			oos.write(startKey.getID());
 			oos.write(endKey.getID());
 		}
