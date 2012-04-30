@@ -16,6 +16,7 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.FindPredecessorResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinAckMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinBusyMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinFinalizeMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.NodeSuspiciousMessage;
@@ -163,6 +164,7 @@ public abstract class Message {
 			case Message.JOIN_RESPONSE: return JoinResponseMessage.deserializeMessage(ois,fromIp,toIp);
 			case Message.JOIN_BUSY: return JoinBusyMessage.deserializeMessage(ois,fromIp,toIp);
 			case Message.JOIN_ACK: return JoinAckMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN_FINALIZE: return JoinFinalizeMessage.deserializeMessage(ois,fromIp,toIp);
 			case Message.NODE_JOIN_NOTIFY: return NotifyJoinMessage.deserializeMessage(ois,fromIp,toIp);
 			case Message.NODE_LEAVE_NOTIFY: return NotifyLeaveMessage.deserializeMessage(ois,fromIp,toIp);
 			case Message.NODE_SUSPICIOUS: return NodeSuspiciousMessage.deserializeMessage(ois,fromIp,toIp);
