@@ -217,83 +217,83 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				return ackMsg;	
 				
 			case Message.CHECK_PREDECESSOR:
-				CheckPredecessorMessage cpMsg = new CheckPredecessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				CheckPredecessorMessage cpMsg = new CheckPredecessorMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));
 				return cpMsg;
 				
 			case Message.CHECK_PREDECESSOR_RESPONSE:
-				CheckPredecessorResponseMessage cprMsg = new CheckPredecessorResponseMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				CheckPredecessorResponseMessage cprMsg = new CheckPredecessorResponseMessage(split[2], split[1], split[3], new NodeID(Base64.decode(split[4])));
 				return cprMsg;
 			
 			case Message.CHECK_SUCCESSOR:
-				CheckSuccessorMessage csMsg = new CheckSuccessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				CheckSuccessorMessage csMsg = new CheckSuccessorMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));
 				return csMsg;
 				
 			case Message.CHECK_SUCCESSOR_RESPONSE:
-				CheckSuccessorResponseMessage csrMsg = new CheckSuccessorResponseMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				CheckSuccessorResponseMessage csrMsg = new CheckSuccessorResponseMessage(split[2], split[1], split[3], new NodeID(Base64.decode(split[4])));
 				return csrMsg;
 				
 			case Message.DUPLICATE_NODE_ID:
-				DuplicateNodeIdMessage dMsg = new DuplicateNodeIdMessage(split[1], split[2],  new NodeID(Base64.decode(split[3])));
+				DuplicateNodeIdMessage dMsg = new DuplicateNodeIdMessage(split[2], split[1],  new NodeID(Base64.decode(split[3])));
 				return dMsg;
 				
 			case Message.FIND_PREDECESSOR:
-				FindPredecessorMessage fpMsg = new FindPredecessorMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				FindPredecessorMessage fpMsg = new FindPredecessorMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), split[4]);
 				return fpMsg;
 				
 			case Message.FIND_PREDECESSOR_RESPONSE:
-				FindPredecessorResponseMessage fprMsg = new FindPredecessorResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
+				FindPredecessorResponseMessage fprMsg = new FindPredecessorResponseMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
 				return fprMsg;
 				
 			case Message.JOIN_ACK:
-				JoinAckMessage jaMsg = new JoinAckMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				JoinAckMessage jaMsg = new JoinAckMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));
 				return jaMsg;
 				
 			case Message.JOIN_BUSY:
-				JoinBusyMessage jbMsg = new JoinBusyMessage(split[1], split[2]);
+				JoinBusyMessage jbMsg = new JoinBusyMessage(split[2], split[1]);
 				return jbMsg;
 				
 			case Message.JOIN_FINALIZE:
-				JoinFinalizeMessage jfMsg = new JoinFinalizeMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				JoinFinalizeMessage jfMsg = new JoinFinalizeMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));
 				return jfMsg;
 				
 			case Message.JOIN:
-				JoinMessage jMsg = new JoinMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				JoinMessage jMsg = new JoinMessage(split[2], split[1], split[3], new NodeID(Base64.decode(split[4])));
 				return jMsg;
 				
 			case Message.JOIN_RESPONSE:
-				JoinResponseMessage jrMsg = new JoinResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4], new NodeID(Base64.decode(split[5])), new NodeID(Base64.decode(split[6])));
+				JoinResponseMessage jrMsg = new JoinResponseMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), split[4], new NodeID(Base64.decode(split[5])), new NodeID(Base64.decode(split[6])));
 				return jrMsg;
 				
 			case Message.KEEPALIVE:
-				KeepAliveMessage kaMsg = new KeepAliveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				KeepAliveMessage kaMsg = new KeepAliveMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), split[4]);
 				return kaMsg;
 				
 			case Message.NODE_SUSPICIOUS:
-				NodeSuspiciousMessage nsMsg = new NodeSuspiciousMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				NodeSuspiciousMessage nsMsg = new NodeSuspiciousMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));
 				return nsMsg;
 				
 			case Message.NODE_JOIN_NOTIFY:
-				NotifyJoinMessage njMsg = new NotifyJoinMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				NotifyJoinMessage njMsg = new NotifyJoinMessage(split[2], split[1], split[3], new NodeID(Base64.decode(split[4])));
 				return njMsg;
 				
 			case Message.NODE_LEAVE_NOTIFY:
-				NotifyLeaveMessage nlMsg = new NotifyLeaveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
+				NotifyLeaveMessage nlMsg = new NotifyLeaveMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
 				return nlMsg;
 				
 			case Message.REGISTER:
-				RegisterMessage rMsg = new RegisterMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
+				RegisterMessage rMsg = new RegisterMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
 				return rMsg;
 				
 			case Message.REGISTER_RESPONSE:
-				RegisterResponseMessage rrMsg = new RegisterResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
+				RegisterResponseMessage rrMsg = new RegisterResponseMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
 				return rrMsg;
 				
 			case Message.RESOLVE:
-				ResolveMessage reMsg = new ResolveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				ResolveMessage reMsg = new ResolveMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), split[4]);
 				return reMsg;
 				
 			case Message.RESOLVE_RESPONSE:
-				ResolveResponseMessage rerMsg =new ResolveResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				ResolveResponseMessage rerMsg =new ResolveResponseMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), split[4]);
 				return rerMsg;
 			
 			case Message.BROADCAST:
@@ -301,19 +301,19 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				int internalType = Integer.parseInt(split[5]);
 				switch (internalType) {
 				case Message.KEEPALIVE:
-					KeepAliveBroadcastMessage kabMsg = new KeepAliveBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), split[7]);
+					KeepAliveBroadcastMessage kabMsg = new KeepAliveBroadcastMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), split[7]);
 					return kabMsg;
 				
 				case Message.NODE_SUSPICIOUS:
-					NodeSuspiciousBroadcastMessage nsbMsg = new NodeSuspiciousBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])));
+					NodeSuspiciousBroadcastMessage nsbMsg = new NodeSuspiciousBroadcastMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])));
 					return nsbMsg;
 				
 				case Message.NODE_JOIN_NOTIFY:
-					NotifyJoinBroadcastMessage njbMsg = new NotifyJoinBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[6], new NodeID(Base64.decode(split[7])));
+					NotifyJoinBroadcastMessage njbMsg = new NotifyJoinBroadcastMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[6], new NodeID(Base64.decode(split[7])));
 					return njbMsg;
 				
 				case Message.NODE_LEAVE_NOTIFY:
-					NotifyLeaveBroadcastMessage nlbMsg = new NotifyLeaveBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), new NodeID(Base64.decode(split[7])), split[8]);
+					NotifyLeaveBroadcastMessage nlbMsg = new NotifyLeaveBroadcastMessage(split[2], split[1], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), new NodeID(Base64.decode(split[7])), split[8]);
 					return nlbMsg;
 				}
 			}						
