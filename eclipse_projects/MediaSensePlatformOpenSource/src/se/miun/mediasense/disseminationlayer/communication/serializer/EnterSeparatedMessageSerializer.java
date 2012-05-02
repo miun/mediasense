@@ -14,6 +14,10 @@ import se.miun.mediasense.disseminationlayer.communication.rudp.AcknowledgementM
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.Base64;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.KeepAliveBroadcastMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.NodeSuspiciousBroadcastMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.NotifyJoinBroadcastMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.NotifyLeaveBroadcastMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckSuccessorMessage;
@@ -115,7 +119,6 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 			
 		case Message.JOIN_RESPONSE:
 			JoinResponseMessage jrMsg = (JoinResponseMessage) message;
-			//TODO predecessor might be null
 			return standard + Base64.encodeBytes(jrMsg.getJoinKey().getID()) + "\n" + jrMsg.getSuccessorAddress() + "\n" + Base64.encodeBytes(jrMsg.getSuccessor().getID()) + "\n" + Base64.encodeBytes(jrMsg.getPredecessor().getID()) + "\n";
 			
 		case Message.KEEPALIVE:
@@ -124,36 +127,52 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 			
 		case Message.NODE_SUSPICIOUS:
 			NodeSuspiciousMessage nsMsg = (NodeSuspiciousMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(nsMsg.getHash().getID()) + "\n";
 			
 		case Message.NODE_JOIN_NOTIFY:
 			NotifyJoinMessage njMsg = (NotifyJoinMessage) message;
-			return "";
+			return standard + njMsg.getNetworkAddress() + "\n" + Base64.encodeBytes(njMsg.getHash().getID()) + "\n";
 			
 		case Message.NODE_LEAVE_NOTIFY:
 			NotifyLeaveMessage nlMsg = (NotifyLeaveMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(nlMsg.getHash().getID()) + "\n" + Base64.encodeBytes(nlMsg.getSuccessorHash().getID()) + "\n" + nlMsg.getSuccessorNetworkAddress() + "\n";
 			
 		case Message.REGISTER:
 			RegisterMessage rMsg = (RegisterMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(rMsg.getSensor().getID()) + "\n" + Base64.encodeBytes(rMsg.getOrigHash().getID()) + "\n" + rMsg.getOrigAddress() + "\n";
 			
 		case Message.REGISTER_RESPONSE:
 			RegisterResponseMessage rrMsg = (RegisterResponseMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(rrMsg.getSensor().getID()) + "\n" + Base64.encodeBytes(rrMsg.getOrigHash().getID()) + "\n" ;
 			
 		case Message.RESOLVE:
 			ResolveMessage reMsg = (ResolveMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(reMsg.getSensorHash().getID()) + "\n" + reMsg.getOrigAddress() + "\n";
 			
 		case Message.RESOLVE_RESPONSE:
 			ResolveResponseMessage rerMsg = (ResolveResponseMessage) message;
-			return "";
+			return standard + Base64.encodeBytes(rerMsg.getSensor().getID()) + "\n" + rerMsg.getSensorAddress() + "\n";
 		
 		case Message.BROADCAST:
 			BroadcastMessage bMsg = (BroadcastMessage) message;
-			return "";
+			standard += Base64.encodeBytes(bMsg.getStartKey().getID()) + "\n" + Base64.encodeBytes(bMsg.getEndKey().getID()) + "\n" + bMsg.getInternalType() + "\n";
+			switch (bMsg.getInternalType()) {
+			case Message.KEEPALIVE:
+				KeepAliveMessage kabMsg = (KeepAliveMessage) bMsg.extractMessage();
+				return standard + Base64.encodeBytes(kabMsg.getAdvertisedID().getID()) + "\n" + kabMsg.getAdvertisedNetworkAddress() + "\n";
 			
+			case Message.NODE_SUSPICIOUS:
+				NodeSuspiciousMessage nsbMsg = (NodeSuspiciousMessage) bMsg.extractMessage();
+				return standard + Base64.encodeBytes(nsbMsg.getHash().getID()) + "\n";
+			
+			case Message.NODE_JOIN_NOTIFY:
+				NotifyJoinMessage njbMsg = (NotifyJoinMessage) bMsg.extractMessage();
+				return standard + njbMsg.getNetworkAddress() + "\n" + Base64.encodeBytes(njbMsg.getHash().getID()) + "\n";
+			
+			case Message.NODE_LEAVE_NOTIFY:
+				NotifyLeaveMessage nlbMsg = (NotifyLeaveMessage) bMsg.extractMessage();
+				return standard + Base64.encodeBytes(nlbMsg.getHash().getID()) + "\n" + Base64.encodeBytes(nlbMsg.getSuccessorHash().getID()) + "\n" + nlbMsg.getSuccessorNetworkAddress() + "\n";
+			}	
 		}
 		
 		return "Unknown\n";
@@ -242,47 +261,61 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 				return jMsg;
 				
 			case Message.JOIN_RESPONSE:
-				//TODO split[6] might be null
 				JoinResponseMessage jrMsg = new JoinResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4], new NodeID(Base64.decode(split[5])), new NodeID(Base64.decode(split[6])));
 				return jrMsg;
-			/*	
+				
 			case Message.KEEPALIVE:
 				KeepAliveMessage kaMsg = new KeepAliveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
-				return "";
+				return kaMsg;
 				
 			case Message.NODE_SUSPICIOUS:
-				NodeSuspiciousMessage nsMsg = (NodeSuspiciousMessage) message;
-				return "";
+				NodeSuspiciousMessage nsMsg = new NodeSuspiciousMessage(split[1], split[2], new NodeID(Base64.decode(split[3])));
+				return nsMsg;
 				
 			case Message.NODE_JOIN_NOTIFY:
-				NotifyJoinMessage njMsg = (NotifyJoinMessage) message;
-				return "";
+				NotifyJoinMessage njMsg = new NotifyJoinMessage(split[1], split[2], split[3], new NodeID(Base64.decode(split[4])));
+				return njMsg;
 				
 			case Message.NODE_LEAVE_NOTIFY:
-				NotifyLeaveMessage nlMsg = (NotifyLeaveMessage) message;
-				return "";
+				NotifyLeaveMessage nlMsg = new NotifyLeaveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
+				return nlMsg;
 				
 			case Message.REGISTER:
-				RegisterMessage rMsg = (RegisterMessage) message;
-				return "";
+				RegisterMessage rMsg = new RegisterMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[5]);
+				return rMsg;
 				
 			case Message.REGISTER_RESPONSE:
-				RegisterResponseMessage rrMsg = (RegisterResponseMessage) message;
-				return "";
+				RegisterResponseMessage rrMsg = new RegisterResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])));
+				return rrMsg;
 				
 			case Message.RESOLVE:
-				ResolveMessage reMsg = (ResolveMessage) message;
-				return "";
+				ResolveMessage reMsg = new ResolveMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				return reMsg;
 				
 			case Message.RESOLVE_RESPONSE:
-				ResolveResponseMessage rerMsg = (ResolveResponseMessage) message;
-				return "";
+				ResolveResponseMessage rerMsg =new ResolveResponseMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), split[4]);
+				return rerMsg;
 			
 			case Message.BROADCAST:
-				BroadcastMessage bMsg = (BroadcastMessage) message;
-				return "";
-			*/	
+				//Get the internal type
+				int internalType = Integer.parseInt(split[5]);
+				switch (internalType) {
+				case Message.KEEPALIVE:
+					KeepAliveBroadcastMessage kabMsg = new KeepAliveBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), split[7]);
+					return kabMsg;
 				
+				case Message.NODE_SUSPICIOUS:
+					NodeSuspiciousBroadcastMessage nsbMsg = new NodeSuspiciousBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])));
+					return nsbMsg;
+				
+				case Message.NODE_JOIN_NOTIFY:
+					NotifyJoinBroadcastMessage njbMsg = new NotifyJoinBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), split[6], new NodeID(Base64.decode(split[7])));
+					return njbMsg;
+				
+				case Message.NODE_LEAVE_NOTIFY:
+					NotifyLeaveBroadcastMessage nlbMsg = new NotifyLeaveBroadcastMessage(split[1], split[2], new NodeID(Base64.decode(split[3])), new NodeID(Base64.decode(split[4])), new NodeID(Base64.decode(split[6])), new NodeID(Base64.decode(split[7])), split[8]);
+					return nlbMsg;
+				}
 			}						
 		} catch (Exception e) {
 			e.printStackTrace();
