@@ -83,8 +83,8 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 			public void actionPerformed(ActionEvent e) {
 				String uci = textField.getText();
 				if(!uci.equals("")) {
-					core.resolve(uci);
 					System.out.println("Started to resolve: " + uci);
+					core.resolve(uci);
 				}
 			}
 		});
@@ -96,8 +96,8 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
 			public void actionPerformed(ActionEvent e) {
 				String uci = textField.getText();
 				if(!uci.equals("")) {
-					core.register(uci);
 					System.out.println("Registered: " + uci);
+					core.register(uci);
 				}
 			}
 		});
