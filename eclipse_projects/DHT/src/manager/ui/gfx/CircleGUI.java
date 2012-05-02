@@ -9,8 +9,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -30,6 +32,7 @@ import manager.Network;
 import manager.dht.FingerEntry;
 import manager.dht.Node;
 import manager.dht.NodeID;
+import manager.dht.Sensor;
 import manager.listener.FingerChangeListener;
 import manager.listener.KeepAliveListener;
 import manager.listener.NodeListener;
@@ -252,7 +255,33 @@ KeepAliveListener, ActionListener, ChangeListener {
 			}
 		}
 		//update the node control panel
-		nodeInfo.setText("active Node: "+activeNode.getCommunication().getLocalIp());
+		Communication com = activeNode.getCommunication();
+		Node n = com.getNode();
+		Map<Sensor,FingerEntry> sen = n.getSensors();
+		nodeInfo.setText("<html>active Node: "+com.getNodeID()+com.getLocalIp());
+		if(!sen.isEmpty()) {
+			//Only if there are sensors
+			Collection<Sensor> sensors = sen.keySet();
+			nodeInfo.setText(nodeInfo.getText()+"<br>My sensors:<br>");
+			for(Sensor s: sensors) {
+				//Show the sensors that belong to the node
+				if(s.getOwner().getNetworkAddress().equals(com.getLocalIp())) {
+					nodeInfo.setText(nodeInfo.getText() + s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")<br>");
+					//Delete those the node is not responsible for from the set
+					if(!sen.get(s).getNetworkAddress().equals(com.getLocalIp())) {
+						sen.remove(s);
+					}
+				}
+			}
+		
+			nodeInfo.setText(nodeInfo.getText()+"Responsible for:<br>");
+			for(Sensor s: sensors) {
+				//Show the sensors that the node is responsible for
+				nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+			}
+		}
+		nodeInfo.setText(nodeInfo.getText()+"</html>");
+		
 		nodeDelay.setValue(manager.getMessageDelay(activeNode.getCommunication().getLocalIp()));
 		nodeControl.setEnabled(true);
 	}
@@ -263,7 +292,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		addNode(com);
 		
 		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
-		scheduleHealthTimer();		
+		scheduleRefreshTimer();		
 	}
 
 	@Override
@@ -281,7 +310,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.repaint();
 		
 		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
-		scheduleHealthTimer();
+		scheduleRefreshTimer();
 	}
 
 	@Override
@@ -354,7 +383,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		changedFingersSinceLastKeepalive.repaint();
 		
 		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
-		scheduleHealthTimer();
+		scheduleRefreshTimer();
 	}
 
 	@Override
@@ -368,7 +397,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 			changedFingersSinceLastKeepalive.repaint();
 			
 			//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
-			scheduleHealthTimer();
+			scheduleRefreshTimer();
 		}
 	}
 
@@ -418,7 +447,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		onNodeRemove(timeStamp,com);
 	}
 	
-	private void scheduleHealthTimer() {
+	private void scheduleRefreshTimer() {
 		synchronized(healthTaskLock) {
 			if(healthTask == null) {
 				healthTask = new TimerTask() {
@@ -427,6 +456,36 @@ KeepAliveListener, ActionListener, ChangeListener {
 					public void run() {
 						//Update health
 						healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
+						
+						// If there is an active node, refresh the sensor infos:
+						if(activeNode != null) {
+							Communication com = activeNode.getCommunication();
+							Node n = com.getNode();
+							Map<Sensor,FingerEntry> sen = n.getSensors();
+							nodeInfo.setText("<html>active Node: "+com.getNodeID()+com.getLocalIp()+"<br>");
+							if(!sen.isEmpty()) {
+								//Only if there are sensors
+								Collection<Sensor> sensors = sen.keySet();
+								nodeInfo.setText(nodeInfo.getText()+"My sensors:<br>");
+								for(Sensor s: sensors) {
+									//Show the sensors that belong to the node
+									if(s.getOwner().getNetworkAddress().equals(com.getLocalIp())) {
+										nodeInfo.setText(nodeInfo.getText() + s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")<br>");
+										//Delete those the node is not responsible for from the set
+										if(!sen.get(s).getNetworkAddress().equals(com.getLocalIp())) {
+											sen.remove(s);
+										}
+									}
+								}
+							
+								nodeInfo.setText(nodeInfo.getText()+"Responsible for:<br>");
+								for(Sensor s: sensors) {
+									//Show the sensors that the node is responsible for
+									nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+								}
+							}
+							nodeInfo.setText(nodeInfo.getText()+"</html>");
+						}
 						
 						synchronized(healthTaskLock) {
 							healthTask = null;
