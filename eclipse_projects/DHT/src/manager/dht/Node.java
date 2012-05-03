@@ -499,11 +499,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	private void setIdentity(byte[] hash) {
 		//Set identity
 		identity = new FingerEntry(new NodeID(hash),communication.getLocalIp());
-		
-		//(Re-)initialize finger table
-		//Always add ourselves to the finger table
-		//finger = new TreeMap<FingerEntry,FingerEntry>();
-		//finger.put(identity,identity);
+
 	}
 	
 	//Check if new node can be inserted into finger table
@@ -767,12 +763,12 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD,identity, predecessor);
 			}
 			else {
-				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE,identity, oldPredecessor);
+				if(!finger.containsKey(oldPredecessor)) {
+					fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE,identity, oldPredecessor);
+				}
 				fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER,identity, predecessor);
 			}
 			
-			//Check if it might be a finger
-			//updateFingerTableEntry(oldPredecessor);
 			//return the old predecessor, maybe we can still use it
 			return oldPredecessor;
 		} 
@@ -1047,32 +1043,6 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	private void handleNodeSuspiciousMessage(NodeSuspiciousMessage nsm) {
 		handleFailingNode(nsm.getHash());
 	}
-	
-	/*private synchronized FingerEntry updateSuccessor(FingerEntry newSuccessor) {
-		//TODO first check for don'ts?????
-		
-		FingerEntry oldSuccessor;
-		
-		//It should not be in the finger table
-		finger.remove(newSuccessor);
-
-		//Take the new successor
-		oldSuccessor = successor;
-		successor = newSuccessor;
-
-		//TODO remove debug stuff
-		//Fire events
-		if(!oldSuccessor.equals(identity)) {
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, oldSuccessor);
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newSuccessor);
-		}
-		else {
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, successor);
-		}
-		
-		//return the old Successor, maybe we can still use it
-		return oldSuccessor;
-	}*/
 
 	private class NotifyTask extends TimerTask {
 		
@@ -1149,20 +1119,6 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			
 			//Update predecessor
 			updatePredecessor(newPredecessor);
-/*			synchronized (this) {
-				if(predecessor == null || !predecessor.equals(newPredecessor)) {
-					//TODO remove debugging
-					if(predecessor != null) {
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE_WORSE, identity, predecessor);
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD_BETTER, identity, newPredecessor);
-					}else {
-						fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_ADD, identity, newPredecessor);
-					}
-					
-					
-					predecessor = newPredecessor;
-				}
-			}*/
 			
 			//We have a predecessor - stop trying to find one
 			if(findPredecessorTask != null) {
@@ -1184,15 +1140,9 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 			finger.remove(getSuccessor(null));
 		}
 		else if(predecessor != null && predecessor.getNodeID().equals(dst)) {
-			/*//TODO remove later fire events
-			fireFingerChangeEvent(FingerChangeListener.FINGER_CHANGE_REMOVE, identity, predecessor);
-			
-			//Predecessor failed
-			predecessor = null;*/
 			updatePredecessor(null);
 			
 			//Start recovery task
-			//notify(ACTION_CHECK_PREDECESSOR);
 			findPredecessorTask = startTask(findPredecessorTask,ACTION_CHECK_PREDECESSOR,0);
 		}
 		else if(finger.containsKey(new FingerEntry(dst, null))) {

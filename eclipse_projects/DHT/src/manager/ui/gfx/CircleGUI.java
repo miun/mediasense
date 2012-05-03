@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,12 +17,14 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -67,19 +70,18 @@ KeepAliveListener, ActionListener, ChangeListener {
 	
 	private NodePanel activeNode;
 	
-	//WEST node controlPanel
-	private JPanel nodeControl;
-	private JLabel nodeInfo;
-	private JSpinner nodeDelay;
-	private JButton nodeDeleteButton;
-	
-	//EAST controlPanel
+	//WEST controlPanel
 	private JPanel controlPanel;
 	private JButton addButton;
 	private JButton deleteFinger;
 	private JSpinner networkDelay;
-	
 	private JCheckBox clearOnKeepalive;
+	
+	private JLabel nodeInfo;
+	private JSpinner nodeDelay;
+	private JButton nodeDeleteButton;
+	
+	
 	
 	//Timer for DHT health visualization
 	Timer healthTimer;
@@ -107,7 +109,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		this.northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,20,10));
 		getContentPane().add(northPanel,BorderLayout.NORTH);
 		
-		this.infoLabel = new JLabel("No KeepAlive received yet");
+		this.infoLabel = new JLabel("<html>No KeepAlive received yet</html>");
 		northPanel.add(infoLabel);
 		
 		this.healthLabel = new JLabel("Health: "+manager.calculateHealthOfDHT(false));
@@ -123,6 +125,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.setSize(d);
 		paintingSurface.setPreferredSize(d);
 		paintingSurface.setMinimumSize(d);
+		paintingSurface.setMaximumSize(d);
 		getContentPane().add(paintingSurface, BorderLayout.CENTER);
 		
 		//Add the circle for nodes
@@ -148,45 +151,52 @@ KeepAliveListener, ActionListener, ChangeListener {
 		
 		//A circlePanel which holds all finger-changes since the last keepAlive initiation
 		this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
-		paintingSurface.add(changedFingersSinceLastKeepalive);
+		paintingSurface.add(changedFingersSinceLastKeepalive);		
 		
-		//WEST node controlPanel
-		this.nodeControl = new JPanel();
-		nodeControl.setLayout(new BoxLayout(nodeControl, BoxLayout.Y_AXIS));
-		nodeControl.setEnabled(false);
-		getContentPane().add(nodeControl,BorderLayout.WEST);
+		//West controlPanel
+		this.controlPanel = new JPanel(new GridLayout(0,1));
+		//controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+		getContentPane().add(controlPanel,BorderLayout.WEST);
 		
-		this.nodeInfo = new JLabel("Selected Node: -");
-		nodeControl.add(nodeInfo);
-		
-		this.nodeDelay = new JSpinner();
-		nodeDelay.addChangeListener(this);
-		nodeControl.add(nodeDelay);
-		
-		this.nodeDeleteButton = new JButton("delete");
-		nodeDeleteButton.addActionListener(this);
-		nodeControl.add(nodeDeleteButton);
-		
-		//EAST controlPanel
-		this.controlPanel = new JPanel();
-		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-		getContentPane().add(controlPanel,BorderLayout.EAST);
-		
-		clearOnKeepalive = new JCheckBox("clear on KA");
+		clearOnKeepalive = new JCheckBox("clear lines on KA");
 		controlPanel.add(clearOnKeepalive);
+		
+		deleteFinger = new JButton("clear Lines");
+		deleteFinger.addActionListener(this);
+		controlPanel.add(deleteFinger);
 		
 		addButton = new JButton("add Node");
 		addButton.addActionListener(this);
 		controlPanel.add(addButton);
 		
-		deleteFinger = new JButton("delete Lines");
-		deleteFinger.addActionListener(this);
-		controlPanel.add(deleteFinger);
+		//Dimension for the JSpinners
+		Dimension sDim = new Dimension(150, 30);
 		
 		this.networkDelay = new JSpinner();
+		networkDelay.setPreferredSize(sDim);
+		networkDelay.setMaximumSize(sDim);
 		networkDelay.addChangeListener(this);
 		networkDelay.setValue(manager.getMessageDelay(null));
 		controlPanel.add(networkDelay);
+		
+		//Seperator
+		controlPanel.add(Box.createVerticalStrut(10));
+		controlPanel.add(new JSeparator());
+		controlPanel.add(Box.createVerticalStrut(10));
+		
+		//Node specific
+		this.nodeInfo = new JLabel("Selected Node: -");
+		controlPanel.add(nodeInfo);
+		
+		this.nodeDelay = new JSpinner();
+		nodeDelay.setPreferredSize(sDim);
+		nodeDelay.setMaximumSize(sDim);
+		nodeDelay.addChangeListener(this);
+		controlPanel.add(nodeDelay);
+		
+		this.nodeDeleteButton = new JButton("delete");
+		nodeDeleteButton.addActionListener(this);
+		controlPanel.add(nodeDeleteButton);
 		
 		//Show the Frame
 		this.pack();
@@ -244,7 +254,6 @@ KeepAliveListener, ActionListener, ChangeListener {
 				activeNode = null;
 				//make the node control panel inactive
 				nodeInfo.setText("active node: -");
-				nodeControl.setEnabled(false);
 				return;
 			} else {
 				//Set the new active node
@@ -283,7 +292,6 @@ KeepAliveListener, ActionListener, ChangeListener {
 		nodeInfo.setText(nodeInfo.getText()+"</html>");
 		
 		nodeDelay.setValue(manager.getMessageDelay(activeNode.getCommunication().getLocalIp()));
-		nodeControl.setEnabled(true);
 	}
 	//----------------------------------------//
 	
@@ -291,7 +299,6 @@ KeepAliveListener, ActionListener, ChangeListener {
 	public void onNodeAdd(Date timeStamp,Communication com) {
 		addNode(com);
 		
-		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 		scheduleRefreshTimer();		
 	}
 
@@ -309,7 +316,6 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.validate();
 		paintingSurface.repaint();
 		
-		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 		scheduleRefreshTimer();
 	}
 
@@ -382,13 +388,12 @@ KeepAliveListener, ActionListener, ChangeListener {
 		changedFingersSinceLastKeepalive.validate();
 		changedFingersSinceLastKeepalive.repaint();
 		
-		//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 		scheduleRefreshTimer();
 	}
 
 	@Override
 	public void OnKeepAliveEvent(Date date, NodeID key, String networkAddress) {
-		this.infoLabel.setText("Last KeepAlive initiated by: {" + networkAddress + "} " + key + " on: " + date);
+		this.infoLabel.setText("<html>Last KeepAlive initiated by: {" + networkAddress + "} " + key + " on: " + date + "</html>");
 		if(clearOnKeepalive.isSelected()){
 			paintingSurface.remove(changedFingersSinceLastKeepalive);
 			this.changedFingersSinceLastKeepalive = new CirclePanel(circleRadius,BORDER, null, null);
@@ -396,7 +401,6 @@ KeepAliveListener, ActionListener, ChangeListener {
 			changedFingersSinceLastKeepalive.validate();
 			changedFingersSinceLastKeepalive.repaint();
 			
-			//healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
 			scheduleRefreshTimer();
 		}
 	}
@@ -456,37 +460,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 					public void run() {
 						//Update health
 						healthLabel.setText("Health: "+manager.calculateHealthOfDHT(false));
-						
-						// If there is an active node, refresh the sensor infos:
-						if(activeNode != null) {
-							Communication com = activeNode.getCommunication();
-							Node n = com.getNode();
-							Map<Sensor,FingerEntry> sen = n.getSensors();
-							nodeInfo.setText("<html>active Node: "+com.getNodeID()+com.getLocalIp()+"<br>");
-							if(!sen.isEmpty()) {
-								//Only if there are sensors
-								Collection<Sensor> sensors = sen.keySet();
-								nodeInfo.setText(nodeInfo.getText()+"My sensors:<br>");
-								for(Sensor s: sensors) {
-									//Show the sensors that belong to the node
-									if(s.getOwner().getNetworkAddress().equals(com.getLocalIp())) {
-										nodeInfo.setText(nodeInfo.getText() + s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")<br>");
-										//Delete those the node is not responsible for from the set
-										if(!sen.get(s).getNetworkAddress().equals(com.getLocalIp())) {
-											sen.remove(s);
-										}
-									}
-								}
-							
-								nodeInfo.setText(nodeInfo.getText()+"Responsible for:<br>");
-								for(Sensor s: sensors) {
-									//Show the sensors that the node is responsible for
-									nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
-								}
-							}
-							nodeInfo.setText(nodeInfo.getText()+"</html>");
-						}
-						
+											
 						synchronized(healthTaskLock) {
 							healthTask = null;
 						}

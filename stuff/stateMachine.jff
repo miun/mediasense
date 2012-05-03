@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 6.4.--><structure>
+	<type>mealy</type>
+	<automaton>
+		<!--The list of states.-->
+		<state id="0" name="q0">
+			<x>109.0</x>
+			<y>-49.0</y>
+			<initial/>
+		</state>
+		<state id="1" name="q1">
+			<x>345.0</x>
+			<y>-48.0</y>
+		</state>
+		<state id="2" name="q2">
+			<x>154.0</x>
+			<y>261.0</y>
+			<label>connected</label>
+		</state>
+		<state id="3" name="q3">
+			<x>548.0</x>
+			<y>104.0</y>
+			<label>connecting</label>
+		</state>
+		<state id="4" name="q4">
+			<x>570.0</x>
+			<y>257.0</y>
+			<label>shutdown</label>
+		</state>
+		<!--The list of transitions.-->
+		<transition>
+			<from>2</from>
+			<to>2</to>
+			<read>register</read>
+			<transout>register</transout>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>2</to>
+			<read>resolve</read>
+			<transout>resolve</transout>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>4</to>
+			<read>shutdown</read>
+			<transout>send_notifyLeave</transout>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>1</to>
+			<read>bootstrap</read>
+			<transout>send_join</transout>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>1</to>
+			<read>timer_join</read>
+			<transout>send_join</transout>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>2</to>
+			<controlx>-79</controlx>
+			<controly>233</controly>
+			<read>!bootstrap</read>
+			<transout/>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>2</to>
+			<read>stability_event</read>
+			<transout>stabilze</transout>
+		</transition>
+		<transition>
+			<from>3</from>
+			<to>2</to>
+			<controlx>361</controlx>
+			<controly>183</controly>
+			<read>join_fin</read>
+			<transout/>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>3</to>
+			<read>join_response</read>
+			<transout>send_joinAck</transout>
+		</transition>
+	</automaton>
+</structure>
