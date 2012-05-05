@@ -84,7 +84,6 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		txPktDetailD = new TreeMap<Integer,Long>();
 		
 		//Prepare delta map and copy all elements to counter map
-		resetDeltaMap();
 		txPktDetail.putAll(txPktDetailD);
 		
 		//Register listener
@@ -256,7 +255,6 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 			txPktD = 0;
 			fingerChangesD = 0;
 			connectedD = 0;
-			resetDeltaMap();
 		}
 		catch (IOException e) {
 			//Message and stop
@@ -265,21 +263,5 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		}
 	}
 	
-	private void resetDeltaMap() {
-		//Add the messages you like!!
-		
-		/*txPktDetailD.put(Message.JOIN,0L);
-		txPktDetailD.put(Message.BROADCAST,0L);
-		txPktDetailD.put(Message.JOIN_RESPONSE,0L);
-		txPktDetailD.put(Message.JOIN_ACK,0L);
-		txPktDetailD.put(Message.JOIN_BUSY,0L);
-		txPktDetailD.put(Message.DUPLICATE_NODE_ID,0L);
-		txPktDetailD.put(Message.FIND_PREDECESSOR,0L);
-		txPktDetailD.put(Message.FIND_PREDECESSOR_RESPONSE,0L);
-		txPktDetailD.put(Message.NODE_JOIN_NOTIFY,0L);
-		txPktDetailD.put(Message.NODE_LEAVE_NOTIFY,0L);
-		txPktDetailD.put(Message.KEEPALIVE,0L);
-		*/
-	}
 }
  

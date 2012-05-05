@@ -31,9 +31,6 @@ public final class Manager {
 	//UI classes
 	private Console console;
 	
-	//Timer for Random Events
-	private Timer timer;
-	
 	public static void main(String[] args) {
 		new Manager();
 	}
@@ -59,9 +56,6 @@ public final class Manager {
 			log = null;
 		}
 		
-		//Create Timer object
-		timer = new Timer();
-
 		//Create UI classes
 		console = new Console(this.getInstance());
 		console.run();

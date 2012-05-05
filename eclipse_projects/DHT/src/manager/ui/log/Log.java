@@ -50,7 +50,7 @@ public class Log implements FingerChangeListener,KeepAliveListener,NodeMessageLi
 		//Register listener
 		manager.addFingerChangeListener(this);
 		manager.addKeepAliveListener(this);
-		//manager.addNodeMessageListener(Message.JOIN, this);
+		manager.addNodeMessageListener(Message.JOIN, this);
 		manager.addNodeMessageListener(Message.JOIN_RESPONSE, this);
 		manager.addNodeMessageListener(Message.JOIN_BUSY, this);
 		manager.addNodeMessageListener(Message.JOIN_ACK, this);
