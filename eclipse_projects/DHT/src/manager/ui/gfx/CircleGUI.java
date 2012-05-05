@@ -13,12 +13,12 @@ import java.awt.event.WindowListener;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -64,6 +64,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 	private CirclePanel circleForNodes;
 	
 	private CirclePanel changedFingersSinceLastKeepalive;
+	private CirclePanel sensorPanel;
 	
 	private int circleRadius;
 	private HashMap<String, NodePanel> nodeObjects;
@@ -155,6 +156,11 @@ KeepAliveListener, ActionListener, ChangeListener {
 		
 		//West controlPanel
 		this.controlPanel = new JPanel(new GridLayout(0,1));
+		
+		Dimension controlD = new Dimension(200, circleRadius+2*BORDER);
+		controlPanel.setPreferredSize(controlD);
+		controlPanel.setMaximumSize(controlD);
+		
 		//controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
 		getContentPane().add(controlPanel,BorderLayout.WEST);
 		
@@ -181,7 +187,9 @@ KeepAliveListener, ActionListener, ChangeListener {
 		
 		//Seperator
 		controlPanel.add(Box.createVerticalStrut(10));
+		
 		controlPanel.add(new JSeparator());
+		
 		controlPanel.add(Box.createVerticalStrut(10));
 		
 		//Node specific
@@ -254,6 +262,13 @@ KeepAliveListener, ActionListener, ChangeListener {
 				activeNode = null;
 				//make the node control panel inactive
 				nodeInfo.setText("active node: -");
+				//remove the sensors from the painting surface
+				if(sensorPanel != null) {
+					paintingSurface.remove(sensorPanel);
+					//refresh the paintingsurface
+					paintingSurface.validate();
+					paintingSurface.repaint();
+				}
 				return;
 			} else {
 				//Set the new active node
@@ -263,6 +278,10 @@ KeepAliveListener, ActionListener, ChangeListener {
 				hideFingers(oldActive);
 			}
 		}
+		
+		//remove the sensors from the painting surface
+		if(sensorPanel != null) paintingSurface.remove(sensorPanel);
+		
 		//update the node control panel
 		Communication com = activeNode.getCommunication();
 		Node n = com.getNode();
@@ -270,27 +289,50 @@ KeepAliveListener, ActionListener, ChangeListener {
 		nodeInfo.setText("<html>active Node: "+com.getNodeID()+com.getLocalIp());
 		if(!sen.isEmpty()) {
 			//Only if there are sensors
+			
+			//a circle to draw them
+			sensorPanel = new CirclePanel(circleRadius, BORDER, null, null);
+			
 			Collection<Sensor> sensors = sen.keySet();
+			Collection<Sensor> notRes = new HashSet<Sensor>();
 			nodeInfo.setText(nodeInfo.getText()+"<br>My sensors:<br>");
 			for(Sensor s: sensors) {
 				//Show the sensors that belong to the node
 				if(s.getOwner().getNetworkAddress().equals(com.getLocalIp())) {
+					
+					sensorPanel.add(new SensorPanel(sensorPanel.getPosOnCircle(s.getSensorHash(), 0), Color.RED));
+					
 					nodeInfo.setText(nodeInfo.getText() + s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")<br>");
-					//Delete those the node is not responsible for from the set
+					
+					//save those the node is not responsible for from the set
 					if(!sen.get(s).getNetworkAddress().equals(com.getLocalIp())) {
-						sen.remove(s);
+						notRes.add(s);
 					}
 				}
 			}
 		
 			nodeInfo.setText(nodeInfo.getText()+"Responsible for:<br>");
 			for(Sensor s: sensors) {
-				//Show the sensors that the node is responsible for
-				nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+				if(!notRes.contains(s)) {
+					sensorPanel.add(new SensorPanel(sensorPanel.getPosOnCircle(s.getSensorHash(), 0), Color.GREEN));
+				
+					//Show the sensors that the node is responsible for
+					nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+				}
 			}
+			
+			
+			paintingSurface.add(sensorPanel);
+			
 		}
 		nodeInfo.setText(nodeInfo.getText()+"</html>");
 		
+		if(!paintingSurface.isValid()) {
+			//refresh the paintingsurface
+			paintingSurface.validate();
+			paintingSurface.repaint();
+		}
+			
 		nodeDelay.setValue(manager.getMessageDelay(activeNode.getCommunication().getLocalIp()));
 	}
 	//----------------------------------------//
