@@ -676,4 +676,14 @@ public class Network {
 			return null;
 		}
 	}
+	
+	public boolean getConnectionState(String address) {
+		Communication com = clients.get(address);
+		if(com != null) {
+			return com.getNode().getStateConnected();
+		}
+		else {
+			return false;
+		}
+	}
 }
