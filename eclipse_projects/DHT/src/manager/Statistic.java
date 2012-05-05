@@ -263,5 +263,12 @@ public class Statistic implements FingerChangeListener,NodeMessageListener {
 		}
 	}
 	
+	public void decrementConnected() {
+		synchronized (this) {
+			--connected;
+			--connectedD;
+		}
+	}
+	
 }
  
