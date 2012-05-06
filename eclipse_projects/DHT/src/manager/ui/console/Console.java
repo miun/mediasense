@@ -92,7 +92,7 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			else if(cmd.cmd.toLowerCase().equals("node_add")) {
 				if(cmd.param == null) {
 					manager.addNode(null);
-				} 
+				}
 				else {
 					manager.addNode(cmd.param[0]);
 				}
@@ -220,20 +220,26 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 			}
 			else if(cmd.cmd.toLowerCase().equals("msg_delay")) {
 				//Set delay for message
-				if(cmd.param == null || cmd.param.length > 2) throw new InvalidParamAmountException();
+				if(cmd.param != null && cmd.param.length > 2) throw new InvalidParamAmountException();
 				
-				boolean result;
 				
-				if(cmd.param.length == 1) {
-					result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),null);
+				if(cmd.param != null) {
+					boolean result;
+
+					if(cmd.param.length == 1) {
+						result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),null);
+					}
+					else {
+						result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),cmd.param[1]);
+					}
+
+					//Print result
+					System.out.println("setMessageDelay: " + (result ? "SUCCESSFUL" : "FAILED"));
 				}
 				else {
-					result = manager.setMessageDelay(Integer.parseInt(cmd.param[0]),cmd.param[1]);
+					//Print the current delay
+					System.out.println("Current global message delay: " + manager.getMessageDelay(null) + " ms");
 				}
-				
-				//Print result
-				System.out.println("setMessageDelay: " + (result ? "SUCCESSFUL" : "FAILED"));
-				
 			}
 			else if(cmd.cmd.toLowerCase().equals("circle")) {
 				if(cmd.param == null || cmd.param.length > 1) throw new InvalidParamAmountException();
@@ -266,11 +272,11 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 					//Only one parameter, check for ! or all
 					if(cmd.param[0].equals("!")) {
 						//remove all
-						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!predecessor","!predecessor_response","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious","!check_predecessor","!check_predecessor_response","!check_successor","!check_successor_response","!register","!register_response","!resoslve","!resolve_response"};
+						types = new String[]{"!join","!join_ack","!join_busy","!join_response","!duplicate","!keepalive","!keepalive_response","!notify_join","!notify_leave","!join_finalize","!find_successor","!find_successor_response","!find_precedessor","!find_predecessor_response","!node_suspicious","!check_predecessor","!check_predecessor_response","!check_successor","!check_successor_response","!register","!register_response","!resoslve","!resolve_response"};
 					}
 					else if(cmd.param[0].equals("all")) {
 						//add all
-						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","predecessor","predecessor_response","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious","check_predecessor","check_predecessor_response","check_successor","check_successor_response","register","register_response","resoslve","resolve_response"};
+						types = new String[]{"join","join_ack","join_busy","join_response","duplicate","keepalive","keepalive_response","notify_join","notify_leave","join_finalize","find_successor","find_successor_response","find_precedessor","find_predecessor_response","node_suspicious","check_predecessor","check_predecessor_response","check_successor","check_successor_response","register","register_response","resoslve","resolve_response"};
 					}
 					else if(cmd.param[0].equals("!broadcast")) {
 						types = new String[]{"!keepalive","!keepalive_response","!notify_join","!notify_leave","!node_suspicious"};
@@ -311,10 +317,6 @@ public class Console implements NodeMessageListener,FingerChangeListener,KeepAli
 						msgType = Message.JOIN_BUSY;
 					} else if(type.equals("duplicate")) {
 						msgType = Message.DUPLICATE_NODE_ID;
-					} else if(type.equals("predecessor")) {
-						msgType = Message.FIND_PREDECESSOR;
-					} else if(type.equals("predecessor_response")) {
-						msgType = Message.FIND_PREDECESSOR_RESPONSE;
 					} else if(type.equals("keepalive")) {
 						msgType = Message.KEEPALIVE;
 					} else if(type.equals("keepalive_response")) {

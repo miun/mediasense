@@ -1,4 +1,4 @@
-package communication.rudp;
+package communication.rudp.socket;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -6,15 +6,17 @@ import java.io.IOException;
 
 import communication.Message;
 
-public class RUDPMessageContainer {
+public class RUDPDatagramPacket {
 	//Flags
-	//private static final int FLAG_RESET = 1;
-	private static final int FLAG_ACK = 2;
-	private static final int FLAG_DATA = 4;
-	private static final int FLAG_RESEND = 8;
-	private static final int FLAG_FRAGMENT = 16;
+	private static final int FLAG_FIRST = 1;
+	private static final int FLAG_RESET = 2;
+	private static final int FLAG_ACK = 4;
+	private static final int FLAG_DATA = 8;
+	private static final int FLAG_RESEND = 16;
+	private static final int FLAG_FRAGMENT = 32;
 	
-	//private boolean flag_reset = false;
+//	private boolean flag_
+	private boolean flag_reset = false;
 	private boolean flag_ack = false;
 	private boolean flag_data = false;
 	private boolean flag_resend = false;
@@ -107,7 +109,7 @@ public class RUDPMessageContainer {
 		return null;
 	}
 	
-	private RUDPMessageContainer deserializePacket(byte[] data) {
+	private RUDPDatagramPacket deserializePacket(byte[] data) {
 		return null;
 	}
 }
