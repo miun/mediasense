@@ -1,8 +1,10 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class NodeID implements Comparable<NodeID> {
+@SuppressWarnings("serial")
+public class NodeID implements Comparable<NodeID>,Serializable {
 	//This is the address size, 160 bytes for SHA1
 	public static final int ADDRESS_SIZE = 20;
 	

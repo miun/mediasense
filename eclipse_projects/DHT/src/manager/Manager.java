@@ -31,9 +31,6 @@ public final class Manager {
 	//UI classes
 	private Console console;
 	
-	//Timer for Random Events
-	private Timer timer;
-	
 	public static void main(String[] args) {
 		new Manager();
 	}
@@ -59,9 +56,6 @@ public final class Manager {
 			log = null;
 		}
 		
-		//Create Timer object
-		timer = new Timer();
-
 		//Create UI classes
 		console = new Console(this.getInstance());
 		console.run();
@@ -88,16 +82,22 @@ public final class Manager {
 	public String addNode(String bootstrap) {
 		String address = Network.createSequentialAddress();
 		if(bootstrap == null) bootstrap = network.getRandomClientAddress(true);
-		Network.getInstance().addNode(address,bootstrap);
+		network.addNode(address,bootstrap);
 		return address;
 	}
 	
 	public void removeNode(String networkAddress) {
+		//Decrement number of connected nodes in statistic
+		if(statistic != null && network.getConnectionState(networkAddress)) statistic.decrementConnected();
+		
 		//Forward to network
 		network.removeNode(networkAddress);
 	}
 	
 	public void killNode(String networkAddress) {
+		//Decrement number of connected nodes in statistic
+		if(statistic != null && network.getConnectionState(networkAddress)) statistic.decrementConnected();
+		
 		//Forward to network
 		network.killNode(networkAddress);
 	}
@@ -211,7 +211,7 @@ public final class Manager {
 		
 		for(int i = 0; i < count; i++) {
 			address = network.getRandomClientAddress(false);
-			if(address != null) network.killNode(address);
+			if(address != null) killNode(address);
 		}
 	}
 
@@ -220,7 +220,7 @@ public final class Manager {
 		
 		for(int i = 0; i < count; i++) {
 			address = network.getRandomClientAddress(false);
-			if(address != null) network.removeNode(address);
+			if(address != null) removeNode(address);
 		}
 	}
 	

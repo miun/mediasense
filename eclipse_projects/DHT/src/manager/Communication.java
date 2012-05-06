@@ -13,8 +13,6 @@ import manager.dht.NodeID;
  * The communication simulates the communication layer between the nodes. 
  * To test our implementation of the DHT on its own this class
  * has been built. 
- * @author florianrueter
- *
  */
 public class Communication extends Thread implements CommunicationInterface {
 	private Network network;

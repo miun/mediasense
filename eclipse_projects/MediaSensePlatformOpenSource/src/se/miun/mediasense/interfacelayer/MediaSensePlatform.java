@@ -105,7 +105,7 @@ public class MediaSensePlatform {
 			//Uses the public bootstrap node
 			//lookupService = new DistributedLookup(disseminationCore, communication, "193.10.119.33"); //Public 
 			//lookupService = new DistributedLookup(disseminationCore, communication, "10.14.1.76"); //Andra datorn
-			lookupService = new Node(communication,disseminationCore, "10.14.1.214"); //Min dator
+			lookupService = new Node(communication,disseminationCore, "10.13.1.122"); //Null to be a bootstrap node
 
 			break;
 			

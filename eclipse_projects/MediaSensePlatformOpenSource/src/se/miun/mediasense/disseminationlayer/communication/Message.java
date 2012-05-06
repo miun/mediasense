@@ -1,8 +1,13 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.EndSubscribeMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.NotifySubscribersMessage;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.StartSubscribeMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckPredecessorResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.CheckSuccessorMessage;
@@ -11,6 +16,7 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.FindPredecessorResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinAckMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinBusyMessage;
+import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinFinalizeMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.JoinResponseMessage;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast.NodeSuspiciousMessage;
@@ -23,6 +29,11 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 
 public abstract class Message {
 
+	//Magic words
+	public final static int MAGIC_WORD_UNICAST = 0xcafebabe;
+	public final static int MAGIC_WORD_BROADCAST = 0xdeadbeef;
+	
+	//Message types	
 	public final static int UNKNOWN = 0;
 	public final static int GET = 1;
 	public final static int SET = 2;
@@ -33,7 +44,6 @@ public abstract class Message {
 	public final static int NOTIFYSUBSCRIBERS = 9;
 	public final static int ACK = 10;
 
-	
 	//DHT messages
 	public final static int BROADCAST = 17;
 
@@ -106,46 +116,74 @@ public abstract class Message {
 		return 4 + 4 + 1;
 	}
 	
-	public byte[] toByteArray() {
-		//Return byte representation of this class
-		byte[] array =  new byte[1];
-		array[0] = (byte)type;
-		return array;
+	//Abstract methods for serialization
+	public void serializeMessage(DataOutputStream dos) {
+		try {
+			dos.writeInt(MAGIC_WORD_UNICAST);
+			dos.writeByte(type);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
-	public static Message fromByteArray(byte[] data) {
-		//Check type
-		if(data == null || data.length == 0) return null;
-		int t = (int)data[0];
-		byte[] subdata = new byte[data.length - 1];
-		System.arraycopy(data, 1, subdata, 0, data.length - 1);
+	public static Message deserializeMessage(DataInputStream ois,String fromIp,String toIp) {
+		int type;
+		int magic_word;
 		
-		switch(t) {
-		case GET: return GetMessage.fromByteArray(subdata);
-		case SET: return SetMessage.fromByteArray(subdata);
-		case NOTIFY: return NotifyMessage.fromByteArray(subdata);
-		case STARTSUBSCRIBE: return StartSubscribeMessage.fromByteArray(subdata);
-		case ENDSUBSCRIBE: return EndSubscribeMessage.fromByteArray(subdata);
-		case NOTIFYSUBSCRIBERS: return NotifySubscribersMessage.fromByteArray(subdata);
-		//case ACK: return Ack.fromByteArray(subdata);
-		case REGISTER: return RegisterMessage.fromByteArray(subdata);
-		case REGISTER_RESPONSE: return RegisterResponseMessage.fromByteArray(subdata);
-		case RESOLVE: return ResolveMessage.fromByteArray(subdata);
-		case RESOLVE_RESPONSE: return ResolveResponseMessage.fromByteArray(subdata);
-		case JOIN: return JoinMessage.fromByteArray(subdata);
-		case JOIN_RESPONSE: return JoinResponseMessage.fromByteArray(subdata);
-		case JOIN_BUSY: return JoinBusyMessage.fromByteArray(subdata);
-		case JOIN_ACK: return JoinAckMessage.fromByteArray(subdata);
-		case NODE_JOIN_NOTIFY: return NotifyJoinMessage.fromByteArray(subdata);
-		case NODE_LEAVE_NOTIFY: return NotifyLeaveMessage.fromByteArray(subdata);
-		case NODE_SUSPICIOUS: return NodeSuspiciousMessage.fromByteArray(subdata);
-		case FIND_PREDECESSOR: return FindPredecessorMessage.fromByteArray(subdata);
-		case FIND_PREDECESSOR_RESPONSE: return FindPredecessorResponseMessage.fromByteArray(subdata);
-		case CHECK_PREDECESSOR: return CheckPredecessorMessage.fromByteArray(subdata);
-		case CHECK_PREDECESSOR_RESPONSE: return CheckPredecessorResponseMessage.fromByteArray(subdata);
-		case CHECK_SUCCESSOR: return CheckSuccessorMessage.fromByteArray(subdata);
-		case CHECK_SUCCESSOR_RESPONSE: return CheckSuccessorResponseMessage.fromByteArray(subdata);
-		default: return null;
+		//Read magic word
+		try {
+			magic_word = ois.readInt();
+		}
+		catch (IOException e) {
+			return null;
+		}
+		
+		if(magic_word == MAGIC_WORD_UNICAST) {
+			//Read type information
+			try {
+				type = ois.readByte();
+			}
+			catch (IOException e) {
+				return null;
+			}
+
+			//Mapping types <-> classes
+			switch(type) {
+			case Message.GET: return GetMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.SET: return SetMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.NOTIFY: return NotifyMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.STARTSUBSCRIBE: return StartSubscribeMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.ENDSUBSCRIBE: return EndSubscribeMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.NOTIFYSUBSCRIBERS: return NotifySubscribersMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.REGISTER: return RegisterMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.REGISTER_RESPONSE: return RegisterResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.RESOLVE: return ResolveMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.RESOLVE_RESPONSE: return ResolveResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN: return JoinMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN_RESPONSE: return JoinResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN_BUSY: return JoinBusyMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN_ACK: return JoinAckMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.JOIN_FINALIZE: return JoinFinalizeMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.NODE_JOIN_NOTIFY: return NotifyJoinMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.NODE_LEAVE_NOTIFY: return NotifyLeaveMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.NODE_SUSPICIOUS: return NodeSuspiciousMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.FIND_PREDECESSOR: return FindPredecessorMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.FIND_PREDECESSOR_RESPONSE: return FindPredecessorResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.CHECK_PREDECESSOR: return CheckPredecessorMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.CHECK_PREDECESSOR_RESPONSE: return CheckPredecessorResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.CHECK_SUCCESSOR: return CheckSuccessorMessage.deserializeMessage(ois,fromIp,toIp);
+			case Message.CHECK_SUCCESSOR_RESPONSE: return CheckSuccessorResponseMessage.deserializeMessage(ois,fromIp,toIp);
+			default: return null;
+			}
+		}
+		else if(magic_word == MAGIC_WORD_BROADCAST) {
+			//Forward to broadcast message
+			return BroadcastMessage.deserializeMessage(ois, fromIp, toIp);
+		}
+		else {
+			//Invalid data received
+			return null;
 		}
 	}
 }

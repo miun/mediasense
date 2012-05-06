@@ -181,8 +181,9 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 	private void handleMessage(String stringRepresentation) {
 		try {
 
+			//TODO make fromIP and toIP 
 			Message message = messageSerializer
-					.deserializeMessage(stringRepresentation.getBytes());
+					.deserializeMessage(stringRepresentation.getBytes(),"","");
 
 			switch (message.getType()) {
 
@@ -216,6 +217,7 @@ public class TcpProxyCommunication implements CommunicationInterface, Runnable {
 						.getAddInManager();
 				addInManager.forwardMessageToAddIns(message);
 				break;
+				
 
 			}
 

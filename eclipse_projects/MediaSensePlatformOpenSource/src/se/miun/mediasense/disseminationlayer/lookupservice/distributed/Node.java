@@ -348,8 +348,10 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 					break;
 				case ACTION_CHECK_PREDECESSOR:
 					synchronized(this) {
-						//Send message to check the successor->predecessor link
-						sendMessage(new CheckPredecessorMessage(identity.getNetworkAddress(), getSuccessor(null).getNetworkAddress(), identity.getNodeID()),getSuccessor(null).getNodeID());
+						if(predecessor != null) {
+							//Send message to check the successor->predecessor link
+							sendMessage(new CheckPredecessorMessage(identity.getNetworkAddress(), predecessor.getNetworkAddress(), identity.getNodeID()),predecessor.getNodeID());
+						}
 						checkPredecessorTask = startTask(checkPredecessorTask, ACTION_CHECK_PREDECESSOR, CHECK_PREDECESSOR_PERIOD);
 					}
 					break;
@@ -1342,9 +1344,11 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 		if(rs != null) {
 			//Abort timer and remove from list
 			rs.abort();
+			
+			//Trigger successful resolve event
+			disseminationCore.callResolveResponseListener(rs.uci, rrm.getSensorAddress());
 		}
 		
-		//Forward
 	}
 	
 	private void rearrangeLocalSensorMapping() {
