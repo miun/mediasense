@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,18 +12,17 @@ import java.awt.event.WindowListener;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -64,6 +62,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 	private CirclePanel circleForNodes;
 	
 	private CirclePanel changedFingersSinceLastKeepalive;
+	private CirclePanel sensorPanel;
 	
 	private int circleRadius;
 	private HashMap<String, NodePanel> nodeObjects;
@@ -80,6 +79,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 	private JLabel nodeInfo;
 	private JSpinner nodeDelay;
 	private JButton nodeDeleteButton;
+	private JButton nodeKillButton;
 	
 	
 	
@@ -154,24 +154,45 @@ KeepAliveListener, ActionListener, ChangeListener {
 		paintingSurface.add(changedFingersSinceLastKeepalive);		
 		
 		//West controlPanel
-		this.controlPanel = new JPanel(new GridLayout(0,1));
-		//controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-		getContentPane().add(controlPanel,BorderLayout.WEST);
+		this.controlPanel = new JPanel();
+		controlPanel.setLayout(new FlowLayout(FlowLayout.LEFT,10,0));
+		JPanel gap;
+		
+		Dimension controlD = new Dimension(200, 400);
+		controlPanel.setPreferredSize(controlD);
+		controlPanel.setMaximumSize(controlD);
+		
+		JScrollPane scrollPane = new JScrollPane(controlPanel);
+		getContentPane().add(scrollPane,BorderLayout.WEST);
+		
+		//Dimension for the Components
+		Dimension sDim = new Dimension(150, 30);
+		
+		controlPanel.add(new JLabel("Network controls:"));
 		
 		clearOnKeepalive = new JCheckBox("clear lines on KA");
+		clearOnKeepalive.setPreferredSize(sDim);
 		controlPanel.add(clearOnKeepalive);
 		
 		deleteFinger = new JButton("clear Lines");
 		deleteFinger.addActionListener(this);
+		deleteFinger.setPreferredSize(sDim);
 		controlPanel.add(deleteFinger);
+		
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
 		
 		addButton = new JButton("add Node");
 		addButton.addActionListener(this);
+		addButton.setPreferredSize(sDim);
 		controlPanel.add(addButton);
 		
-		//Dimension for the JSpinners
-		Dimension sDim = new Dimension(150, 30);
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
 		
+		controlPanel.add(new JLabel("Network delay:"));
 		this.networkDelay = new JSpinner();
 		networkDelay.setPreferredSize(sDim);
 		networkDelay.setMaximumSize(sDim);
@@ -179,25 +200,49 @@ KeepAliveListener, ActionListener, ChangeListener {
 		networkDelay.setValue(manager.getMessageDelay(null));
 		controlPanel.add(networkDelay);
 		
-		//Seperator
-		controlPanel.add(Box.createVerticalStrut(10));
-		controlPanel.add(new JSeparator());
-		controlPanel.add(Box.createVerticalStrut(10));
-		
 		//Node specific
+		
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 30));
+		controlPanel.add(gap);
+		
+		controlPanel.add(new JLabel("Node controls:"));
+
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
+		
 		this.nodeInfo = new JLabel("Selected Node: -");
 		controlPanel.add(nodeInfo);
 		
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
+		
+		controlPanel.add(new JLabel("Extra delay:"));
 		this.nodeDelay = new JSpinner();
 		nodeDelay.setPreferredSize(sDim);
 		nodeDelay.setMaximumSize(sDim);
 		nodeDelay.addChangeListener(this);
 		controlPanel.add(nodeDelay);
 		
-		this.nodeDeleteButton = new JButton("delete");
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
+		
+		this.nodeDeleteButton = new JButton("shut down");
 		nodeDeleteButton.addActionListener(this);
+		nodeDeleteButton.setPreferredSize(sDim);
 		controlPanel.add(nodeDeleteButton);
 		
+		gap = new JPanel();
+		gap.setPreferredSize(new Dimension(199, 10));
+		controlPanel.add(gap);
+		
+		this.nodeKillButton = new JButton("kill");
+		nodeKillButton.addActionListener(this);
+		nodeKillButton.setPreferredSize(sDim);
+		controlPanel.add(nodeKillButton);
 		//Show the Frame
 		this.pack();
 		
@@ -254,6 +299,13 @@ KeepAliveListener, ActionListener, ChangeListener {
 				activeNode = null;
 				//make the node control panel inactive
 				nodeInfo.setText("active node: -");
+				//remove the sensors from the painting surface
+				if(sensorPanel != null) {
+					paintingSurface.remove(sensorPanel);
+					//refresh the paintingsurface
+					paintingSurface.validate();
+					paintingSurface.repaint();
+				}
 				return;
 			} else {
 				//Set the new active node
@@ -263,34 +315,61 @@ KeepAliveListener, ActionListener, ChangeListener {
 				hideFingers(oldActive);
 			}
 		}
+		
+		//remove the sensors from the painting surface
+		if(sensorPanel != null) paintingSurface.remove(sensorPanel);
+		
 		//update the node control panel
 		Communication com = activeNode.getCommunication();
 		Node n = com.getNode();
 		Map<Sensor,FingerEntry> sen = n.getSensors();
-		nodeInfo.setText("<html>active Node: "+com.getNodeID()+com.getLocalIp());
+		nodeInfo.setText("<html>active Node: "+com.getNodeID()+ " (" + com.getLocalIp() + ")");
 		if(!sen.isEmpty()) {
 			//Only if there are sensors
+			
+			//a circle to draw them
+			sensorPanel = new CirclePanel(circleRadius, BORDER, null, null);
+			
 			Collection<Sensor> sensors = sen.keySet();
+			Collection<Sensor> notRes = new HashSet<Sensor>();
 			nodeInfo.setText(nodeInfo.getText()+"<br>My sensors:<br>");
 			for(Sensor s: sensors) {
 				//Show the sensors that belong to the node
 				if(s.getOwner().getNetworkAddress().equals(com.getLocalIp())) {
+					
+					sensorPanel.add(new SensorPanel(sensorPanel.getPosOnCircle(s.getSensorHash(), 0), Color.RED));
+					
 					nodeInfo.setText(nodeInfo.getText() + s.getSensorHash() + " stored @ (" + sen.get(s).getNetworkAddress() +")<br>");
-					//Delete those the node is not responsible for from the set
+					
+					//save those the node is not responsible for from the set
 					if(!sen.get(s).getNetworkAddress().equals(com.getLocalIp())) {
-						sen.remove(s);
+						notRes.add(s);
 					}
 				}
 			}
 		
 			nodeInfo.setText(nodeInfo.getText()+"Responsible for:<br>");
 			for(Sensor s: sensors) {
-				//Show the sensors that the node is responsible for
-				nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+				if(!notRes.contains(s)) {
+					sensorPanel.add(new SensorPanel(sensorPanel.getPosOnCircle(s.getSensorHash(), 0), Color.GREEN));
+				
+					//Show the sensors that the node is responsible for
+					nodeInfo.setText(nodeInfo.getText()+s.getSensorHash() + "from (" + s.getOwner().getNetworkAddress() + ")<br>");
+				}
 			}
+			
+			
+			paintingSurface.add(sensorPanel);
+			
 		}
 		nodeInfo.setText(nodeInfo.getText()+"</html>");
 		
+		if(!paintingSurface.isValid()) {
+			//refresh the paintingsurface
+			paintingSurface.validate();
+			paintingSurface.repaint();
+		}
+			
 		nodeDelay.setValue(manager.getMessageDelay(activeNode.getCommunication().getLocalIp()));
 	}
 	//----------------------------------------//
@@ -408,7 +487,7 @@ KeepAliveListener, ActionListener, ChangeListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource().equals(addButton)) {
-			manager.addNode(String.valueOf(0));
+			manager.addNode(null);
 		} 
 		else if (e.getSource().equals(deleteFinger)){
 			paintingSurface.remove(changedFingersSinceLastKeepalive);
@@ -419,6 +498,12 @@ KeepAliveListener, ActionListener, ChangeListener {
 		} else if (e.getSource().equals(nodeDeleteButton)) {
 			if(activeNode != null) {
 				manager.removeNode(activeNode.getCommunication().getLocalIp());
+				setActiveNode(activeNode);
+			}
+		} else if (e.getSource().equals(nodeKillButton)) {
+			if(activeNode != null) {
+				manager.killNode(activeNode.getCommunication().getLocalIp());
+				setActiveNode(activeNode);
 			}
 		}
 	}
