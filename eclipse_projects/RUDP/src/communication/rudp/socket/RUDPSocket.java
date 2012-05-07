@@ -34,13 +34,17 @@ public class RUDPSocket implements RUDPLinkTimeoutListener {
 		RUDPLink link;
 		InetSocketAddress sa;
 		
+		//Get or create link
 		sa = datagram.getSocketAddress();
 		link = links.get(sa);
-		
 		if(link == null) {
 			link = new RUDPLink(sa,this, timer);
 			links.put(sa, link);
 		}
+		
+		//Send
+		link.send(datagram);
+		
 	}
 	
 	public void receive(RUDPDatagram datagram) throws SocketException {
