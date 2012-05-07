@@ -15,13 +15,15 @@ public class RUDPLink {
 	private InetSocketAddress sa;
 	private Timer timer;
 	private RUDPLinkTimeoutListener listener_timeout;
+	private RUDPReceiveListener listener_receive;
 	
 	//Packet buffer
 	private HashMap<RUDPDatagramPacket,Integer> packet_buffer;
 	
-	public RUDPLink(InetSocketAddress sa,RUDPLinkTimeoutListener listener,Timer timer) {
+	public RUDPLink(InetSocketAddress sa,RUDPLinkTimeoutListener listener_to,RUDPReceiveListener listener_recv,Timer timer) {
 		//Set timer and listener
-		this.listener_timeout = listener;
+		this.listener_timeout = listener_to;
+		this.listener_receive = listener_recv;
 		
 		//Set or create timer
 		if(timer == null) {
@@ -37,5 +39,13 @@ public class RUDPLink {
 	
 	public InetSocketAddress getSocketAddress() {
 		return sa;
+	}
+	
+	public void send(RUDPDatagram datagram) {
+		
+	}
+	
+	public void putReceivedData(byte[] data,int len) {
+		
 	}
 }
