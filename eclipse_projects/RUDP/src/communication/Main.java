@@ -17,13 +17,13 @@ public class Main {
 		CommunicationInterface comm2 = new RUDP(core2);*/
 		
 		//Message msg;
-		RUDPDatagram dgram;
-		InetAddress dst = InetAddress.getByName("10.13.1.122");
-		byte[] data = new byte[1024];
-		Random R = new Random();
-		R.nextBytes(data);
-		
 		try {
+			RUDPDatagram dgram;
+			InetAddress dst = InetAddress.getByName("10.13.1.122");
+			byte[] data = new byte[200000];
+			Random R = new Random();
+			R.nextBytes(data);
+
 			RUDPSocket sock = new RUDPSocket();
 			dgram = new RUDPDatagram(dst, 23456, data);
 			sock.send(dgram);
@@ -43,7 +43,7 @@ public class Main {
 		}*/
 		
 		//Shutdown
-		comm1.shutdown();
-		comm2.shutdown();
+		//comm1.shutdown();
+		//comm2.shutdown();
 	}
 }

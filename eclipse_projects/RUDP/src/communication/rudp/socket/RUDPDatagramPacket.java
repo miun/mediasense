@@ -41,6 +41,7 @@ public class RUDPDatagramPacket {
 	private short frag_count;
 
 	//ACK data
+	int ack_seq;
 	short ack_data[];
 	
 	//Data
@@ -53,12 +54,12 @@ public class RUDPDatagramPacket {
 		this.listener = listener;
 	}
 	
-	public RUDPDatagramPacket(int seq,boolean resend,Short frag_nr,Short frag_last,short[] ack_data,byte[] data,int data_off,int data_len) {
+/*	public RUDPDatagramPacket(int seq,boolean resend,Short frag_nr,Short frag_last,short[] ack_data,byte[] data,int data_off,int data_len) {
 		//Set all the data
 		setData(data,data_off,data_len, seq, resend);
 		setFragment(frag_nr, frag_last);
 		setACK(ack_data);
-	}
+	}*/
 	
 	public RUDPDatagramPacket(byte[] packet) throws InvalidRUDPPacketException,IOException {
 		ByteArrayInputStream bis;
@@ -88,6 +89,7 @@ public class RUDPDatagramPacket {
 		
 		//Read variable length fields
 		if(flag_ack) {
+			ack_seq = dis.readInt();
 			ack_data = new short[ack_count];
 			for(int i = 0; i < ack_count; i++) {
 				ack_data[i] = dis.readShort();				
@@ -102,43 +104,41 @@ public class RUDPDatagramPacket {
 	}
 
 	//Set fragment information
-	public void setFragment(Short nr,Short count) {
-		if(nr == null || count == null) {
-			flag_fragment = false;
-		}
-		else {
-			flag_fragment = true;
-			this.frag_nr = nr; 
-			this.frag_count = count;
-		}
+	public void setFragmentFlag(boolean flag) {
+		flag_fragment = flag;
+	}
+	
+	public void setFragment(short nr,short count) {
+		this.flag_fragment = true;
+		this.frag_nr = nr; 
+		this.frag_count = count;
 	}
 	
 	//Set acknowledge 
-	public void setACK(short[] ack_data ) {
+	public void setACK(int ack_seq,short[] ack_data) {
 		if(ack_data == null) {
 			flag_ack = false;
 		}
 		else {
 			flag_ack = true;
 			this.ack_data = ack_data;
+			this.ack_seq = ack_seq;
 		}
 	}
 	
 	//Set data
+	public void setDataFlag(boolean flag) {
+		flag_data = flag;
+		data = new byte[0];
+	}
+	
 	public void setData(byte[] data,int data_off,int data_len,int seq,boolean resend) {
-		if(data == null) {
-			flag_data = false;
-			flag_resend = false;
-			this.data = null;
-		}
-		else {
-			flag_data = true;
-			flag_resend = resend;
-			this.data_off = data_off;
-			this.data_len = data_len;
-			this.data = data;
-			this.seq = seq;
-		}
+		flag_data = true;
+		flag_resend = resend;
+		this.data_off = data_off;
+		this.data_len = data_len;
+		this.data = data;
+		this.seq = seq;
 	}
 	
 	public Boolean getFlag(int flag) {
@@ -165,7 +165,10 @@ public class RUDPDatagramPacket {
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
 			
 			//Write static length fields
-			if(flag_ack) dos.writeShort(ack_data.length);
+			if(flag_ack) {
+				dos.writeInt(ack_seq);
+				dos.writeShort(ack_data.length);
+			}
 			if(flag_data) dos.writeInt(seq);
 			if(flag_fragment) {
 				dos.writeShort(frag_nr);
@@ -190,13 +193,15 @@ public class RUDPDatagramPacket {
 	}
 	
 	public int getRemainingLength() {
-		int size = MAX_PACKET_SIZE - 8;
+		//Subtract the IP and UDP header
+		//TODO find a better way to figure out the maximum payload size
+		int size = MAX_PACKET_SIZE - 20 - 8;
 		
 		//Flag
 		size -= Byte.SIZE / 8; 
 
 		//ACK length
-		if(flag_ack) size -= Short.SIZE / 8;
+		if(flag_ack) size -= Short.SIZE / 8 + Integer.SIZE / 8;
 		
 		//Sequence number
 		if(flag_data) size -= Integer.SIZE / 8;
@@ -228,15 +233,16 @@ public class RUDPDatagramPacket {
 		if(retries >= MAX_PACKET_RETRY) {
 			System.out.println("PACKET failed");
 		}
-		
-		//Cancel old timer
-		if(task_resend != null) {
-			task_resend.cancel();
+		else {
+			//Cancel old timer
+			if(task_resend != null) {
+				task_resend.cancel();
+			}
+			
+			//Restart new timer
+			task_resend = new TimeoutTask(this);
+			timer.schedule(task_resend,timeout);
 		}
-		
-		//Restart new timer
-		task_resend = new TimeoutTask(this);
-		timer.schedule(task_resend,timeout);
 	}
 	
 	private class TimeoutTask extends TimerTask {
@@ -250,6 +256,23 @@ public class RUDPDatagramPacket {
 		public void run() {
 			listener.onSendTimeout(packet);
 		}
+	}
+	
+	public void acknowldege() {
+		//Cancel resend task
+		task_resend.cancel();
+	}
+	
+	public int getSequenceNr() {
+		return seq;
+	}
+	
+	public short[] getAckData() {
+		return ack_data;
+	}
+	
+	public int getAckSeq() {
+		return ack_seq;
 	}
 	
 	@Override
