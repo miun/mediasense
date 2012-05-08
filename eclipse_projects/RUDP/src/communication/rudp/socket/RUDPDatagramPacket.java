@@ -5,8 +5,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class RUDPDatagramPacket {
+	private static final int MAX_PACKET_SIZE = 65535;
+	private static final int MAX_PACKET_RETRY = 3;
+	
 	//Flags
 	public static final int FLAG_FIRST = 1;
 	public static final int FLAG_RESET = 2;
@@ -21,30 +26,37 @@ public class RUDPDatagramPacket {
 	private boolean flag_data = false;
 	private boolean flag_resend = false;
 	private boolean flag_fragment = false;
+	
+	private Timer timer;
+	private TimerTask task_resend;
+	private RUDPSendTimeoutListener listener;
+	private int retries = 0;
 
 	//Sequence of this packet
 	private int seq;
 	
 	//If this packet is part of a fragmented datagram,
 	//these flags indicate the first and last fragment
-	private short frag_first;
 	private short frag_nr;
-	private short frag_last;
+	private short frag_count;
 
 	//ACK data
 	short ack_data[];
 	
 	//Data
+	int data_off;
+	int data_len;
 	byte[] data;
-	
-	public RUDPDatagramPacket() {
-		//Empty constructor also possible
+		
+	public RUDPDatagramPacket(Timer timer,RUDPSendTimeoutListener listener) {
+		this.timer = timer;
+		this.listener = listener;
 	}
 	
-	public RUDPDatagramPacket(int seq,boolean resend,Short frag_first,Short frag_nr,Short frag_last,short[] ack_data,byte[] data) {
+	public RUDPDatagramPacket(int seq,boolean resend,Short frag_nr,Short frag_last,short[] ack_data,byte[] data,int data_off,int data_len) {
 		//Set all the data
-		setData(data, seq, resend);
-		setFragment(frag_first, frag_nr, frag_last);
+		setData(data,data_off,data_len, seq, resend);
+		setFragment(frag_nr, frag_last);
 		setACK(ack_data);
 	}
 	
@@ -70,9 +82,8 @@ public class RUDPDatagramPacket {
 		if(flag_ack) ack_count = dis.readShort();
 		if(flag_data) seq = dis.readInt();
 		if(flag_fragment) {
-			frag_first = dis.readShort();
 			frag_nr = dis.readShort();
-			frag_last = dis.readShort();
+			frag_count = dis.readShort();
 		}
 		
 		//Read variable length fields
@@ -91,15 +102,14 @@ public class RUDPDatagramPacket {
 	}
 
 	//Set fragment information
-	public void setFragment(Short first,Short nr,Short last) {
-		if(first == null || last == null || nr == null) {
+	public void setFragment(Short nr,Short count) {
+		if(nr == null || count == null) {
 			flag_fragment = false;
 		}
 		else {
 			flag_fragment = true;
-			this.frag_first = first;
-			this.frag_last = last;
 			this.frag_nr = nr; 
+			this.frag_count = count;
 		}
 	}
 	
@@ -115,7 +125,7 @@ public class RUDPDatagramPacket {
 	}
 	
 	//Set data
-	public void setData(byte[] data,int seq,boolean resend) {
+	public void setData(byte[] data,int data_off,int data_len,int seq,boolean resend) {
 		if(data == null) {
 			flag_data = false;
 			flag_resend = false;
@@ -124,6 +134,8 @@ public class RUDPDatagramPacket {
 		else {
 			flag_data = true;
 			flag_resend = resend;
+			this.data_off = data_off;
+			this.data_len = data_len;
 			this.data = data;
 			this.seq = seq;
 		}
@@ -156,14 +168,13 @@ public class RUDPDatagramPacket {
 			if(flag_ack) dos.writeShort(ack_data.length);
 			if(flag_data) dos.writeInt(seq);
 			if(flag_fragment) {
-				dos.writeShort(frag_first);
 				dos.writeShort(frag_nr);
-				dos.writeShort(frag_last);
+				dos.writeShort(frag_count);
 			}
 			
 			//Write variable length fields
 			if(flag_ack) for(short s: ack_data) dos.writeShort(s);
-			if(flag_data) dos.write(data);
+			if(flag_data) dos.write(data,data_off,data_len);
 			
 			//Flush, close and write
 			dos.flush();
@@ -175,6 +186,69 @@ public class RUDPDatagramPacket {
 		catch(IOException e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+	public int getRemainingLength() {
+		int size = MAX_PACKET_SIZE - 8;
+		
+		//Flag
+		size -= Byte.SIZE / 8; 
+
+		//ACK length
+		if(flag_ack) size -= Short.SIZE / 8;
+		
+		//Sequence number
+		if(flag_data) size -= Integer.SIZE / 8;
+		
+		//Fragment
+		if(flag_fragment) size -= 2 * (Short.SIZE / 8);
+		
+		//ACK field
+		if(flag_ack) size -= ack_data.length * (Short.SIZE / 8);
+		
+		//Data field
+		if(flag_data) size -= data.length * (Byte.SIZE / 8);
+		return size;
+	}
+	
+	public Short getFragmentNr() {
+		return frag_nr;
+	}
+	
+	public Short getFragmentCount() {
+		return frag_count;
+	}
+	
+	public void triggerSend(int timeout) {
+		//Increment retries
+		retries++;
+		
+		//TODO handle a failed packet
+		if(retries >= MAX_PACKET_RETRY) {
+			System.out.println("PACKET failed");
+		}
+		
+		//Cancel old timer
+		if(task_resend != null) {
+			task_resend.cancel();
+		}
+		
+		//Restart new timer
+		task_resend = new TimeoutTask(this);
+		timer.schedule(task_resend,timeout);
+	}
+	
+	private class TimeoutTask extends TimerTask {
+		private RUDPDatagramPacket packet;
+		
+		public TimeoutTask(RUDPDatagramPacket packet) {		
+			this.packet = packet;
+		}
+		
+		@Override
+		public void run() {
+			listener.onSendTimeout(packet);
 		}
 	}
 	
