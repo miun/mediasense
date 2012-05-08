@@ -77,10 +77,6 @@ public class DeltaRangeList {
 		}
 	}
 	
-	public Iterator<Range> iterator() {
-		return set.iterator();
-	}
-	
 	public Integer[] toDifferentialArray() {
 		List<Integer> result = new ArrayList<Integer>();
 		

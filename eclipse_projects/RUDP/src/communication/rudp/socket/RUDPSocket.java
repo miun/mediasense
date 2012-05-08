@@ -13,7 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import communication.DestinationNotReachableException;
 
-public class RUDPSocket extends Thread implements RUDPLinkTimeoutListener,RUDPReceiveListener {
+public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
 	//The capacity defines the receive queue length in packets
 	//The maximum size of each packet can be 64 kB
 	private static final int QUEUE_CAPACITY = 128;
@@ -71,7 +71,7 @@ public class RUDPSocket extends Thread implements RUDPLinkTimeoutListener,RUDPRe
 				synchronized(links) {
 					link = links.get(recv_buffer.getSocketAddress());
 					if(link == null) {
-						link = new RUDPLink(sa,this,this,timer);
+						link = new RUDPLink(sa,this,this,this,timer);
 						links.put(sa,link);
 					}
 				}
@@ -85,7 +85,7 @@ public class RUDPSocket extends Thread implements RUDPLinkTimeoutListener,RUDPRe
 		}
 	}
 
-	public void send(RUDPDatagram datagram) throws SocketException {
+	public void send(RUDPDatagram datagram) throws IOException {
 		RUDPLink link;
 		InetSocketAddress sa;
 		
@@ -94,11 +94,11 @@ public class RUDPSocket extends Thread implements RUDPLinkTimeoutListener,RUDPRe
 		link = links.get(sa);
 		
 		if(link == null) {
-			link = new RUDPLink(sa,this,this,timer);
+			link = new RUDPLink(sa,this,this,this,timer);
 			links.put(sa, link);
 		}
 		
-		//Send
+		//Process send request in link
 		link.send(datagram);
 	}
 	
@@ -153,6 +153,28 @@ public class RUDPSocket extends Thread implements RUDPLinkTimeoutListener,RUDPRe
 			//Other error should not happen
 			exception.printStackTrace();
 			return null;
+		}
+	}
+
+	@Override
+	public void triggerSend(RUDPLink link, RUDPDatagramPacket packet) {
+		DatagramPacket dgram;
+		byte[] data;
+		
+		//Serialize 
+		data = packet.serializePacket();
+		
+		try {
+			//Create UDP datagram and send it
+			dgram = new DatagramPacket(data,data.length,link.getSocketAddress());
+			sock.send(dgram);
+			
+			//Trigger send event
+			//TODO find a better timeout mechanism
+			packet.triggerSend(1000);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }
