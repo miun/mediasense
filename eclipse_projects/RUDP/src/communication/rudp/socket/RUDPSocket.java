@@ -12,6 +12,8 @@ import java.util.Timer;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import communication.DestinationNotReachableException;
+import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
+import communication.rudp.socket.listener.RUDPReceiveListener;
 
 public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
 	//The capacity defines the receive queue length in packets
@@ -171,6 +173,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			
 			//Trigger send event
 			//TODO find a better timeout mechanism
+			//packet.triggerSend(link.getAvgRTT * 1.5);
 			packet.triggerSend(1000);
 		}
 		catch (Exception e) {

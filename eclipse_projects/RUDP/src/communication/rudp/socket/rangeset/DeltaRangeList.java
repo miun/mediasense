@@ -1,7 +1,6 @@
 package communication.rudp.socket.rangeset;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -13,17 +12,17 @@ public class DeltaRangeList {
 		set = new TreeSet<Range>();
 	}
 	
-	public DeltaRangeList(short[] diffArray) {
+	public DeltaRangeList(List<Short> diffArray) {
 		//Create set
 		this();
 		
 		//Construct ranges
-		for(int i = 0; i < diffArray.length; i = i + 2) {
-			set.add(new Range(diffArray[i],diffArray[i + 1] - 1));
+		for(int i = 0; i < diffArray.size(); i = i + 2) {
+			set.add(new Range(diffArray.get(i),(short)(diffArray.get(i + 1) - 1)));
 		}
 	}
 	
-	public void add(int key) {
+	public void add(short key) {
 		Range addRange = new Range(key,key);
 		Range newRange = null;
 		Range lower;
@@ -68,12 +67,12 @@ public class DeltaRangeList {
 		return result;
 	}
 	
-	public List<Integer> toDifferentialArray() {
-		List<Integer> result = new ArrayList<Integer>();
+	public List<Short> toDifferentialArray() {
+		List<Short> result = new ArrayList<Short>();
 		
 		for(Range r: set) {
 			result.add(r.getStart());
-			result.add(r.getEnd() + 1);
+			result.add((short)(r.getEnd() + 1));
 		}
 		
 		return result;
@@ -97,5 +96,28 @@ public class DeltaRangeList {
 	
 	public boolean isEmpty() {
 		return set.isEmpty();
+	}
+	
+	public void shiftRanges(short delta) {
+		int newStart,newEnd;
+		
+		for(Range r: set) {
+			//Calculate new positions
+			newStart = r.getStart() + delta;
+			newEnd = r.getEnd() + delta;
+			
+			//Check if range has to be dropped
+			if(newEnd < 0 && newStart < 0) {
+				set.remove(r);
+			}
+			else if(newEnd < 0) {
+				//Correct end limit
+				newEnd = 0;
+			}
+			else if(newStart < 0) {
+				//Correct start limit
+				newStart = Short.MAX_VALUE;
+			}
+		}
 	}
 }

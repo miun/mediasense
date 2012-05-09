@@ -1,19 +1,19 @@
 package communication.rudp.socket.rangeset;
 
 //For range definition
-class Range implements Comparable<Range> {
-	private int start,end;
+public class Range implements Comparable<Range> {
+	private short start,end;
 	
-	public Range(int start,int end) {
+	public Range(short start,short end) {
 		this.start = start;
 		this.end = end;
 	}
 
-	public int getStart() {
+	public short getStart() {
 		return start;
 	}
 
-	public int getEnd() {
+	public short getEnd() {
 		return end;
 	}
 	
