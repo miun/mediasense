@@ -174,7 +174,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			//Trigger send event
 			//TODO find a better timeout mechanism
 			//packet.triggerSend(link.getAvgRTT * 1.5);
-			packet.triggerSend(1000);
+			//packet.triggerSend(1000);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

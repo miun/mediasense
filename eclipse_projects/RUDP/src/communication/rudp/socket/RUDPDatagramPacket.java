@@ -332,6 +332,10 @@ public class RUDPDatagramPacket {
 		return ack_seq;
 	}
 	
+	public void setFirstFlag(boolean flag) {
+		flag_first = flag;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
