@@ -27,9 +27,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private RUDPReceiveListener listener_receive;
 	
 	//Sender stuff
-	private int seq_own;		//Continuous seq. number
-	private int seq_window;		//The last acknowledged packet
-	private boolean isSynced;	//Is the window in sync with the other side?!?
+	private int seq_own;			//Continuous seq. number
+	private int seq_window;			//The last acknowledged packet
+	private boolean isSynced;		//Is the window in sync with the other side?!?
+	private boolean isFirst = true;	//The first packet must be marked as that!
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
 	
 	//Receiver stuff
@@ -129,7 +130,13 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Send packets
 		for(RUDPDatagramPacket p: packetList) {
 			//Forward to socket interface
-			socket.triggerSend(this, p);
+			//p.triggerSend(avg_RTT * 1.5);
+			if(isFirst) {
+				p.setFirstFlag(true);
+				isFirst = false;
+			}
+			
+			p.triggerSend(1000);
 		}
 	}
 	
