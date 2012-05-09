@@ -1,4 +1,4 @@
-package communication.rudp.socket;
+package communication.rudp.socket.listener.exceptions;
 
 public class InvalidRUDPPacketException extends Exception {
 
