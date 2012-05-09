@@ -20,13 +20,13 @@ public class Main {
 		try {
 			RUDPDatagram dgram;
 			InetAddress dst = InetAddress.getByName("10.13.1.122");
-			byte[] data = new byte[200000];
-			Random R = new Random();
-			R.nextBytes(data);
+//			byte[] data = new byte[200000];
+//			Random R = new Random();
+//			R.nextBytes(data);
 
-			RUDPSocket sock = new RUDPSocket();
-			dgram = new RUDPDatagram(dst, 23456, data);
-			sock.send(dgram);
+			RUDPSocket sock = new RUDPSocket(23456);
+//			dgram = new RUDPDatagram(dst, 23456, data);
+//			sock.send(dgram);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
