@@ -194,25 +194,24 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		else if(isSynced) {
 			//Calculate window shift / check for overflow
 			//TODO does this overflow thing really work???
-			delta = packet.getWindowSequence() - own_window_start;
+			delta = packet.getWindowSequence() - ack_window_foreign;
 			if(delta < 0) delta += Integer.MAX_VALUE;
 			
 			//TODO check limits etc.
 			
-			//Shift all ranges
+			//Shift the range
 			packetRangeAck.shiftRanges((short)(-1 * delta));
 			
 			//Shift window / check for overflow
-			own_window_start += delta; 
-			if(own_window_start < 0) own_window_start += Integer.MAX_VALUE;
+			ack_window_foreign += delta; 
+			if(ack_window_foreign < 0) ack_window_foreign += Integer.MAX_VALUE;
 		}
 		else {
-			//TODO failed
+			System.out.println("failed");
 		}
 	}
 	
 	private void handlePayloadData(RUDPDatagramPacket packet) {
-		RUDPDatagram dgram;
 		int newRangeElement;
 		
 		//Process data packet
