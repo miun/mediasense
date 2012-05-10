@@ -203,9 +203,9 @@ public class RUDPDatagramPacket {
 
 			//Write static length fields
 			if(flag_ack) {
-				ack_size = ack_data.size() * 2 * Short.SIZE + Integer.SIZE;
-				if(ack_size > RESERVED_ACK_SIZE) ack_size = RESERVED_ACK_SIZE;
-				dos.writeShort(ack_size);
+				ack_count = ack_data.size();
+				if(ack_count > RESERVED_ACK_LENGTH) ack_count = RESERVED_ACK_LENGTH;
+				dos.writeShort(ack_count);
 			}
 
 			//Write fragment counters
@@ -220,9 +220,8 @@ public class RUDPDatagramPacket {
 			//Write variable length fields
 			if(flag_ack) {
 				dos.write(ack_seq);
-				for(short s: ack_data) {
-					dos.writeShort(s);
-					if(++ack_count > RESERVED_ACK_LENGTH) break;
+				for(int i = 0; i < ack_count; i++) {
+					dos.writeShort(ack_data.get(i));
 				}
 			}
 			
