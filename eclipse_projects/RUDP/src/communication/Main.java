@@ -15,7 +15,7 @@ public class Main {
 		CommunicationInterface comm1 = new RUDP(core1);
 		CommunicationInterface comm2 = new RUDP(core2);*/
 
-		String who = "flo";
+		String who = "timo";
 		
 		//Message msg;
 		try {
@@ -32,7 +32,7 @@ public class Main {
 					dgram = new RUDPDatagram(dst, 23456, data);
 					sock.send(dgram);
 					
-					Thread.sleep(1000);
+					Thread.sleep(10000000);
 				}
 			}
 			else if(who.equals("flo")) {

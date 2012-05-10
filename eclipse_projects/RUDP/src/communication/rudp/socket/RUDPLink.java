@@ -131,12 +131,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		for(RUDPDatagramPacket p: packetList) {
 			//Forward to socket interface
 			//p.triggerSend(avg_RTT * 1.5);
-			if(isFirst) {
-				p.setFirstFlag(true);
-				isFirst = false;
-			}
-			
-			p.triggerSend(1000);
+			p.triggerSend(10000000);
 		}
 	}
 	
@@ -280,6 +275,12 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Add the ack overlay stream
 		setAckStream(p);
 		setWindowSequence(p);
+		
+		//Set first flag at first packet
+		if(isFirst) {
+			p.setFirstFlag(true);
+			isFirst = false;
+		}
 		
 		socket.triggerSend(this, p);
 	}

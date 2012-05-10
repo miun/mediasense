@@ -300,13 +300,13 @@ public class RUDPDatagramPacket {
 			System.out.println("PACKET failed");
 		} 
 		else {
-			//Restart new timer
-			task_resend = new TimeoutTask(timeout * 2);
-			timer.schedule(task_resend,timeout);
-			
 			//Send packet
 			listener.sendPacket(this);
 			
+			//Restart new timer
+			task_resend = new TimeoutTask(timeout * 2);
+			timer.schedule(task_resend,timeout);
+
 			//Increment retries
 			retries++;
 		}
