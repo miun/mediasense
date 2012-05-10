@@ -90,7 +90,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 	}
 
-	public void send(RUDPDatagram datagram) throws IOException {
+	public void send(RUDPDatagram datagram) throws IOException,InterruptedException {
 		RUDPLink link;
 		InetSocketAddress sa;
 		
