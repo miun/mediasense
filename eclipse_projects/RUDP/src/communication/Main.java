@@ -30,7 +30,7 @@ public class Main {
 	
 				while(true) {
 					dgram = new RUDPDatagram(dst, 23456, data);
-//					sock.send(dgram);
+					sock.send(dgram);
 					sock.send(dgram);
 					
 					Thread.sleep(60000);

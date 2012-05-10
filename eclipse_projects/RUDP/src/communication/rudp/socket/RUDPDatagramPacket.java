@@ -291,7 +291,9 @@ public class RUDPDatagramPacket {
 		
 		//Cancel old timer
 		if(task_resend != null) {
-			task_resend.cancel();
+			synchronized(this) {
+				task_resend.cancel();
+			}
 		}
 		
 		//TODO handle a failed packet
@@ -304,8 +306,10 @@ public class RUDPDatagramPacket {
 			listener.sendPacket(this);
 			
 			//Restart new timer
-			task_resend = new TimeoutTask(timeout * 2);
-			timer.schedule(task_resend,timeout);
+			synchronized(this) {
+				task_resend = new TimeoutTask(timeout * 2);
+				timer.schedule(task_resend,timeout);
+			}
 
 			//Increment retries
 			retries++;
@@ -327,7 +331,18 @@ public class RUDPDatagramPacket {
 	
 	public void acknowldege() {
 		//Cancel resend task
-		task_resend.cancel();
+		synchronized(this) {
+			if(task_resend != null) {
+				task_resend.cancel();
+				task_resend = null;
+			}
+		}
+	}
+	
+	public boolean isAcknowledged() {
+		synchronized(this) {
+			return task_resend == null;
+		}
 	}
 	
 	public int getSequenceNr() {
