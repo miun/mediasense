@@ -79,7 +79,10 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				}
 				
 				//The link takes care of received data
-				link.putReceivedData(recv_buffer.getData(),recv_buffer.getLength());
+				int packetLength = recv_buffer.getLength();
+				byte[] packetBuffer = new byte[packetLength];
+				System.arraycopy(recv_buffer.getData(),0,packetBuffer, 0,packetLength);
+				link.putReceivedData(packetBuffer,packetLength);
 			}
 			catch (IOException e) {
 				e.printStackTrace();
