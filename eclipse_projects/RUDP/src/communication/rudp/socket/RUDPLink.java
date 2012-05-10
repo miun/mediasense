@@ -27,17 +27,17 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private RUDPReceiveListener listener_receive;
 	
 	//Sender stuff
-	private int seq_own;			//Continuous seq. number
-	private int seq_window;			//The last acknowledged packet
-	private boolean isSynced;		//Is the window in sync with the other side?!?
-	private boolean isFirst = true;	//The first packet must be marked as that!
+	private int own_seq;				//Continuous seq. number
+	private int own_window_start;		//The last acknowledged packet
+	private boolean isSynced = false;	//Is the window in sync with the other side?!?
+	private boolean isFirst = true;		//The first packet must be marked as that!
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
 	
 	//Receiver stuff
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_in;
 	
 	//Acknowledge stuff
-	private int ack_window;
+	private int ack_window_foreign;
 	private DeltaRangeList packetRangeAck;
 	private TimerTask task_ack;
 	
@@ -91,11 +91,11 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				//Create datagram packet
 				packet.setFragment(fragmentCounter,(short)0);
 				remainingPacketLength = packet.getRemainingLength();
-				packet.setData(datagram.getData(), offset,remainingPacketLength < dataLen ? remainingPacketLength : dataLen , seq_own, false);
+				packet.setData(datagram.getData(), offset,remainingPacketLength < dataLen ? remainingPacketLength : dataLen , own_seq, false);
 				packetList.add(packet);
 				
 				//Add to send buffer
-				packetBuffer_out.put(seq_own,packet);
+				packetBuffer_out.put(own_seq,packet);
 				
 				//Increment offset
 				offset += remainingPacketLength;
@@ -107,7 +107,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//Increment fragment and sequence counter
 				fragmentCounter++;
-				seq_own++;
+				own_seq++;
 			}
 			
 			//Set fragment count, because now we know it
@@ -117,14 +117,14 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 		else {
 			//NO fragmentation
-			packet.setData(datagram.getData(),0, datagram.getData().length, seq_own, false);
+			packet.setData(datagram.getData(),0, datagram.getData().length, own_seq, false);
 			packetList.add(packet);
 			
 			//Add to send buffer
-			packetBuffer_out.put(seq_own,packet);
+			packetBuffer_out.put(own_seq,packet);
 			
 			//Increment sequence number
-			seq_own++;
+			own_seq++;
 		}
 		
 		//Send packets
@@ -193,13 +193,13 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 			//First packet => take ack-window is reference
-			seq_window = packet.getWindowSequence();
+			own_window_start = packet.getWindowSequence();
 			isSynced = true;
 		}
 		else if(isSynced) {
 			//Calculate window shift / check for overflow
 			//TODO does this overflow thing really work???
-			delta = packet.getWindowSequence() - seq_window;
+			delta = packet.getWindowSequence() - own_window_start;
 			if(delta < 0) delta += Integer.MAX_VALUE;
 			
 			//TODO check limits etc.
@@ -208,8 +208,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			packetRangeAck.shiftRanges((short)(-1 * delta));
 			
 			//Shift window / check for overflow
-			seq_window += delta; 
-			if(seq_window < 0) seq_window += Integer.MAX_VALUE;
+			own_window_start += delta; 
+			if(own_window_start < 0) own_window_start += Integer.MAX_VALUE;
 		}
 		else {
 			//TODO failed
@@ -226,7 +226,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			packetBuffer_in.put(packet.getSequenceNr(),packet);
 			
 			//Add to range list
-			newRangeElement = packet.getSequenceNr() - ack_window;
+			newRangeElement = packet.getSequenceNr() - ack_window_foreign;
 			if(newRangeElement > Short.MAX_VALUE) {
 				//TODO
 			}
@@ -254,7 +254,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			List<Short> ackList;
 			
 			ackList = packetRangeAck.toDifferentialArray();
-			packet.setACK(ack_window,ackList);
+			packet.setACK(ack_window_foreign,ackList);
 			
 			//TODO what if there are more ranges than space
 			//Disable ack timer
@@ -272,7 +272,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void setWindowSequence(RUDPDatagramPacket packet) {
-		packet.setWindowSequence(seq_window);
+		packet.setWindowSequence(own_window_start);
 	}
 
 	@Override
