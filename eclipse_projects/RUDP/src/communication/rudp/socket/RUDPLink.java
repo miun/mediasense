@@ -1,5 +1,6 @@
 package communication.rudp.socket;
 
+import java.awt.event.WindowStateListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private int own_window_start;		//The last acknowledged packet
 	private boolean isSynced = false;	//Is the window in sync with the other side?!?
 	private boolean isFirst = true;		//The first packet must be marked as that!
-	private TreeMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
+	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
 	
 	//Receiver stuff
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_in;
@@ -44,7 +45,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	
 	public RUDPLink(InetSocketAddress sa,RUDPSocketInterface socket,RUDPLinkTimeoutListener listener_to,RUDPReceiveListener listener_recv,Timer timer) {
 		//Create data structures
-		packetBuffer_out = new TreeMap<Integer,RUDPDatagramPacket>();
+		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacket>();
 		packetBuffer_in = new HashMap<Integer,RUDPDatagramPacket>();
 		packetRangeAck = new DeltaRangeList();
 		
@@ -177,25 +178,17 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			
 			//Acknowledge all packets
 			for(Integer i: rangeList.toElementArray()) {
-				ack_pkt = packetBuffer_out.remove(i + ackSeqOffset);
+				ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
 				if(ack_pkt != null) {
-					ack_pkt.acknowldege();
-					
-					//Move acknowledge window
-					if(((i + ackSeqOffset) - own_window_start) == 1) {
-						if(!packetBuffer_out.isEmpty()) {
-							own_window_start = packetBuffer_out.firstKey() + ackSeqOffset;
-						}
-						else {
-							own_window_start ++; 
-						}
-					}
+					ack_pkt.acknowldege();		
 				}
 			}
 			
-			//Move start of own window to the end of the first range
-//			Range range = rangeList.get((short)0);
-//			if(range != null) own_window_start += range.getEnd() + 1;
+			//Remove only packets to the first gap and shift the window
+			while((ack_pkt = packetBuffer_out.remove(own_window_start)) != null) {
+				own_window_start++ ;
+			}
+
 		}
 	}
 	
