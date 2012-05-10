@@ -96,7 +96,7 @@ public class RUDPDatagramPacket {
 		}
 		
 		//Read data and check limits before
-		ack_size = ack_count * 2 * Short.SIZE + Integer.SIZE;
+		ack_size = ack_count * 2 * Short.SIZE/8 + Integer.SIZE/8;
 		if(ack_size > RESERVED_ACK_SIZE) throw new InvalidRUDPPacketException();
 		if((bis.available() - ack_size) < 0) throw new InvalidRUDPPacketException();
 		data = new byte[bis.available() - ack_size];
@@ -276,9 +276,6 @@ public class RUDPDatagramPacket {
 		//Set the resend flag if it is not the first attempt
 		if(retries > 0) {
 			flag_resend = true;
-		} else {
-			//trigger first send immediate
-			listener.sendPacket(this);
 		}
 		
 		//Cancel old timer
@@ -293,25 +290,27 @@ public class RUDPDatagramPacket {
 		} 
 		else {
 			//Restart new timer
-			task_resend = new TimeoutTask(this);
+			task_resend = new TimeoutTask(timeout * 2);
 			timer.schedule(task_resend,timeout);
+			
+			//Send packet
+			listener.sendPacket(this);
 			
 			//Increment retries
 			retries++;
 		}
-		
 	}
 	
 	private class TimeoutTask extends TimerTask {
-		private RUDPDatagramPacket packet;
+		private int timeout;
 		
-		public TimeoutTask(RUDPDatagramPacket packet) {		
-			this.packet = packet;
+		public TimeoutTask(int timeout) {		
+			this.timeout = timeout;
 		}
 		
 		@Override
 		public void run() {
-			listener.sendPacket(packet);
+			triggerSend(timeout);
 		}
 	}
 	
