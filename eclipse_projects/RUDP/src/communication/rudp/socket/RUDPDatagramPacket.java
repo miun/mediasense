@@ -221,7 +221,7 @@ public class RUDPDatagramPacket {
 
 			//Write variable length fields
 			if(flag_ack) {
-				dos.write(ack_seq);
+				dos.writeInt(ack_seq);
 				for(int i = 0; i < ack_count; i++) {
 					dos.writeShort(ack_data.get(i));
 				}
