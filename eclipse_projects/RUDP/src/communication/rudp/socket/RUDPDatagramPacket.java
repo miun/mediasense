@@ -16,7 +16,7 @@ public class RUDPDatagramPacket {
 	private static final int MAX_PACKET_SIZE = 65535;
 	private static final int MAX_PACKET_RETRY = 3;
 	private static final int RESERVED_ACK_LENGTH = 32;
-	private static final int RESERVED_ACK_SIZE = RESERVED_ACK_LENGTH * 2 * ((Short.SIZE + Integer.SIZE) / 8);
+	private static final int RESERVED_ACK_SIZE = RESERVED_ACK_LENGTH * 2 * (Short.SIZE / 8) + Integer.SIZE / 8;
 	
 	//Flags
 	public static final int FLAG_FIRST = 1;
