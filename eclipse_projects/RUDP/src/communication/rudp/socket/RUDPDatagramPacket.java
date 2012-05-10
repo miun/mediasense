@@ -72,7 +72,7 @@ public class RUDPDatagramPacket {
 		DataInputStream dis;
 		int flag;
 		int ack_count = 0;
-		int ack_size;
+		int ack_size = 0;
 		
 		bis = new ByteArrayInputStream(packet);
 		dis = new DataInputStream(bis);
@@ -89,17 +89,25 @@ public class RUDPDatagramPacket {
 		//Read static fields
 		seq_window = dis.readInt();
 		if(flag_data) seq = dis.readInt();
-		if(flag_ack) ack_count = dis.readShort();
+		if(flag_ack) {
+			ack_count = dis.readShort();
+			
+			//Check that the ack field is not too long
+			if(ack_count > RESERVED_ACK_LENGTH) throw new InvalidRUDPPacketException();
+			
+			//Get size of ack field
+			ack_size = ack_count * 2 * Short.SIZE/8 + Integer.SIZE/8 ;
+		}
 		if(flag_fragment) {
 			frag_nr = dis.readShort();
 			frag_count = dis.readShort();
 		}
 		
-		//Read data and check limits before
-		ack_size = ack_count * 2 * Short.SIZE/8 + Integer.SIZE/8;
-		if(ack_size > RESERVED_ACK_SIZE) throw new InvalidRUDPPacketException();
-		if((bis.available() - ack_size) < 0) throw new InvalidRUDPPacketException();
-		data = new byte[bis.available() - ack_size];
+		//Read data if available
+		if(flag_data) {
+			if((bis.available() - ack_size) < 0) throw new InvalidRUDPPacketException();
+			data = new byte[bis.available() - ack_size];
+		}
 
 		//Read variable length fields
 		if(flag_ack) {
