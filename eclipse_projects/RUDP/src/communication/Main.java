@@ -25,13 +25,15 @@ public class Main {
 			Random R = new Random();
 			R.nextBytes(data);
 
+			RUDPSocket sock = new RUDPSocket(23456);
+			/*
 			while(true) {
 				RUDPSocket sock = new RUDPSocket();
 				dgram = new RUDPDatagram(dst, 23456, data);
 				sock.send(dgram);
 				
 				Thread.sleep(1000);
-			}
+			}*/
 		}
 		catch (Exception e) {
 			e.printStackTrace();
