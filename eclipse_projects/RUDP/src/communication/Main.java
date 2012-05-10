@@ -1,9 +1,7 @@
 package communication;
 
 import java.net.InetAddress;
-import java.util.Random;
 
-import communication.rudp.RUDP;
 import communication.rudp.socket.RUDPDatagram;
 import communication.rudp.socket.RUDPSocket;
 
@@ -24,9 +22,13 @@ public class Main {
 			
 			for(int i = 0; i < 128; i++) data[i] = (byte)i;
 
-			RUDPSocket sock = new RUDPSocket();
-			dgram = new RUDPDatagram(dst, 23456, data);
-			sock.send(dgram);
+			while(true) {
+				RUDPSocket sock = new RUDPSocket();
+				dgram = new RUDPDatagram(dst, 23456, data);
+				sock.send(dgram);
+				
+				Thread.sleep(1000);
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
