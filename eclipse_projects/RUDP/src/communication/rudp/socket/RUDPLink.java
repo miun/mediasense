@@ -97,7 +97,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				packetList.add(packet);
 				
 				//Add to send buffer
-				packetBuffer_out.put(own_seq,packet);
+				synchronized(packetBuffer_out) {
+					packetBuffer_out.put(own_seq,packet);
+				}
 				
 				//Increment offset
 				offset += remainingPacketLength;
@@ -123,7 +125,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			packetList.add(packet);
 			
 			//Add to send buffer
-			packetBuffer_out.put(own_seq,packet);
+			synchronized(packetBuffer_out) {
+				packetBuffer_out.put(own_seq,packet);
+			}
 			
 			//Increment sequence number
 			own_seq++;
@@ -168,8 +172,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		DeltaRangeList rangeList;
 		int ackSeqOffset;
 		
-		//Die Wurst mit vier Seiten
-		
 		//First process acknowledge data, if present
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
 			//Recreate range list
@@ -177,18 +179,25 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			ackSeqOffset = packet.getAckSeq();
 			
 			//Acknowledge all packets
-			for(Integer i: rangeList.toElementArray()) {
-				ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
-				if(ack_pkt != null) {
-					ack_pkt.acknowldege();		
+			synchronized(packetBuffer_out) {
+				for(Integer i: rangeList.toElementArray()) {
+					ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
+					if(ack_pkt != null) {
+						ack_pkt.acknowldege();
+					}
+				}
+				
+				//Remove only packets till the first gap and shift the window
+				while((ack_pkt = packetBuffer_out.get(own_window_start)) != null) {
+					if(ack_pkt.isAcknowledged()) {
+						packetBuffer_out.remove(own_window_start);
+						own_window_start++;
+					}
+					else {
+						break;
+					}
 				}
 			}
-			
-			//Remove only packets to the first gap and shift the window
-			while((ack_pkt = packetBuffer_out.remove(own_window_start)) != null) {
-				own_window_start++ ;
-			}
-
 		}
 	}
 	
