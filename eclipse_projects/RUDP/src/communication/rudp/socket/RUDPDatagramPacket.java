@@ -105,8 +105,10 @@ public class RUDPDatagramPacket {
 		
 		//Read data if available
 		if(flag_data) {
-			if((bis.available() - ack_size) < 0) throw new InvalidRUDPPacketException();
-			data = new byte[bis.available() - ack_size];
+			int dataSize = bis.available() - ack_size;
+			if(dataSize < 0) throw new InvalidRUDPPacketException();
+			data = new byte[dataSize];
+			dis.readFully(data,0,dataSize);
 		}
 
 		//Read variable length fields
@@ -118,7 +120,7 @@ public class RUDPDatagramPacket {
 			}
 		}
 		
-		dis.read(data);
+		
 		dis.close();
 		bis.close();
 	}

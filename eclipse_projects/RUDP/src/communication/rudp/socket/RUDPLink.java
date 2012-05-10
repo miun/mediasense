@@ -193,7 +193,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 			//First packet => take ack-window is reference
-			own_window_start = packet.getWindowSequence();
+			ack_window_foreign = packet.getWindowSequence();
 			isSynced = true;
 		}
 		else if(isSynced) {

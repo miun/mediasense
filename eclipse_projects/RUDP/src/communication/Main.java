@@ -15,10 +15,11 @@ public class Main {
 		CommunicationInterface comm1 = new RUDP(core1);
 		CommunicationInterface comm2 = new RUDP(core2);*/
 
-		String who = "timo";
+		String who = "flo";
 		
 		//Message msg;
 		try {
+
 			if(who.equals("timo")) {
 				RUDPDatagram dgram;
 				InetAddress dst = InetAddress.getByName("10.13.1.122");
