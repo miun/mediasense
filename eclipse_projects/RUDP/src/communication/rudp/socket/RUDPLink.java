@@ -206,7 +206,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			
 			//TODO check limits etc.
 			
-			//Shift all ranges
+			//Shift the range
 			packetRangeAck.shiftRanges((short)(-1 * delta));
 			
 			//Shift window / check for overflow
@@ -219,7 +219,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void handlePayloadData(RUDPDatagramPacket packet) {
-		RUDPDatagram dgram;
 		int newRangeElement;
 		
 		//Process data packet

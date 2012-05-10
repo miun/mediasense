@@ -1,6 +1,7 @@
 package communication.rudp.socket.rangeset;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -112,6 +113,7 @@ public class DeltaRangeList {
 	
 	public void shiftRanges(short delta) {
 		int newStart,newEnd;
+		HashSet<Range> rangesToDrop = new HashSet<Range>();
 		
 		for(Range r: set) {
 			//Calculate new positions
@@ -120,7 +122,7 @@ public class DeltaRangeList {
 			
 			//Check if range has to be dropped
 			if(newEnd < 0 && newStart < 0) {
-				set.remove(r);
+				rangesToDrop.add(r);
 			}
 			else if(newEnd < 0) {
 				//Correct end limit
@@ -131,5 +133,8 @@ public class DeltaRangeList {
 				newStart = Short.MAX_VALUE;
 			}
 		}
+		
+		//Remove all the ranges that are fully gone
+		set.removeAll(rangesToDrop);
 	}
 }
