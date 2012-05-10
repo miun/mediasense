@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 import communication.rudp.socket.listener.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.rangeset.DeltaRangeList;
-import communication.rudp.socket.rangeset.Range;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
 	protected static final int MAX_ACK_DELAY = 100;
@@ -32,7 +32,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private int own_window_start;		//The last acknowledged packet
 	private boolean isSynced = false;	//Is the window in sync with the other side?!?
 	private boolean isFirst = true;		//The first packet must be marked as that!
-	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
+	private TreeMap<Integer,RUDPDatagramPacket> packetBuffer_out;	//Contains sent un-acknowledged packets
 	
 	//Receiver stuff
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_in;
@@ -44,7 +44,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	
 	public RUDPLink(InetSocketAddress sa,RUDPSocketInterface socket,RUDPLinkTimeoutListener listener_to,RUDPReceiveListener listener_recv,Timer timer) {
 		//Create data structures
-		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacket>();
+		packetBuffer_out = new TreeMap<Integer,RUDPDatagramPacket>();
 		packetBuffer_in = new HashMap<Integer,RUDPDatagramPacket>();
 		packetRangeAck = new DeltaRangeList();
 		
@@ -165,7 +165,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private void handleAckData(RUDPDatagramPacket packet) {
 		RUDPDatagramPacket ack_pkt;
 		DeltaRangeList rangeList;
-		int seq_offset;
+		int ackSeqOffset;
 		
 		//Die Wurst mit vier Seiten
 		
@@ -173,13 +173,23 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
 			//Recreate range list
 			rangeList = new DeltaRangeList(packet.getAckData());
-			seq_offset = packet.getAckSeq();
+			ackSeqOffset = packet.getAckSeq();
 			
 			//Acknowledge all packets
 			for(Integer i: rangeList.toElementArray()) {
-				ack_pkt = packetBuffer_out.remove(i + seq_offset);
+				ack_pkt = packetBuffer_out.remove(i + ackSeqOffset);
 				if(ack_pkt != null) {
 					ack_pkt.acknowldege();
+					
+					//Move acknowledge window
+					if(((i + ackSeqOffset) - own_window_start) == 1) {
+						if(!packetBuffer_out.isEmpty()) {
+							own_window_start = packetBuffer_out.firstKey() + ackSeqOffset;
+						}
+						else {
+							own_window_start ++; 
+						}
+					}
 				}
 			}
 			
@@ -275,7 +285,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private void setWindowSequence(RUDPDatagramPacket packet) {
 		packet.setWindowSequence(own_window_start);
 	}
-
+	
 	@Override
 	public void sendPacket(RUDPDatagramPacket p) {
 		//Add the ack overlay stream
