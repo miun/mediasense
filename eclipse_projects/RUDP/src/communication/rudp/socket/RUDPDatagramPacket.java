@@ -190,7 +190,7 @@ public class RUDPDatagramPacket {
 			//Write window sequence
 			dos.writeInt(seq_window);
 			
-			//Read sequence
+			//Write sequence
 			if(flag_data) dos.writeInt(seq);
 
 			//Write static length fields
@@ -247,17 +247,19 @@ public class RUDPDatagramPacket {
 		//Window sequence number
 		size -= Integer.SIZE;
 
-		//ACK length
-		size -= Short.SIZE / 8;
-		
 		//Sequence number
 		if(flag_data) size -= Integer.SIZE / 8;
 		
 		//Fragment
 		if(flag_fragment) size -= 2 * (Short.SIZE / 8);
 		
-		//ACK field + ACK sequence number
-		if(flag_ack) size -= ack_data.size() * (Short.SIZE / 8) + Integer.SIZE / 8;
+		if(flag_ack) {
+			//ACK length
+			size -= Short.SIZE / 8;
+
+			//ACK field + ACK sequence number
+			size -= ack_data.size() * (Short.SIZE / 8) + Integer.SIZE / 8;
+		}
 		
 		//Data field
 		if(flag_data) size -= data.length * (Byte.SIZE / 8);
