@@ -1,6 +1,5 @@
 package communication.rudp.socket;
 
-import java.awt.event.WindowStateListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -8,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
+import java.util.concurrent.Semaphore;
 
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
@@ -16,12 +15,14 @@ import communication.rudp.socket.listener.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
-	protected static final int MAX_ACK_DELAY = 100;
+	private static final int MAX_ACK_DELAY = 100;
+	private static final int WINDOW_SIZE = 4;
 	
 	//Global variables
 	private InetSocketAddress sa;
 	private Timer timer;
 	private int avg_RTT;
+	private Semaphore semaphoreWindowSize;
 
 	//Listener  & interfaces
 	private RUDPSocketInterface socket;
@@ -53,6 +54,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		this.listener_timeout = listener_to;
 		this.listener_receive = listener_recv;
 		this.socket = socket;
+		this.semaphoreWindowSize = new Semaphore(WINDOW_SIZE);
 		
 		//Set or create timer
 		if(timer == null) {
@@ -70,7 +72,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		return sa;
 	}
 	
-	public void send(RUDPDatagram datagram) {
+	public void send(RUDPDatagram datagram) throws InterruptedException {
 		List<RUDPDatagramPacket> packetList = new ArrayList<RUDPDatagramPacket>();
 		RUDPDatagramPacket packet;
 		int dataSize;
@@ -135,6 +137,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		//Send packets
 		for(RUDPDatagramPacket p: packetList) {
+			//Enter the semaphore to stay within window size
+			semaphoreWindowSize.acquire();
+			
 			//Forward to socket interface
 			//p.triggerSend(avg_RTT * 1.5);
 			p.triggerSend(10000000);
@@ -190,8 +195,12 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				//Remove only packets till the first gap and shift the window
 				while((ack_pkt = packetBuffer_out.get(own_window_start)) != null) {
 					if(ack_pkt.isAcknowledged()) {
+						//Shift window
 						packetBuffer_out.remove(own_window_start);
 						own_window_start++;
+						
+						//Release semaphore
+						semaphoreWindowSize.release();
 					}
 					else {
 						break;
