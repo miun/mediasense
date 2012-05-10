@@ -31,8 +31,9 @@ public class Main {
 				while(true) {
 					dgram = new RUDPDatagram(dst, 23456, data);
 					sock.send(dgram);
+					sock.send(dgram);
 					
-					Thread.sleep(10000000);
+					Thread.sleep(1000);
 				}
 			}
 			else if(who.equals("flo")) {

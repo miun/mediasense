@@ -12,6 +12,7 @@ import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 import communication.rudp.socket.listener.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.rangeset.DeltaRangeList;
+import communication.rudp.socket.rangeset.Range;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
 	protected static final int MAX_ACK_DELAY = 100;
@@ -155,7 +156,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		handleAckData(packet);
 		
 		//Handle new window sequence
-		handleWindowSequence(packet);
+		handleAckWindowSequence(packet);
 		
 		//Handle payload data
 		handlePayloadData(packet);
@@ -177,12 +178,18 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//Acknowledge all packets
 			for(Integer i: rangeList.toElementArray()) {
 				ack_pkt = packetBuffer_out.remove(i + seq_offset);
-				if(ack_pkt != null) ack_pkt.acknowldege();
+				if(ack_pkt != null) {
+					ack_pkt.acknowldege();
+				}
 			}
+			
+			//Move start of own window to the end of the first range
+//			Range range = rangeList.get((short)0);
+//			if(range != null) own_window_start += range.getEnd() + 1;
 		}
 	}
 	
-	private void handleWindowSequence(RUDPDatagramPacket packet) {
+	private void handleAckWindowSequence(RUDPDatagramPacket packet) {
 		//Calculate delta to old window
 		int delta;
 		
@@ -194,7 +201,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		else if(isSynced) {
 			//Calculate window shift / check for overflow
 			//TODO does this overflow thing really work???
-			delta = packet.getWindowSequence() - own_window_start;
+			delta = packet.getWindowSequence() - ack_window_foreign;
 			if(delta < 0) delta += Integer.MAX_VALUE;
 			
 			//TODO check limits etc.
@@ -203,11 +210,11 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			packetRangeAck.shiftRanges((short)(-1 * delta));
 			
 			//Shift window / check for overflow
-			own_window_start += delta; 
-			if(own_window_start < 0) own_window_start += Integer.MAX_VALUE;
+			ack_window_foreign += delta; 
+			if(ack_window_foreign < 0) ack_window_foreign += Integer.MAX_VALUE;
 		}
 		else {
-			//TODO failed
+			System.out.println("fail");
 		}
 	}
 	

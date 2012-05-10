@@ -78,6 +78,18 @@ public class DeltaRangeList {
 		return result;
 	}
 	
+	public Range get(short key) {
+		Range range = set.ceiling(new Range(key,key));
+		
+		//Return the range the key is in
+		if(range != null && range.getEnd() >= key) {
+			return range;
+		}
+		else {
+			return null;
+		}
+	}
+	
 	public void remove(int key) {
 		//TODO create it
 	}
