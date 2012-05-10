@@ -15,7 +15,7 @@ public class Main {
 		CommunicationInterface comm1 = new RUDP(core1);
 		CommunicationInterface comm2 = new RUDP(core2);*/
 
-		String who = "flo";
+		String who = "timo";
 		
 		//Message msg;
 		try {
