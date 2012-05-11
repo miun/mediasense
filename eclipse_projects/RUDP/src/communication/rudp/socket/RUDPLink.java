@@ -279,6 +279,15 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			List<Short> ackList;
 			
 			ackList = packetRangeAck.toDifferentialArray();
+			
+			if(ackList.size() == 0) {
+				ackList = packetRangeAck.toDifferentialArray();
+			}
+			
+			if(ackList.get(0) > 100) {
+				System.out.println("Error");
+			}
+			
 			packet.setACK(ack_window_foreign,ackList);
 			
 			//DEBUG - report if the ACK list did not fit into one packet

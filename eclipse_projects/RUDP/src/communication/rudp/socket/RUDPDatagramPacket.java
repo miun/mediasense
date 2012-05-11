@@ -98,6 +98,7 @@ public class RUDPDatagramPacket {
 			sender_window_start = dis.readInt();
 			if(flag_data) sender_seq = dis.readInt();
 			if(flag_ack) {
+				//Count means the number of ranges!
 				ack_count = dis.readShort();
 				
 				//Check that the ACK field is not too long
@@ -125,7 +126,9 @@ public class RUDPDatagramPacket {
 			if(flag_ack) {
 				ack_start_seq = dis.readInt();
 				ack_data = new ArrayList<Short>();
-				for(int i = 0; i < ack_count; i++) {
+				
+				//Take the count times 2, because every range has 2 elements 
+				for(int i = 0; i < ack_count * 2; i++) {
 					ack_data.add(dis.readShort());				
 				}
 			}
@@ -221,7 +224,7 @@ public class RUDPDatagramPacket {
 
 			//Write static length fields
 			if(flag_ack) {
-				ack_count = ack_data.size();
+				ack_count = ack_data.size() / 2;
 				if(ack_count > RESERVED_ACK_COUNT) ack_count = RESERVED_ACK_COUNT;
 				dos.writeShort(ack_count);
 			}
@@ -238,7 +241,7 @@ public class RUDPDatagramPacket {
 			//Write variable length fields
 			if(flag_ack) {
 				dos.writeInt(ack_start_seq);
-				for(int i = 0; i < ack_count; i++) {
+				for(int i = 0; i < ack_count * 2; i++) {
 					dos.writeShort(ack_data.get(i));
 				}
 			}
@@ -386,7 +389,7 @@ public class RUDPDatagramPacket {
 		result += (flag_data ? ",DATA" : "");
 		result += (flag_resend ? ",RESEND" : "");
 		
-		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries;
+		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries + "\nAckData: ";
 		
 		if(flag_ack && ack_data.size() > 0) {
 			result += (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
