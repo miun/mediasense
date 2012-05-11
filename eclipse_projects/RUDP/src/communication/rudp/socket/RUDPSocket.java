@@ -18,21 +18,21 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
 	//The capacity defines the receive queue length in packets
 	//The maximum size of each packet can be 64 kB
-	private static final int QUEUE_CAPACITY = 128;
+	private static final int QUEUE_CAPACITY = 1;
 	
 	private DatagramSocket sock;
 	private DatagramPacket recv_buffer;
+	
 	private LinkedBlockingQueue<RUDPDatagram> recv_queue;
 	private HashMap<InetSocketAddress,RUDPLink> links;
 	private Timer timer;
-	private boolean failed = false;
 
 	public RUDPSocket(DatagramSocket sock) {
 		//Set socket
 		this.sock = sock;
 		
 		//Receive buffer, timer and link map
-		recv_buffer = new DatagramPacket(new byte[65536],65536);
+		recv_buffer = new DatagramPacket(new byte[RUDPDatagramPacket.MAX_PACKET_SIZE],RUDPDatagramPacket.MAX_PACKET_SIZE);
 		recv_queue = new LinkedBlockingQueue<RUDPDatagram>(QUEUE_CAPACITY);
 		timer = new Timer("RUDP timer");
 		links = new HashMap<InetSocketAddress,RUDPLink>();
@@ -106,15 +106,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		//Process send request in link
 		link.send(datagram);
 	}
-	
-	public boolean isFailed() {
-		return failed;
-	}
-	
-	public void restore() {
-		failed = false;
-	}
-	
+
 	@Override
 	public void onLinkTimeout(InetSocketAddress sa,RUDPLink link) {
 		//Link timed out => remove it from list
@@ -146,16 +138,12 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			//Return data
 			return dgram.getData();
 		}
-		catch(DestinationNotReachableException e) {
-			//Forward exception to inform about a not reachable destination
-			throw e;
-		}
 		catch (InterruptedException e) {
-			//Do nothing
+			//Socket has been interrupted; return null
 			return null;
 		}
 		catch (Exception exception) {
-			//Other error should not happen
+			//Other error, should not happen!
 			exception.printStackTrace();
 			return null;
 		}
@@ -173,11 +161,6 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			//Create UDP datagram and send it
 			dgram = new DatagramPacket(data,data.length,link.getSocketAddress());
 			sock.send(dgram);
-			
-			//Trigger send event
-			//TODO find a better timeout mechanism
-			//packet.triggerSend(link.getAvgRTT * 1.5);
-			//packet.triggerSend(1000);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
