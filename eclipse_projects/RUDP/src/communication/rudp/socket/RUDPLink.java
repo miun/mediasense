@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
@@ -38,7 +39,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;	
 	
 	//Receiver list
-	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_in;
+	private int currentReceivePointer;
+	private TreeMap<Integer,RUDPDatagram> packetBuffer_in;
 	
 	//Acknowledge stuff
 	private int ack_window_foreign;
@@ -48,7 +50,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	public RUDPLink(InetSocketAddress sa,RUDPSocketInterface socket,RUDPLinkTimeoutListener listener_to,RUDPReceiveListener listener_recv,Timer timer) {
 		//Create data structures
 		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacket>();
-		packetBuffer_in = new HashMap<Integer,RUDPDatagramPacket>();
+		packetBuffer_in = new TreeMap<Integer,RUDPDatagram>();
 		packetRangeAck = new DeltaRangeList();
 		
 		//Set timer and listener
@@ -235,6 +237,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 			//First packet => take ACK-window as the new window start
 			ack_window_foreign = packet.getSenderWindowStart();
+			currentReceivePointer = ack_window_foreign;
 			
 			//We are sync'ed now
 			isSynced = true;
@@ -266,6 +269,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void handlePayloadData(RUDPDatagramPacket packet) {
+		RUDPDatagram dgram;
 		int newRangeElement;
 		
 		//Process data packet
@@ -276,7 +280,22 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			}
 			else {
 				//Insert into receiving packet buffer
-				packetBuffer_in.put(packet.getSenderSeqNr(),packet);
+				if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+					if((dgram = packetBuffer_in.get(packet.getSenderSeqNr() - packet.getFragmentNr())) == null) {
+						//Create new fragmented datagram
+						dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
+						packetBuffer_in.put(packet.getSenderSeqNr() - packet.getFragmentNr(),dgram);
+					}
+					else {
+						//We are the Borg, and we will...
+						dgram.assimilateFragment(packet);
+					}
+				}
+				else {
+					//Create new normal datagram
+					dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
+					packetBuffer_in.put(packet.getSenderSeqNr() - packet.getFragmentNr(),dgram);
+				}
 				
 				//Calculate relative position and add to packet range list
 				newRangeElement = packet.getSenderSeqNr() - ack_window_foreign;
@@ -290,9 +309,20 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					}
 				}
 				
-				//Check if new datagrams are ready for delivery
-				//TODO
-				//listener_receive.onRUDPDatagramReceive(null);
+				//Forward all ready packets to upper layer
+				while((dgram = packetBuffer_in.get(currentReceivePointer)) != null)  {
+					if(dgram.isComplete()) {
+						//Remove from list
+						packetBuffer_in.remove(currentReceivePointer);
+						
+						//Forward
+						listener_receive.onRUDPDatagramReceive(dgram);
+						
+						//Shift receive pointer
+						currentReceivePointer += dgram.getFragmentCount();
+					}
+					else break;
+				}
 			}
 		}
 	}

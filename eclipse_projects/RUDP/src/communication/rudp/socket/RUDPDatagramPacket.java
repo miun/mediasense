@@ -384,6 +384,10 @@ public class RUDPDatagramPacket {
 		flag_reset = flag;
 	}
 	
+	public byte[] getData() {
+		return data;
+	}
+	
 	public String toString() {
 		String result;
 		

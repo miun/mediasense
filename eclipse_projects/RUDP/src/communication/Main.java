@@ -22,11 +22,12 @@ public class Main extends Thread {
 
 		String who = "flo";
 		
+//		byte[] data = new byte[1024 * 1024];
 
 		//Message msg;
 		try {
 			RUDPDatagram dgram;
-			InetAddress dst = InetAddress.getByName("10.14.1.72");
+			InetAddress dst = InetAddress.getByName("10.13.1.122");
 			sock = new RUDPSocket(23456);
 
 			//Create data packet
