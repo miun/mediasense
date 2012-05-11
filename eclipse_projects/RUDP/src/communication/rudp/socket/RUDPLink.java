@@ -138,7 +138,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//Forward to socket interface
 			//TODO replace with a nice function
 			//p.triggerSend(avg_RTT * 1.5);
-			p.triggerSend(10000000);
+			p.triggerSend(1000);
 		}
 	}
 	
@@ -263,7 +263,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//Check if new datagrams are ready for delivery
 				//TODO
-				listener_receive.onRUDPDatagramReceive(null);
+				//listener_receive.onRUDPDatagramReceive(null);
 			}
 		}
 	}
