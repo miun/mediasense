@@ -3,8 +3,6 @@ package communication.rudp.socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import communication.DestinationNotReachableException;
-
 public class RUDPDatagram {
 	private Exception exception;
 	private InetAddress dst;

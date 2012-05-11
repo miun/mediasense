@@ -21,7 +21,7 @@ public class RUDPDatagramPacket {
 	
 	//Flags
 	public static final int FLAG_FIRST = 1;
-//	public static final int FLAG_RESET = 2;
+	public static final int FLAG_RESET = 2;
 	public static final int FLAG_ACK = 4;
 	public static final int FLAG_DATA = 8;
 	public static final int FLAG_RESEND = 16;
@@ -88,7 +88,7 @@ public class RUDPDatagramPacket {
 		try {
 			flag = dis.readByte();
 			flag_first = (flag & FLAG_FIRST) != 0 ? true : false; 
-//			flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
+			flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
 			flag_ack = (flag & FLAG_ACK) != 0 ? true : false; 
 			flag_data = (flag & FLAG_DATA) != 0 ? true : false; 
 			flag_fragment = (flag & FLAG_FRAGMENT) != 0 ? true : false; 
@@ -194,7 +194,7 @@ public class RUDPDatagramPacket {
 	public Boolean getFlag(int flag) {
 		switch(flag) {
 			case FLAG_FIRST: return flag_first;
-//			case FLAG_RESET: return flag_reset;
+			case FLAG_RESET: return flag_reset;
 			case FLAG_ACK: return flag_ack;
 			case FLAG_DATA: return flag_data;
 			case FLAG_RESEND: return flag_resend;
@@ -213,8 +213,7 @@ public class RUDPDatagramPacket {
 			dos = new DataOutputStream(bos);
 			
 			//Write flags
-			//(flag_reset ? FLAG_RESET : 0) + 
-			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
+			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
 			
 			//Write window sequence
 			dos.writeInt(sender_window_start);
@@ -309,9 +308,10 @@ public class RUDPDatagramPacket {
 		}
 		
 		//Cancel old timer
-		if(task_resend != null) {
-			synchronized(this) {
+		synchronized(this) {
+			if(task_resend != null) {
 				task_resend.cancel();
+				task_resend = null;
 			}
 		}
 		
@@ -380,10 +380,15 @@ public class RUDPDatagramPacket {
 		flag_first = flag;
 	}
 	
+	public void setResetFlag(boolean flag) {
+		flag_reset = flag;
+	}
+	
 	public String toString() {
 		String result;
 		
 		result = flag_first ? "FIRST" : "";
+		result += (flag_reset ? ",RESET" : "");
 		result += (flag_ack ? ",ACK" : "");
 		result += (flag_fragment ? ",FRAGMENT" : "");
 		result += (flag_data ? ",DATA" : "");

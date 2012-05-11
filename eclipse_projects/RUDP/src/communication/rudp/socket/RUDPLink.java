@@ -157,6 +157,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		System.out.println("-----\nRECEIVE");
 		System.out.println("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign);
 		System.out.println(packet.toString());
+		
+		//Handle reset packets
+		handleResetFlag(packet);
+
 		//Handle ACK-data
 		handleAckData(packet);
 		
@@ -207,6 +211,23 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 	}
 	
+	//Handle reset flag
+	private void handleResetFlag(RUDPDatagramPacket packet) {
+		if(packet.getFlag(RUDPDatagramPacket.FLAG_RESET)) {
+			//Set the first flag again
+			isFirst = true;
+			
+			//Clear internal data structures to have a new start
+			packetRangeAck.clear();
+			packetBuffer_in.clear();
+			
+			//Make sure that the first packet that is still in
+			//the packet buffer gets the first flag!
+			RUDPDatagramPacket p = packetBuffer_out.get(own_window_start);
+			if(p != null) sendPacket(p);
+		}
+	}
+	
 	private void handleAckWindowSequence(RUDPDatagramPacket packet) {
 		//Calculate delta to old window
 		int delta;
@@ -214,10 +235,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 			//First packet => take ACK-window as the new window start
 			ack_window_foreign = packet.getSenderWindowStart();
-			
-			//Clear internal data structures to have a new start
-			packetRangeAck.clear();
-			packetBuffer_in.clear();
 			
 			//We are sync'ed now
 			isSynced = true;
@@ -237,6 +254,13 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			ack_window_foreign += delta; 
 		}
 		else {
+			//Send a reset packet, because we need a first packet for synchronization
+			RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
+			
+			//Send
+			resetPacket.setResetFlag(true);
+			sendPacket(resetPacket);
+			
 			System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
 		}
 	}
@@ -247,7 +271,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Process data packet
 		if(isSynced && packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
 			//Check if packet is within window bounds
-			if((packet.getSenderSeqNr() - own_window_start) < 0 || (packet.getSenderSeqNr() - own_window_start) > WINDOW_SIZE) {
+			if((packet.getSenderSeqNr() - ack_window_foreign) < 0 || (packet.getSenderSeqNr() - ack_window_foreign) > WINDOW_SIZE) {
 				System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
 			}
 			else {
@@ -282,10 +306,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			
 			if(ackList.size() == 0) {
 				ackList = packetRangeAck.toDifferentialArray();
-			}
-			
-			if(ackList.get(0) > 100) {
-				System.out.println("Error");
 			}
 			
 			packet.setACK(ack_window_foreign,ackList);

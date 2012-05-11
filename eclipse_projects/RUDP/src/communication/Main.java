@@ -39,6 +39,7 @@ public class Main extends Thread {
 			while(true) {
 				sock.send(dgram);
 				Thread.sleep(new Random().nextInt(300));
+
 			}
 		}
 		catch (Exception e) {
