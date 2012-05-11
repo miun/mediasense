@@ -33,7 +33,9 @@ public class Main extends Thread {
 			byte[] data = new byte[128];
 			for(int i = 0; i < 128; i++) data[i] = (byte)i;
 			dgram = new RUDPDatagram(dst, 23456, data);
-
+			
+			Thread.sleep(1000);
+			
 			while(true) {
 				sock.send(dgram);
 				Thread.sleep(new Random().nextInt(1000));
