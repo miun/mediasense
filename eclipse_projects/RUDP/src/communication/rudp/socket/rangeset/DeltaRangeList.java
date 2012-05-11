@@ -136,4 +136,14 @@ public class DeltaRangeList {
 		//Remove all the ranges that are fully gone
 		set.removeAll(rangesToDrop);
 	}
+
+	public String toString(int offset) {
+		String result = "";
+		
+		for(Range r: set) {
+			result += (r.getStart() + offset) + "->" + (r.getEnd() + offset) + ","; 
+		}
+		
+		return result;
+	}
 }
