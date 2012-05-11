@@ -1,7 +1,6 @@
 package communication;
 
 import java.net.InetAddress;
-import java.util.Random;
 
 import communication.rudp.socket.RUDPDatagram;
 import communication.rudp.socket.RUDPSocket;
@@ -26,7 +25,7 @@ public class Main extends Thread {
 		//Message msg;
 		try {
 			RUDPDatagram dgram;
-			InetAddress dst = InetAddress.getByName("10.14.1.72");
+			InetAddress dst = InetAddress.getByName("10.13.1.122");
 			sock = new RUDPSocket(23456);
 
 			//Create data packet
@@ -38,7 +37,7 @@ public class Main extends Thread {
 			
 			while(true) {
 				sock.send(dgram);
-				Thread.sleep(1000);
+				Thread.sleep(100);
 			}
 		}
 		catch (Exception e) {
