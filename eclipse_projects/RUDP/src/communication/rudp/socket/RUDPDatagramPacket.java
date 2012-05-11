@@ -123,7 +123,7 @@ public class RUDPDatagramPacket {
 	
 			//Read variable length fields
 			if(flag_ack) {
-				ack_start_seq = dis.readInt();
+				ack_start_seq = dis.readInt();				
 				ack_data = new ArrayList<Short>();
 				for(int i = 0; i < ack_count; i++) {
 					ack_data.add(dis.readShort());				
@@ -386,7 +386,7 @@ public class RUDPDatagramPacket {
 		result += (flag_data ? ",DATA" : "");
 		result += (flag_resend ? ",RESEND" : "");
 		
-		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries;
+		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries + "\nAckData: ";
 		
 		if(flag_ack && ack_data.size() > 0) {
 			result += (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
