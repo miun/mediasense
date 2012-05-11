@@ -388,8 +388,8 @@ public class RUDPDatagramPacket {
 		
 		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries;
 		
-		if(ack_data.size() > 0) {
-			result += (new DeltaRangeList(this.getAckData())).toString();
+		if(flag_ack && ack_data.size() > 0) {
+			result += (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
 		}
 		
 		return result;

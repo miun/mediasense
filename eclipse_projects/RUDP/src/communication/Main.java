@@ -30,6 +30,8 @@ public class Main extends Thread {
 			for(int i = 0; i < 128; i++) data[i] = (byte)i;
 			dgram = new RUDPDatagram(dst, 23456, data);
 
+			Thread.sleep(1000);
+			
 			while(true) {
 				sock.send(dgram);
 				Thread.sleep(1000);
