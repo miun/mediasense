@@ -154,6 +154,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			return;
 		}
 		
+		System.out.println("-----\nRECEIVED\n" + packet.toString());
+		System.out.println("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign);
+		
+		
 		//Handle ACK-data
 		handleAckData(packet);
 		
@@ -162,6 +166,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		//Handle payload data
 		handlePayloadData(packet);
+
+		System.out.println("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign + "\n-----");
 	}
 	
 	private void handleAckData(RUDPDatagramPacket packet) {
@@ -208,7 +214,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 			//First packet => take ACK-window as the new window start
-			ack_window_foreign = packet.getWindowStartSequence();
+			ack_window_foreign = packet.getSenderWindowStart();
 			
 			//Clear internal data structures to have a new start
 			packetRangeAck.clear();
@@ -219,7 +225,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 		else if(isSynced) {
 			//Calculate window shift / check for overflow
-			delta = packet.getWindowStartSequence() - ack_window_foreign;
+			delta = packet.getSenderWindowStart() - ack_window_foreign;
 
 			//Check if the window in [0,WINDOW_SIZE]
 			if(delta < 0 || delta > WINDOW_SIZE) {
@@ -242,15 +248,15 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Process data packet
 		if(isSynced && packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
 			//Check if packet is within window bounds
-			if((packet.getSequenceNr() - own_window_start) < 0 || (packet.getSequenceNr() - own_window_start) > WINDOW_SIZE) {
+			if((packet.getSenderSeqNr() - own_window_start) < 0 || (packet.getSenderSeqNr() - own_window_start) > WINDOW_SIZE) {
 				System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
 			}
 			else {
 				//Insert into receiving packet buffer
-				packetBuffer_in.put(packet.getSequenceNr(),packet);
+				packetBuffer_in.put(packet.getSenderSeqNr(),packet);
 				
 				//Calculate relative position and add to packet range list
-				newRangeElement = packet.getSequenceNr() - ack_window_foreign;
+				newRangeElement = packet.getSenderSeqNr() - ack_window_foreign;
 				packetRangeAck.add((short)newRangeElement);
 				
 				//Start ACK-timer, if necessary
@@ -298,7 +304,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void setWindowSequence(RUDPDatagramPacket packet) {
-		packet.setWindowStartSequence(own_window_start);
+		packet.setSenderWindowStart(own_window_start);
 	}
 	
 	@Override
@@ -312,8 +318,14 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			p.setFirstFlag(true);
 			isFirst = false;
 		}
+
+		//TODO remove debug output
+		System.out.print(p.toString());
 		
+		//Send packet
 		socket.triggerSend(this, p);
+		
+		System.out.print(" - ###\n");
 	}
 	
 	private class AcknowledgeTask extends TimerTask {
