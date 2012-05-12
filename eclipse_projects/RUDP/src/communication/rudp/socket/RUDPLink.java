@@ -321,7 +321,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							packetBuffer_in.remove(currentReceivePointer);
 							
 							//Forward
-							//listener_receive.onRUDPDatagramReceive(dgram);
+							listener_receive.onRUDPDatagramReceive(dgram);
 							
 							//Shift receive pointer
 							currentReceivePointer += dgram.getFragmentCount();
