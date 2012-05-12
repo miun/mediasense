@@ -132,10 +132,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//Add packet to out list
 			synchronized(packetBuffer_out) {
 				packetBuffer_out.put(own_seq,p);
+				
+				//Increment sequence number
+				own_seq++;
 			}
-			
-			//Increment sequence number
-			own_seq++;
 			
 			//Forward to socket interface
 			//TODO replace with a nice function
@@ -314,7 +314,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						packetBuffer_in.remove(currentReceivePointer);
 						
 						//Forward
-						listener_receive.onRUDPDatagramReceive(dgram);
+						//listener_receive.onRUDPDatagramReceive(dgram);
 						
 						//Shift receive pointer
 						currentReceivePointer += dgram.getFragmentCount();
