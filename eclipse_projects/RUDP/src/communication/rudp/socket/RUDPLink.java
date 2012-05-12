@@ -9,6 +9,8 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
+import javax.jws.Oneway;
+
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
@@ -277,6 +279,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private void handlePayloadData(RUDPDatagramPacket packet) {
 		RUDPDatagram dgram;
 		int newRangeElement;
+		List<RUDPDatagram> readyDatagrams = null;
 		
 		//Process data packet
 		synchronized(this) {
@@ -314,14 +317,16 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						timer.schedule(task_ack, MAX_ACK_DELAY);
 					}
 					
+					readyDatagrams = new ArrayList<RUDPDatagram>();
+					
 					//Forward all ready packets to upper layer
 					while((dgram = packetBuffer_in.get(currentReceivePointer)) != null)  {
 						if(dgram.isComplete()) {
 							//Remove from list
 							packetBuffer_in.remove(currentReceivePointer);
 							
-							//Forward
-							listener_receive.onRUDPDatagramReceive(dgram);
+							//Remember ready datagrams
+							readyDatagrams.add(dgram);
 							
 							//Shift receive pointer
 							currentReceivePointer += dgram.getFragmentCount();
@@ -330,6 +335,11 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					}
 				}
 			}
+		}
+		
+		//Forward all ready datagrams to upper layer
+		if(readyDatagrams != null) {
+			for(RUDPDatagram d: readyDatagrams) listener_receive.onRUDPDatagramReceive(d);
 		}
 	}
 	
