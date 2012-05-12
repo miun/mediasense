@@ -47,14 +47,17 @@ public class RUDPDatagram {
 
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
 			fragNr = packet.getFragmentNr();
-			if(fragNr <= fragCount) {
-				//Count the fragments we already have
-				if(this.data[fragNr] == null) {
-					fragAmount++;
+			
+			synchronized(this) {
+				if(fragNr <= fragCount) {
+					//Count the fragments we already have
+					if(this.data[fragNr] == null) {
+						fragAmount++;
+					}
+	
+					//Assimilate data
+					this.data[fragNr] = packet.getData();
 				}
-
-				//Assimilate data
-				this.data[fragNr] = packet.getData();
 			}
 		}
 	}
@@ -75,13 +78,15 @@ public class RUDPDatagram {
 			byte[] result;
 			
 			//Count total size
-			for(int i = 0; i < fragCount; i++) totalSize += data[i].length;
-			result = new byte[totalSize];
-			
-			//Create one large datagram
-			for(int i = 0; i < fragCount; i++) {
-				System.arraycopy(data[i],0,result,offset,data[i].length);
-				offset += data[i].length;
+			synchronized(this) {
+				for(int i = 0; i < fragCount; i++) totalSize += data[i].length;
+				result = new byte[totalSize];
+				
+				//Create one large datagram
+				for(int i = 0; i < fragCount; i++) {
+					System.arraycopy(data[i],0,result,offset,data[i].length);
+					offset += data[i].length;
+				}
 			}
 			
 			return result;
