@@ -18,7 +18,7 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
 	//The capacity defines the receive queue length in packets
 	//The maximum size of each packet can be 64 kB
-	private static final int QUEUE_CAPACITY = 1;
+	private static final int QUEUE_CAPACITY = 10;
 	
 	private DatagramSocket sock;
 	private DatagramPacket recv_buffer;
