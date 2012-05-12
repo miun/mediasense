@@ -29,38 +29,42 @@ public class DeltaRangeList {
 		Range higher;
 		
 		//Get range candidate
-		lower = set.floor(addRange);
-		higher = set.ceiling(addRange);
-
-		//Try to merge lower range
-		if(lower != null) {
-			if((newRange = lower.merge(addRange)) != null) {
-				set.remove(lower);
+		synchronized(set) {
+			lower = set.floor(addRange);
+			higher = set.ceiling(addRange);
+	
+			//Try to merge lower range
+			if(lower != null) {
+				if((newRange = lower.merge(addRange)) != null) {
+					set.remove(lower);
+				}
 			}
-		}
-		
-		//Try to merge higher range
-		if(higher != null) {
-			if((newRange = higher.merge(newRange != null ? newRange : addRange)) != null) {
-				set.remove(higher);
+			
+			//Try to merge higher range
+			if(higher != null) {
+				if((newRange = higher.merge(newRange != null ? newRange : addRange)) != null) {
+					set.remove(higher);
+				}
 			}
-		}
-		
-		//Add new range
-		if(newRange != null) {
-			set.add(newRange);
-		}
-		else {
-			set.add(addRange);
+			
+			//Add new range
+			if(newRange != null) {
+				set.add(newRange);
+			}
+			else {
+				set.add(addRange);
+			}
 		}
 	}
 	
 	public List<Integer> toElementArray() {
 		List<Integer> result = new ArrayList<Integer>();
 		
-		for(Range r: set) {
-			for(int i = r.getStart(); i <= r.getEnd(); i++) {
-				result.add(i);
+		synchronized(set) {
+			for(Range r: set) {
+				for(int i = r.getStart(); i <= r.getEnd(); i++) {
+					result.add(i);
+				}
 			}
 		}
 		
@@ -70,16 +74,22 @@ public class DeltaRangeList {
 	public List<Short> toDifferentialArray() {
 		List<Short> result = new ArrayList<Short>();
 		
-		for(Range r: set) {
-			result.add(r.getStart());
-			result.add((short)(r.getEnd() + 1));
+		synchronized(set) {
+			for(Range r: set) {
+				result.add(r.getStart());
+				result.add((short)(r.getEnd() + 1));
+			}
 		}
 		
 		return result;
 	}
 	
 	public Range get(short key) {
-		Range range = set.ceiling(new Range(key,key));
+		Range range;
+		
+		synchronized(set) {
+			range = set.ceiling(new Range(key,key));
+		}
 		
 		//Return the range the key is in
 		if(range != null && range.getEnd() >= key) {
@@ -114,34 +124,38 @@ public class DeltaRangeList {
 		int newStart,newEnd;
 		List<Range> rangesToDrop = new ArrayList<Range>();
 		
-		for(Range r: set) {
-			//Calculate new positions
-			newStart = r.getStart() + delta;
-			newEnd = r.getEnd() + delta;
-			
-			//Check if range has to be dropped
-			if(newEnd < 0 && newStart < 0) {
-				rangesToDrop.add(r);
+		synchronized(set) {
+			for(Range r: set) {
+				//Calculate new positions
+				newStart = r.getStart() + delta;
+				newEnd = r.getEnd() + delta;
+				
+				//Check if range has to be dropped
+				if(newEnd < 0 && newStart < 0) {
+					rangesToDrop.add(r);
+				}
+				else if(newEnd < 0) {
+					//Correct end limit
+					newEnd = 0;
+				}
+				else if(newStart < 0) {
+					//Correct start limit
+					newStart = Short.MAX_VALUE;
+				}
 			}
-			else if(newEnd < 0) {
-				//Correct end limit
-				newEnd = 0;
-			}
-			else if(newStart < 0) {
-				//Correct start limit
-				newStart = Short.MAX_VALUE;
-			}
-		}
 		
-		//Remove all the ranges that are fully gone
-		set.removeAll(rangesToDrop);
+			//Remove all the ranges that are fully gone
+			set.removeAll(rangesToDrop);
+		}
 	}
 
 	public String toString(int offset) {
 		String result = "";
 		
-		for(Range r: set) {
-			result += (r.getStart() + offset) + "->" + (r.getEnd() + offset) + ","; 
+		synchronized(set) {
+			for(Range r: set) {
+				result += (r.getStart() + offset) + "->" + (r.getEnd() + offset) + ","; 
+			}
 		}
 		
 		return result;

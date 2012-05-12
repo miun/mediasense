@@ -417,7 +417,7 @@ public class RUDPDatagramPacket {
 		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		
 		if(flag_ack && ack_data.size() > 0) {
-			result += "\nACK_DATA: " + (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
+			result += "\nACK_DATA:\t" + (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
 		}
 		
 		result += "\n<<<<<";

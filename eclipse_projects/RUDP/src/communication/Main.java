@@ -61,7 +61,7 @@ public class Main extends Thread {
 				if(data[0] != who) {
 					//Return data if its not from us!
 					try {
-						sock.send(new RUDPDatagram(dst, 23456, data));
+						//sock.send(new RUDPDatagram(dst, 23456, data));
 					}
 					catch (Exception e) {
 						e.printStackTrace();
