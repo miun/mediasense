@@ -78,10 +78,12 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 					}
 				}
 				
-				//The link takes care of received data
+				//Create a copy of the received data
 				int packetLength = recv_buffer.getLength();
 				byte[] packetBuffer = new byte[packetLength];
 				System.arraycopy(recv_buffer.getData(),0,packetBuffer, 0,packetLength);
+				
+				//Forward
 				link.putReceivedData(packetBuffer,packetLength);
 			}
 			catch (IOException e) {
@@ -96,13 +98,16 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		
 		//Get or create link
 		sa = datagram.getSocketAddress();
-		link = links.get(sa);
-		
-		if(link == null) {
-			link = new RUDPLink(sa,this,this,this,timer);
-			links.put(sa, link);
+
+		synchronized(links) {
+			link = links.get(sa);
+			
+			if(link == null) {
+				link = new RUDPLink(sa,this,this,this,timer);
+				links.put(sa, link);
+			}
 		}
-		
+			
 		//Process send request in link
 		link.send(datagram);
 	}
@@ -110,7 +115,9 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	@Override
 	public void onLinkTimeout(InetSocketAddress sa,RUDPLink link) {
 		//Link timed out => remove it from list
-		links.remove(sa);
+		synchronized(links) {
+			links.remove(sa);
+		}
 	}
 
 	@Override

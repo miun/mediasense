@@ -9,6 +9,8 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
+import javax.jws.Oneway;
+
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
@@ -130,9 +132,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			semaphoreWindowSize.acquire();
 			
 			//Add packet to out list
-			synchronized(packetBuffer_out) {
+			synchronized(this) {
 				packetBuffer_out.put(own_seq,p);
-				
+
 				//Increment sequence number
 				own_seq++;
 			}
@@ -185,7 +187,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			ackSeqOffset = packet.getAckStartSequence();
 			
 			//Acknowledge all packets
-			synchronized(packetBuffer_out) {
+			synchronized(this) {
 				for(Integer i: rangeList.toElementArray()) {
 					ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
 					if(ack_pkt != null) {
@@ -214,16 +216,21 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	//Handle reset flag
 	private void handleResetFlag(RUDPDatagramPacket packet) {
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_RESET)) {
-			//Set the first flag again
-			isFirst = true;
+			RUDPDatagramPacket p;
 			
-			//Clear internal data structures to have a new start
-			packetRangeAck.clear();
-			packetBuffer_in.clear();
+			synchronized(this) {
+				//Set the first flag again
+				isFirst = true;
 			
-			//Make sure that the first packet that is still in
-			//the packet buffer gets the first flag!
-			RUDPDatagramPacket p = packetBuffer_out.get(own_window_start);
+				//Clear internal data structures to have a new start
+				packetRangeAck.clear();
+				packetBuffer_in.clear();
+			
+				//Make sure that the first packet that is still in
+				//the packet buffer gets the first flag!
+				p = packetBuffer_out.get(own_window_start);
+			}
+			
 			if(p != null) sendPacket(p);
 		}
 	}
@@ -231,131 +238,138 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private void handleAckWindowSequence(RUDPDatagramPacket packet) {
 		//Calculate delta to old window
 		int delta;
-		
-		if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
-			//First packet => take ACK-window as the new window start
-			ack_window_foreign = packet.getSenderWindowStart();
-			currentReceivePointer = ack_window_foreign;
-			
-			//We are sync'ed now
-			isSynced = true;
-		}
-		else if(isSynced) {
-			//Calculate window shift / check for overflow
-			delta = packet.getSenderWindowStart() - ack_window_foreign;
 
-			//Check if the window in [0,WINDOW_SIZE]
-			if(delta < 0 || delta > WINDOW_SIZE) {
-				System.out.println("UNSYNCHRONIZED PACKET RECEIVED - OUT OF WINDOW BOUNDS");
-				return;
+		synchronized(this) {
+			if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
+				//First packet => take ACK-window as the new window start
+				ack_window_foreign = packet.getSenderWindowStart();
+				currentReceivePointer = ack_window_foreign;
+				
+				//We are sync'ed now
+				isSynced = true;
 			}
-			
-			//Shift range and foreign window
-			packetRangeAck.shiftRanges((short)(-1 * delta));
-			ack_window_foreign += delta; 
-		}
-		else {
-			//Send a reset packet, because we need a first packet for synchronization
-			RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
-			
-			//Send
-			resetPacket.setResetFlag(true);
-			sendPacket(resetPacket);
-			
-			System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
+			else if(isSynced) {
+				//Calculate window shift / check for overflow
+				delta = packet.getSenderWindowStart() - ack_window_foreign;
+	
+				//Check if the window in [0,WINDOW_SIZE]
+				if(delta < 0 || delta > WINDOW_SIZE) {
+					System.out.println("UNSYNCHRONIZED PACKET RECEIVED - OUT OF WINDOW BOUNDS");
+					return;
+				}
+				
+				//Shift range and foreign window
+				packetRangeAck.shiftRanges((short)(-1 * delta));
+				ack_window_foreign += delta; 
+			}
+			else {
+				//Send a reset packet, because we need a first packet for synchronization
+				RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
+				
+				//Send
+				resetPacket.setResetFlag(true);
+				sendPacket(resetPacket);
+				
+				System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
+			}
 		}
 	}
 	
 	private void handlePayloadData(RUDPDatagramPacket packet) {
 		RUDPDatagram dgram;
 		int newRangeElement;
+		List<RUDPDatagram> readyDatagrams = null;
 		
 		//Process data packet
-		if(isSynced && packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
-			//Check if packet is within window bounds
-			if((packet.getSenderSeqNr() - ack_window_foreign) < 0 || (packet.getSenderSeqNr() - ack_window_foreign) > WINDOW_SIZE) {
-				System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
-			}
-			else {
-				//Insert into receiving packet buffer
-				if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
-					if((dgram = packetBuffer_in.get(packet.getSenderSeqNr() - packet.getFragmentNr())) == null) {
-						//Create new fragmented datagram
+		synchronized(this) {
+			if(isSynced && packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
+				//Check if packet is within window bounds
+				if((packet.getSenderSeqNr() - ack_window_foreign) < 0 || (packet.getSenderSeqNr() - ack_window_foreign) > WINDOW_SIZE) {
+					System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
+				}
+				else {
+					//Insert into receiving packet buffer
+					if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+						if((dgram = packetBuffer_in.get(packet.getSenderSeqNr() - packet.getFragmentNr())) == null) {
+							//Create new fragmented datagram
+							dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
+							packetBuffer_in.put(packet.getSenderSeqNr() - packet.getFragmentNr(),dgram);
+						}
+						else {
+							//We are the Borg, and we will...
+							dgram.assimilateFragment(packet);
+						}
+					}
+					else {
+						//Create new normal datagram
 						dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
 						packetBuffer_in.put(packet.getSenderSeqNr() - packet.getFragmentNr(),dgram);
 					}
-					else {
-						//We are the Borg, and we will...
-						dgram.assimilateFragment(packet);
-					}
-				}
-				else {
-					//Create new normal datagram
-					dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
-					packetBuffer_in.put(packet.getSenderSeqNr() - packet.getFragmentNr(),dgram);
-				}
-				
-				//Calculate relative position and add to packet range list
-				newRangeElement = packet.getSenderSeqNr() - ack_window_foreign;
-				packetRangeAck.add((short)newRangeElement);
-				
-				//Start ACK-timer, if necessary
-				synchronized(this) {
+					
+					//Calculate relative position and add to packet range list
+					newRangeElement = packet.getSenderSeqNr() - ack_window_foreign;
+					packetRangeAck.add((short)newRangeElement);
+					
+					//Start ACK-timer, if necessary
 					if(task_ack == null) {
 						task_ack = new AcknowledgeTask();
 						timer.schedule(task_ack, MAX_ACK_DELAY);
 					}
-				}
-				
-				//Forward all ready packets to upper layer
-				while((dgram = packetBuffer_in.get(currentReceivePointer)) != null)  {
-					if(dgram.isComplete()) {
-						//Remove from list
-						packetBuffer_in.remove(currentReceivePointer);
-						
-						//Forward
-						//listener_receive.onRUDPDatagramReceive(dgram);
-						
-						//Shift receive pointer
-						currentReceivePointer += dgram.getFragmentCount();
+					
+					readyDatagrams = new ArrayList<RUDPDatagram>();
+					
+					//Forward all ready packets to upper layer
+					while((dgram = packetBuffer_in.get(currentReceivePointer)) != null)  {
+						if(dgram.isComplete()) {
+							//Remove from list
+							packetBuffer_in.remove(currentReceivePointer);
+							
+							//Remember ready datagrams
+							readyDatagrams.add(dgram);
+							
+							//Shift receive pointer
+							currentReceivePointer += dgram.getFragmentCount();
+						}
+						else break;
 					}
-					else break;
 				}
 			}
+		}
+		
+		//Forward all ready datagrams to upper layer
+		if(readyDatagrams != null) {
+			for(RUDPDatagram d: readyDatagrams) listener_receive.onRUDPDatagramReceive(d);
 		}
 	}
 	
 	private void setAckStream(RUDPDatagramPacket packet) {
 		//Check if we can acknowledge something
-		if(!packetRangeAck.isEmpty()) {
-			List<Short> ackList;
-			
-			ackList = packetRangeAck.toDifferentialArray();
-			
-			if(ackList.size() == 0) {
+		synchronized(this) {
+			if(!packetRangeAck.isEmpty()) {
+				List<Short> ackList;
+				
+				//Put ACK stream into packet
 				ackList = packetRangeAck.toDifferentialArray();
-			}
-			
-			packet.setACK(ack_window_foreign,ackList);
-			
-			//DEBUG - report if the ACK list did not fit into one packet
-			if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
-				System.out.println("RESERVED_ACK_COUNT OVERFLOW");
-			}
-			
-			//TODO there could be more ranges then we are able to send
-			//in one packet. test if this is fine
-			//Disable ACK timer
-			synchronized(this) {
+				if(ackList.size() == 0) ackList = packetRangeAck.toDifferentialArray();
+				packet.setACK(ack_window_foreign,ackList);
+				
+				//DEBUG - report if the ACK list did not fit into one packet
+				if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
+					System.out.println("RESERVED_ACK_COUNT OVERFLOW");
+				}
+				
+				//TODO there could be more ranges then we are able to send
+				//in one packet. test if this is fine
+				//Disable ACK timer
 				if(task_ack != null) {
 					task_ack.cancel();
 					task_ack = null;
 				}
 			}
-		}
-		else {
-			//Remove ACK data
-			packet.setACK(0, null);
+			else {
+				//Remove ACK data
+				packet.setACK(0, null);
+			}
 		}
 	}
 	
@@ -370,9 +384,11 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		setWindowSequence(p);
 		
 		//Set first flag at first packet
-		if(isFirst) {
-			p.setFirstFlag(true);
-			isFirst = false;
+		synchronized(this) {
+			if(isFirst) {
+				p.setFirstFlag(true);
+				isFirst = false;
+			}
 		}
 
 		//TODO remove debug output
