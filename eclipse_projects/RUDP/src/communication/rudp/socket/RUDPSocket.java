@@ -161,7 +161,6 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		try {
 			//Create UDP datagram and send it
 			dgram = new DatagramPacket(data,data.length,link.getSocketAddress());
-			System.out.println("SEND");
 			sock.send(dgram);
 		}
 		catch (Exception e) {

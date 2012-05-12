@@ -156,9 +156,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			return;
 		}
 		
-		System.out.println("-----\nRECEIVE");
-		System.out.println("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign);
-		System.out.println(packet.toString());
+		System.out.println("RECEIVE\n" + packet.toString() + "\n");
 		
 		//Handle reset packets
 		handleResetFlag(packet);
@@ -171,8 +169,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		//Handle payload data
 		handlePayloadData(packet);
-
-		System.out.println("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign + "\n-----\n");
+		
+		System.out.println("OWN_WINDOW_START:\t" + own_window_start + "\nFOREIGN_WINDOW_START:\t" + ack_window_foreign + "\n");
 	}
 	
 	private void handleAckData(RUDPDatagramPacket packet) {
@@ -378,13 +376,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 
 		//TODO remove debug output
-		System.out.println("-----\nSEND\n" + p.toString());
-		System.out.print("OWN_SEQ: " + own_seq + " OWN_WINDOW_START: " + own_window_start + " ack_window_foreign: " + ack_window_foreign);
-		
+		System.out.println("SEND\n" + p.toString() + "\n");
+
 		//Send packet
 		socket.triggerSend(this, p);
-		
-		System.out.println(" - ###\n-----\n");
 	}
 	
 	private class AcknowledgeTask extends TimerTask {
