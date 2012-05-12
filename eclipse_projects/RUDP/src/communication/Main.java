@@ -36,6 +36,8 @@ public class Main extends Thread {
 			data[0] = who;
 			dgram = new RUDPDatagram(dst, 23456, data);
 			
+			Thread.sleep(1000);
+			
 			while(true) {
 				sock.send(dgram);
 			}

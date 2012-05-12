@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -60,17 +61,22 @@ public class RUDPDatagramPacket {
 	int data_len;
 	byte[] data;
 	
+	//TODO remove
+	private int id;
+	
 	public RUDPDatagramPacket() {
 		//Create an empty packet without resend-timer stuff
 		//Used for acknowledge-only packets, that don't need to be resend
 		timer = null;
 		listener = null;
+		id = (new Random()).nextInt();
 	}
 		
 	public RUDPDatagramPacket(Timer timer,RUDPPacketSenderInterface listener) {
 		//Create a packet with resend capabilities
 		this.timer = timer;
 		this.listener = listener;
+		id = (new Random()).nextInt();
 	}
 
 	//Deserialize packet
@@ -86,6 +92,9 @@ public class RUDPDatagramPacket {
 		
 		//Read flag
 		try {
+			//TODO remove debug
+			id = dis.readInt();
+			
 			flag = dis.readByte();
 			flag_first = (flag & FLAG_FIRST) != 0 ? true : false; 
 			flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
@@ -211,6 +220,9 @@ public class RUDPDatagramPacket {
 		try {
 			bos = new ByteArrayOutputStream();
 			dos = new DataOutputStream(bos);
+			
+			//TODO remove debug
+			dos.writeInt(id);
 			
 			//Write flags
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
@@ -391,19 +403,25 @@ public class RUDPDatagramPacket {
 	public String toString() {
 		String result;
 		
-		result = flag_first ? "FIRST" : "";
+		result = ">>>>>\nID:\t\t0x" + Integer.toHexString(id).toUpperCase() + "\nFlags:\t\t";
+		result += flag_first ? "FIRST" : "";
 		result += (flag_reset ? ",RESET" : "");
 		result += (flag_ack ? ",ACK" : "");
 		result += (flag_fragment ? ",FRAGMENT" : "");
 		result += (flag_data ? ",DATA" : "");
 		result += (flag_resend ? ",RESEND" : "");
 		
-		result += "\nOWN_SEQ:" + sender_seq + " WND_START_SEQ:" + sender_window_start + " FRAG_NR:" + frag_nr + " FRAG_COUNT:" + frag_count + " RETRIES:" + retries + "\nAckData: ";
+		//Window start
+		result += "\nWND_START_SEQ:\t" + sender_window_start; 
+		if(flag_data) result += "\nOWN_SEQ:\t" + sender_seq + "\nRETRIES:\t" + retries;
+		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		
 		if(flag_ack && ack_data.size() > 0) {
-			result += (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
+			result += "\nACK_DATA: " + (new DeltaRangeList(this.getAckData())).toString(ack_start_seq);
 		}
 		
+		result += "\n<<<<<";
+
 		return result;
 	}
 	

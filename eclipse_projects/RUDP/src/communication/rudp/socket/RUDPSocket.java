@@ -18,7 +18,7 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
 	//The capacity defines the receive queue length in packets
 	//The maximum size of each packet can be 64 kB
-	private static final int QUEUE_CAPACITY = 1;
+	private static final int QUEUE_CAPACITY = 10;
 	
 	private DatagramSocket sock;
 	private DatagramPacket recv_buffer;
@@ -67,6 +67,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			try {
 				//Receive datagram
 				sock.receive(recv_buffer);
+				System.out.println("RECV");
 				sa = new InetSocketAddress(recv_buffer.getAddress(),recv_buffer.getPort());
 				
 				//Find or create link
@@ -160,6 +161,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		try {
 			//Create UDP datagram and send it
 			dgram = new DatagramPacket(data,data.length,link.getSocketAddress());
+			System.out.println("SEND");
 			sock.send(dgram);
 		}
 		catch (Exception e) {
