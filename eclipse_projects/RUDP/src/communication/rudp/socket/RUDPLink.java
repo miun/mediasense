@@ -201,7 +201,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					if(ack_pkt.isAcknowledged()) {
 						//Shift window
 						packetBuffer_out.remove(own_window_start);
-						own_window_start++;
+						//own_window_start++;
 					}
 					else {
 						break;
@@ -262,6 +262,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//Release semaphore delta times
 				semaphoreWindowSize.release(delta);
+				own_window_start += delta;
 			}
 			else {
 				//Send a reset packet, because we need a first packet for synchronization
