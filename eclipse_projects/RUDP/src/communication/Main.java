@@ -32,12 +32,13 @@ public class Main extends Thread {
 			InetAddress dst = InetAddress.getByName("10.14.1.93");
 
 			sock = new RUDPSocket(23456);
-
+			
 			//Create data packet
 			for(int i = 0; i < data.length; i++) data[i] = (byte)i;
 			data[0] = who;
 			dgram = new RUDPDatagram(dst, 23456, data);
 			
+			this.start();
 			Thread.sleep(1000);
 			
 			while(true) {
