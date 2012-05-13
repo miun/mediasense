@@ -100,7 +100,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				//Create datagram packet
 				packet.setFragment(fragmentCounter,(short)0);
 				remainingPacketLength = packet.getMaxDataLength();
-				packet.setData(datagram.getData(), offset,remainingPacketLength < dataLen ? remainingPacketLength : dataLen , currentPacketSeq, false);
+				packet.setData(datagram.getData(), offset,remainingPacketLength < dataLen ? remainingPacketLength : dataLen , false);
 				packetList.add(packet);
 				
 				//Increment offset
@@ -122,7 +122,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 		else {
 			//NO fragmentation
-			packet.setData(datagram.getData(),0, datagram.getData().length, currentPacketSeq, false);
+			packet.setData(datagram.getData(),0, datagram.getData().length, false);
 			packetList.add(packet);
 		}
 		
@@ -133,6 +133,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			
 			//Add packet to out list
 			synchronized(this) {
+				p.setPacketSequence(currentPacketSeq);
 				packetBuffer_out.put(currentPacketSeq,p);
 
 				//Increment sequence number
@@ -391,7 +392,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Set first flag at first packet
 		synchronized(this) {
 			if(isFirst) {
-				p.setFirstFlag(true,currentPacketSeq);
+				p.setFirstFlag(true);
 				isFirst = false;
 			}
 		}

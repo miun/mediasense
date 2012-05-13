@@ -186,12 +186,15 @@ public class RUDPDatagramPacket {
 		return remaining_window_size;
 	}
 	
-	public void setData(byte[] data,int data_off,int data_len,int seq,boolean resend) {
+	public void setData(byte[] data,int data_off,int data_len,boolean resend) {
 		flag_data = true;
 		flag_resend = resend;
 		this.data_off = data_off;
 		this.data_len = data_len;
 		this.data = data;
+	}
+	
+	public void setPacketSequence(int seq) {
 		this.packet_seq = seq;
 	}
 	
@@ -382,9 +385,8 @@ public class RUDPDatagramPacket {
 		return ack_seq_offset;
 	}
 	
-	public void setFirstFlag(boolean flag,int seq) {
+	public void setFirstFlag(boolean flag) {
 		flag_first = flag;
-		if(flag) packet_seq = seq;
 	}
 	
 	public void setResetFlag(boolean flag) {
