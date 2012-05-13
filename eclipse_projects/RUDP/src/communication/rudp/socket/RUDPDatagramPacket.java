@@ -108,7 +108,7 @@ public class RUDPDatagramPacket {
 			
 			//Read static fields
 			remaining_window_size = dis.readInt();
-			if(flag_data) packet_seq = dis.readInt();
+			if(flag_data || flag_first) packet_seq = dis.readInt();
 			if(flag_ack) {
 				//Count means the number of ranges!
 				ack_count = dis.readShort();
@@ -226,7 +226,7 @@ public class RUDPDatagramPacket {
 			dos.writeInt(remaining_window_size);
 			
 			//Write sequence
-			if(flag_data) dos.writeInt(packet_seq);
+			if(flag_data || flag_first) dos.writeInt(packet_seq);
 
 			//Write static length fields
 			if(flag_ack) {
@@ -408,7 +408,7 @@ public class RUDPDatagramPacket {
 		
 		//Window start
 		result += "\nREM_WND_SIZE:\t" + remaining_window_size; 
-		if(flag_data) result += "\nPACKET_SEQ:\t" + packet_seq + "\nRETRIES:\t" + retries;
+		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nRETRIES:\t" + retries;
 		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		
 		if(flag_ack && ack_seq_data.size() > 0) {
