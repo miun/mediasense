@@ -2,7 +2,6 @@ package communication.rudp.socket;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.List;
 
 public class RUDPDatagram {
 	private Exception exception;

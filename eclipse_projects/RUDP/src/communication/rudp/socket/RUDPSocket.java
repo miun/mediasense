@@ -67,7 +67,6 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			try {
 				//Receive datagram
 				sock.receive(recv_buffer);
-				System.out.println("RECV");
 				sa = new InetSocketAddress(recv_buffer.getAddress(),recv_buffer.getPort());
 				
 				//Find or create link
