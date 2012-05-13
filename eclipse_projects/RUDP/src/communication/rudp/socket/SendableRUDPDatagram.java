@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
-public class RUDPDatagram {
+public class SendableRUDPDatagram {
 	private Exception exception;
 	private InetAddress dst;
 	private int port;
@@ -20,14 +20,14 @@ public class RUDPDatagram {
 	private short fragCount;
 	private RUDPDatagramPacket[] data;
 	
-	public RUDPDatagram(InetAddress dst,int port,Exception e) {
+	public SendableRUDPDatagram(InetAddress dst,int port,Exception e) {
 		//Datagram contains an exception
 		this.dst = dst;
 		this.port = port;
 		exception = e;
 	}
 	
-	public RUDPDatagram(InetAddress dst,int port,byte[] data) {
+	public SendableRUDPDatagram(InetAddress dst,int port,byte[] data,Timer timer,RUDPPacketSenderInterface listener) {
 		//Datagram contains data
 		this.dst = dst;
 		this.port = port;
@@ -47,7 +47,10 @@ public class RUDPDatagram {
 		dataLen = dataSize;
 		
 		//new packet
-		packet = new RUDPDatagramPacket();
+		packet = new RUDPDatagramPacket(timer, listener);
+		
+		
+		int datas = packet.getRemainingWindowSize();
 		
 		if(dataSize > packet.getMaxDataLength()) {
 			short fragmentCounter = 0;
@@ -65,7 +68,7 @@ public class RUDPDatagram {
 				dataLen -= remainingPacketLength; 
 				
 				//Create new packet
-				packet = new RUDPDatagramPacket();
+				packet = new RUDPDatagramPacket(timer,listener);
 				//packet.setDataFlag(true);
 				
 				//Increment fragment and sequence counter
@@ -81,7 +84,6 @@ public class RUDPDatagram {
 				this.data[p.getFragmentNr()] = p;
 			}
 			
-			
 			this.fragAmount = fragmentCounter;
 			this.fragCount = fragmentCounter;
 		}
@@ -94,7 +96,7 @@ public class RUDPDatagram {
 		
 	}
 	
-	public RUDPDatagram(InetAddress dst,int port,short fragCount) {
+	public SendableRUDPDatagram(InetAddress dst,int port,short fragCount) {
 		//Datagram is a fragmented datagram
 		this.dst = dst;
 		this.port = port;
@@ -123,6 +125,10 @@ public class RUDPDatagram {
 		}
 	}
 	
+	public RUDPDatagramPacket[] getFragments() {
+		return data.clone();
+	}
+
 	public InetAddress getDst() {
 		return dst;
 	}

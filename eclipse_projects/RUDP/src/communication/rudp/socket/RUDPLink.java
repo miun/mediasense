@@ -78,8 +78,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	public void send(RUDPDatagram datagram) throws InterruptedException {
-		List<RUDPDatagramPacket> packetList = new ArrayList<RUDPDatagramPacket>();
-		RUDPDatagramPacket packet;
+		SendableRUDPDatagram sdatagram = new SendableRUDPDatagram(datagram.getDst(), datagram.getPort(), datagram.getData(), timer, this);
+		
+		RUDPDatagramPacket[] packetList = sdatagram.getFragments();
+		/*RUDPDatagramPacket packet;
 		int dataSize;
 		int dataLen;
 		int remainingPacketLength;
@@ -124,7 +126,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//NO fragmentation
 			packet.setData(datagram.getData(),0, datagram.getData().length, false);
 			packetList.add(packet);
-		}
+		}*/
+		
+		
 		
 		//Send packets
 		for(RUDPDatagramPacket p: packetList) {
@@ -224,6 +228,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		int delta;
 
 		synchronized(this) {
+			//Release semaphore delta times
+			semaphoreWindowSize.release(WINDOW_SIZE - packetBuffer_out.size());
+			
 			if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 				//First packet => take ACK-window as the new window start
 				ackRangeOffset = packet.getPacketSeq();
@@ -242,11 +249,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						return;
 					}
 					
-					//Shift range and foreign window
-					ackRange.shiftRanges((short)(-1 * delta));
-					
-					//Release semaphore delta times
-					semaphoreWindowSize.release(delta);
 				}
 				else {
 					//Send a reset packet, because we need a first packet for synchronization
@@ -255,6 +257,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					//Send
 					resetPacket.setResetFlag(true);
 					sendPacket(resetPacket);
+					
+					//TODO reset semaphore
 					
 					System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
 				}
@@ -322,8 +326,16 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							//Remember ready datagrams
 							readyDatagrams.add(dgram);
 							
-							//Shift receive pointer
-							ackRangeOffset += dgram.getFragmentCount();
+							//Tell the datagram it is deployed							
+							dgram.setDeployed();
+							
+							if(dgram.isAcknowledged()) {
+								//Shift receive pointer
+								ackRangeOffset += dgram.getFragmentCount();
+	
+								//Shift range and foreign window
+								ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
+							}
 						}
 						else break;
 					}
