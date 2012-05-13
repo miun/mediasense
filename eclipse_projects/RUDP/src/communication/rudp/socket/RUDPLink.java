@@ -231,31 +231,33 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				//We are sync'ed now
 				isSynced = true;
 			}
-			else if(isSynced) {
-				//Calculate window shift / check for overflow
-				delta = packet.getPacketSeq() - ackRangeOffset;
-	
-				//Check if the window in [0,WINDOW_SIZE]
-				if(delta < 0 || delta > WINDOW_SIZE) {
-					System.out.println("UNSYNCHRONIZED PACKET RECEIVED - OUT OF WINDOW BOUNDS");
-					return;
+			else if(packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
+				if(isSynced) {
+					//Calculate window shift / check for overflow
+					delta = packet.getPacketSeq() - ackRangeOffset;
+		
+					//Check if the window in [0,WINDOW_SIZE]
+					if(delta < 0 || delta > WINDOW_SIZE) {
+						System.out.println("UNSYNCHRONIZED PACKET RECEIVED - OUT OF WINDOW BOUNDS");
+						return;
+					}
+					
+					//Shift range and foreign window
+					ackRange.shiftRanges((short)(-1 * delta));
+					
+					//Release semaphore delta times
+					semaphoreWindowSize.release(delta);
 				}
-				
-				//Shift range and foreign window
-				ackRange.shiftRanges((short)(-1 * delta));
-				
-				//Release semaphore delta times
-				semaphoreWindowSize.release(delta);
-			}
-			else {
-				//Send a reset packet, because we need a first packet for synchronization
-				RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
-				
-				//Send
-				resetPacket.setResetFlag(true);
-				sendPacket(resetPacket);
-				
-				System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
+				else {
+					//Send a reset packet, because we need a first packet for synchronization
+					RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
+					
+					//Send
+					resetPacket.setResetFlag(true);
+					sendPacket(resetPacket);
+					
+					System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
+				}
 			}
 		}
 	}
@@ -389,7 +391,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		//Set first flag at first packet
 		synchronized(this) {
 			if(isFirst) {
-				p.setFirstFlag(true);
+				p.setFirstFlag(true,currentPacketSeq);
 				isFirst = false;
 			}
 		}

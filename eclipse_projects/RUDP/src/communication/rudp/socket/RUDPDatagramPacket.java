@@ -382,8 +382,9 @@ public class RUDPDatagramPacket {
 		return ack_seq_offset;
 	}
 	
-	public void setFirstFlag(boolean flag) {
+	public void setFirstFlag(boolean flag,int seq) {
 		flag_first = flag;
+		if(flag) packet_seq = seq;
 	}
 	
 	public void setResetFlag(boolean flag) {
