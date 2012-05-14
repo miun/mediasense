@@ -250,8 +250,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					}
 					else {
 						//Create new normal datagram
-						dgram = new RUDPDatagramBuilder(sa, (short)1);
-						dgram.assimilateFragment(packet);
+						dgram = new RUDPDatagramBuilder(sa, packet);
 						packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
 					}
 					
@@ -275,6 +274,36 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					//Datagrams ready for delivery
 					readyDatagrams = new ArrayList<RUDPDatagram>();
 					
+				
+					int i;
+					RUDPDatagramBuilder d;
+					boolean deleteFromBuffer = true;
+					List<Short> ackList = ackRange.toDifferentialArray();
+					
+					for(i = 0 ; i < ackList.size() ; i = i +2) {
+						d = packetBuffer_in.get(ackRangeOffset + ackList.get(i));
+						if(d!=null && d.isComplete()) {
+							
+							readyDatagrams.add(dgram.toRUDPDatagram());
+							d.setDeployed();
+							
+							if(deleteFromBuffer && d.isAckSent()) {
+								//Remove from list
+								packetBuffer_in.remove(ackRangeOffset);
+								
+								//Shift receive pointer
+								ackRangeOffset += d.getFragmentCount();
+
+								//Shift range and foreign window
+								ackRange.shiftRanges((short)(-1 * d.getFragmentCount()));
+							}
+							else {
+								deleteFromBuffer = false;
+							}
+						}
+					}	
+					
+					/*
 					//Forward all ready packets to upper layer
 					while((dgram = packetBuffer_in.get(ackRangeOffset)) != null)  {
 						if(dgram.isComplete()) {
@@ -297,7 +326,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							}
 						}
 						else break;
-					}
+					}*/
 					//TODO send immediate packet if the inbuffer is going to be full
 				}
 			}

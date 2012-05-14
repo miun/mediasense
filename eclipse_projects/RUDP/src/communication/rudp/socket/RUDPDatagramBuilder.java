@@ -25,6 +25,15 @@ public class RUDPDatagramBuilder {
 		this.fragAmount = 0;
 	}
 	
+	public RUDPDatagramBuilder(InetSocketAddress address,RUDPDatagramPacket packet) {
+		//Datagram is a fragmented datagram
+		this.address = address;
+		this.packets = new RUDPDatagramPacket[1];
+		this.packets[0] = packet;
+		this.fragCount = 1;
+		this.fragAmount = 1;
+	}
+	
 	public RUDPDatagramBuilder(RUDPDatagram dgram) {
 		this.address = dgram.getSocketAddress();
 		
