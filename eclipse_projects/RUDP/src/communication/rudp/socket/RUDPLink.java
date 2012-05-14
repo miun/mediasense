@@ -9,8 +9,6 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
-import javax.jws.Oneway;
-
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
