@@ -47,7 +47,7 @@ public class RUDPDatagramPacket {
 
 	//Sequence of this packet
 	private int packet_seq;
-	private int remaining_window_size;
+	private int window_size;
 	
 	//If this packet is part of a fragmented datagram,
 	//these flags indicate the first and last fragment
@@ -55,7 +55,7 @@ public class RUDPDatagramPacket {
 	private short frag_count;
 
 	//ACK data
-	private int ack_seq_offset;
+	private int ack_window_start;
 	private List<Short> ack_seq_data;
 	
 	//ACK data receiver side
@@ -108,7 +108,7 @@ public class RUDPDatagramPacket {
 			flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
 			
 			//Read static fields
-			remaining_window_size = dis.readInt();
+			window_size = dis.readInt();
 			if(flag_data || flag_first) packet_seq = dis.readInt();
 			if(flag_ack) {
 				//Count means the number of ranges!
@@ -137,7 +137,7 @@ public class RUDPDatagramPacket {
 	
 			//Read variable length fields
 			if(flag_ack) {
-				ack_seq_offset = dis.readInt();				
+				ack_window_start = dis.readInt();				
 				ack_seq_data = new ArrayList<Short>();
 				
 				//Take the count times 2, because every range has 2 elements 
@@ -174,17 +174,17 @@ public class RUDPDatagramPacket {
 		else {
 			flag_ack = true;
 			this.ack_seq_data = ack_data;
-			this.ack_seq_offset = ack_seq;
+			this.ack_window_start = ack_seq;
 		}
 	}
 	
 	//Sequence window
-	public void setRemainingWindowSize(int remaining_window_size) {
-		this.remaining_window_size = remaining_window_size;
+	public void setWindowSize(int window_size) {
+		this.window_size = window_size;
 	}
 	
-	public int getRemainingWindowSize() {
-		return remaining_window_size;
+	public int getWindowSize() {
+		return window_size;
 	}
 	
 	public void setData(byte[] data,boolean resend) {
@@ -225,7 +225,7 @@ public class RUDPDatagramPacket {
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
 			
 			//Write window sequence
-			dos.writeInt(remaining_window_size);
+			dos.writeInt(window_size);
 			
 			//Write sequence
 			if(flag_data || flag_first) dos.writeInt(packet_seq);
@@ -248,7 +248,7 @@ public class RUDPDatagramPacket {
 
 			//Write variable length fields
 			if(flag_ack) {
-				dos.writeInt(ack_seq_offset);
+				dos.writeInt(ack_window_start);
 				for(int i = 0; i < ack_count * 2; i++) {
 					dos.writeShort(ack_seq_data.get(i));
 				}
@@ -391,8 +391,8 @@ public class RUDPDatagramPacket {
 		return ack_seq_data;
 	}
 	
-	public int getAckSeqOffset() {
-		return ack_seq_offset;
+	public int getAckWindowStart() {
+		return ack_window_start;
 	}
 	
 	public void setFirstFlag(boolean flag) {
@@ -419,12 +419,12 @@ public class RUDPDatagramPacket {
 		result += (flag_resend ? ",RESEND" : "");
 		
 		//Window start
-		result += "\nREM_WND_SIZE:\t" + remaining_window_size; 
+		result += "\nREM_WND_SIZE:\t" + window_size; 
 		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + retries;
 		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		
 		if(flag_ack && ack_seq_data.size() > 0) {
-			result += "\nACK_RANGES:\t" + (new DeltaRangeList(this.getAckSeqData())).toString(ack_seq_offset);
+			result += "\nACK_RANGES:\t" + (new DeltaRangeList(this.getAckSeqData())).toString(ack_window_start);
 		}
 		
 		result += "\n<<<<<";
