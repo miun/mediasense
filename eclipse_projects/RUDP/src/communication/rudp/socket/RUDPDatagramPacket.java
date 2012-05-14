@@ -26,7 +26,6 @@ public class RUDPDatagramPacket {
 	public static final int FLAG_DATA = 8;
 	public static final int FLAG_RESEND = 16;
 	public static final int FLAG_FRAGMENT = 32;
-	//public static final int FLAG_PERSIST = 64;
 	
 	private boolean flag_first = false;
 	private boolean flag_reset = false;
@@ -35,9 +34,11 @@ public class RUDPDatagramPacket {
 	private boolean flag_resend = false;
 	private boolean flag_fragment = false;
 	
-	//Resend timer and task
+	//Send attempts
 	private int attempts;
 	private int retries;
+	
+	//Resend timer
 	private Timer timer;
 	private TimerTask task_resend;
 	
@@ -47,7 +48,6 @@ public class RUDPDatagramPacket {
 	//Sequence of this packet
 	private int packet_seq;
 	private int remaining_window_size;
-	//private int sender_window_start;
 	
 	//If this packet is part of a fragmented datagram,
 	//these flags indicate the first and last fragment
@@ -58,13 +58,10 @@ public class RUDPDatagramPacket {
 	private int ack_seq_offset;
 	private List<Short> ack_seq_data;
 	
-	//Ack data receiver side
+	//ACK data receiver side
 	private boolean isAckSent = false;
-	private boolean isDeployed = false;
 	
 	//Data
-	int data_off;
-	int data_len;
 	byte[] data;
 	
 	//TODO remove
@@ -190,11 +187,9 @@ public class RUDPDatagramPacket {
 		return remaining_window_size;
 	}
 	
-	public void setData(byte[] data,int data_off,int data_len,boolean resend) {
+	public void setData(byte[] data,boolean resend) {
 		flag_data = true;
 		flag_resend = resend;
-		this.data_off = data_off;
-		this.data_len = data_len;
 		this.data = data;
 	}
 	
@@ -249,7 +244,7 @@ public class RUDPDatagramPacket {
 			}
 			
 			//Write data
-			if(flag_data) dos.write(data,data_off,data_len);
+			if(flag_data) dos.write(data);
 
 			//Write variable length fields
 			if(flag_ack) {
@@ -451,14 +446,6 @@ public class RUDPDatagramPacket {
 	
 	public boolean isAckSent() {
 		return isAckSent;
-	}
-	
-	public void setDeployed() {
-		isDeployed = true;
-	}
-	
-	public boolean isDeployed() {
-		return isDeployed;
 	}
 	
 	@Override

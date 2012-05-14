@@ -42,7 +42,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	
 	//Receiver list
 	//private int currentReceivePointer;
-	private TreeMap<Integer,RUDPDatagram> packetBuffer_in;
+	private TreeMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
 	
 	//Acknowledge stuff
 	private int ackRangeOffset;
@@ -52,7 +52,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	public RUDPLink(InetSocketAddress sa,RUDPSocketInterface socket,RUDPLinkTimeoutListener listener_to,RUDPReceiveListener listener_recv,Timer timer) {
 		//Create data structures
 		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacket>();
-		packetBuffer_in = new TreeMap<Integer,RUDPDatagram>();
+		packetBuffer_in = new TreeMap<Integer,RUDPDatagramBuilder>();
 		ackRange = new DeltaRangeList();
 		
 		//Set timer and listener
@@ -78,67 +78,22 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	public void send(RUDPDatagram datagram) throws InterruptedException {
-		datagram.setPacketsSendable(timer, this);
-		
-		RUDPDatagramPacket[] packetList = datagram.getFragments();
-		/*RUDPDatagramPacket packet;
-		int dataSize;
-		int dataLen;
-		int remainingPacketLength;
-		
-		//Create new packet
-		packet = new RUDPDatagramPacket(timer,this);
-		//packet.setDataFlag(true);
-		
-		//Length of the data to send
-		dataSize = datagram.getData().length;
-		dataLen = dataSize;
-		
-		if(dataSize > packet.getMaxDataLength()) {
-			short fragmentCounter = 0;
-			
-			//For each fragment
-			for(int offset = 0; offset < dataSize;) {
-				//Create datagram packet
-				packet.setFragment(fragmentCounter,(short)0);
-				remainingPacketLength = packet.getMaxDataLength();
-				packet.setData(datagram.getData(), offset,remainingPacketLength < dataLen ? remainingPacketLength : dataLen , false);
-				packetList.add(packet);
-				
-				//Increment offset
-				offset += remainingPacketLength;
-				dataLen -= remainingPacketLength; 
-				
-				//Create new packet
-				packet = new RUDPDatagramPacket(timer,this);
-				//packet.setDataFlag(true);
-				
-				//Increment fragment and sequence counter
-				fragmentCounter++;
-			}
-			
-			//Set fragment count, because now we know it
-			for(RUDPDatagramPacket p: packetList) {
-				p.setFragment(p.getFragmentNr(), (short)packetList.size());
-			}
-		}
-		else {
-			//NO fragmentation
-			packet.setData(datagram.getData(),0, datagram.getData().length, false);
-			packetList.add(packet);
-		}*/
-		
-		
+		RUDPDatagramBuilder dgramBuilder;
+		RUDPDatagramPacket[] packetList;
+
+		//Create datagram builder from user datagram
+		dgramBuilder = new RUDPDatagramBuilder(datagram); 
+		packetList = dgramBuilder.getFragmentedPackets();
 		
 		//Send packets
-		for(RUDPDatagramPacket p: packetList) {
+		for(RUDPDatagramPacket packet: packetList) {
 			//Enter the semaphore to stay within window size
 			semaphoreWindowSize.acquire();
 			
 			//Add packet to out list
 			synchronized(this) {
-				p.setPacketSequence(currentPacketSeq);
-				packetBuffer_out.put(currentPacketSeq,p);
+				packet.setPacketSequence(currentPacketSeq);
+				packetBuffer_out.put(currentPacketSeq,packet);
 
 				//Increment sequence number
 				currentPacketSeq++;
@@ -147,7 +102,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//Forward to socket interface
 			//TODO replace with a nice function
 			//p.triggerSend(avg_RTT * 1.5);
-			p.sendPacket(timer,this,MAX_DATA_PACKET_RETRIES,1000);
+			packet.sendPacket(timer,this,MAX_DATA_PACKET_RETRIES,1000);
 		}
 	}
 	
@@ -267,7 +222,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void handlePayloadData(RUDPDatagramPacket packet) {
-		RUDPDatagram dgram;
+		RUDPDatagramBuilder dgram;
 		int newRangeElement;
 		List<RUDPDatagram> readyDatagrams = null;
 		
@@ -283,7 +238,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
 						if((dgram = packetBuffer_in.get(packet.getPacketSeq() - packet.getFragmentNr())) == null) {
 							//Create new fragmented datagram
-							dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
+							dgram = new RUDPDatagramBuilder(sa,packet.getFragmentCount());
+							dgram.assimilateFragment(packet);
+							//, packet.getData());
 							packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
 						}
 						else {
@@ -293,7 +250,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					}
 					else {
 						//Create new normal datagram
-						dgram = new RUDPDatagram(sa.getAddress(), sa.getPort(), packet.getData());
+						dgram = new RUDPDatagramBuilder(sa, (short)1);
+						dgram.assimilateFragment(packet);
 						packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
 					}
 					
@@ -321,7 +279,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					while((dgram = packetBuffer_in.get(ackRangeOffset)) != null)  {
 						if(dgram.isComplete()) {
 							//Remember ready datagrams
-							readyDatagrams.add(dgram);
+							readyDatagrams.add(dgram.toRUDPDatagram());
 							
 							//Tell the datagram it is deployed							
 							dgram.setDeployed();
@@ -363,7 +321,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				packet.setACKData(ackRangeOffset,ackList);
 				
 				//Inform packages that their ack is sent
-				RUDPDatagram d;
+				RUDPDatagramBuilder d;
 				int i;
 				boolean deleteFromBuffer = true;
 				for(i = 0 ; i < ackList.size() ; i = i +2) {
