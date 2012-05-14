@@ -419,7 +419,8 @@ public class RUDPDatagramPacket {
 		result += (flag_resend ? ",RESEND" : "");
 		
 		//Window start
-		result += "\nREM_WND_SIZE:\t" + window_size; 
+		result += "\nWND_SIZE:\t" + window_size; 
+		result += "\nACK_WND_START:\t" + ack_window_start; 
 		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + retries;
 		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		

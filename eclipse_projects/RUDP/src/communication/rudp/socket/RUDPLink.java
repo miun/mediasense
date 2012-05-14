@@ -15,7 +15,7 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
-	private static final int MAX_ACK_DELAY = 10000000;
+	private static final int MAX_ACK_DELAY = 100;
 	private static final int MAX_DATA_PACKET_RETRIES = 3;
 	private static final int WINDOW_SIZE = 4;
 	private static final int WINDOW_SIZE_BOOST = 2;
