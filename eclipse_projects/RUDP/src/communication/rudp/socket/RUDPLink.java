@@ -184,7 +184,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 
 		synchronized(this) {
 			//Release semaphore delta times
-			semaphoreWindowSize.release(WINDOW_SIZE - packetBuffer_out.size());
+			//semaphoreWindowSize.release(WINDOW_SIZE - packetBuffer_out.size());
 			
 			if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 				//First packet => take ACK-window as the new window start
@@ -192,31 +192,27 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//We are sync'ed now
 				isSynced = true;
+				
+				//Release semaphore
+				semaphoreWindowSize.drainPermits();
+				semaphoreWindowSize.release(packet.getRemainingWindowSize());
 			}
-			else if(packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
-				if(isSynced) {
-					//Calculate window shift / check for overflow
-					delta = packet.getPacketSeq() - ackRangeOffset;
-		
-					//Check if the window in [0,WINDOW_SIZE]
-					if(delta < 0 || delta > WINDOW_SIZE) {
-						System.out.println("UNSYNCHRONIZED PACKET RECEIVED - OUT OF WINDOW BOUNDS");
-						return;
-					}
-					
-				}
-				else {
-					//Send a reset packet, because we need a first packet for synchronization
-					RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
-					
-					//Send
-					resetPacket.setResetFlag(true);
-					sendPacket(resetPacket);
-					
-					//TODO reset semaphore
-					
-					System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
-				}
+			else if(!isSynced) {
+			
+				//Send a reset packet, because we need a first packet for synchronization
+				RUDPDatagramPacket resetPacket = new RUDPDatagramPacket();
+				
+				//Send
+				resetPacket.setResetFlag(true);
+				sendPacket(resetPacket);
+				
+				//TODO reset semaphore
+				
+				System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
+			}
+			else {
+				semaphoreWindowSize.drainPermits();
+				semaphoreWindowSize.release(packet.getRemainingWindowSize());
 			}
 		}
 	}

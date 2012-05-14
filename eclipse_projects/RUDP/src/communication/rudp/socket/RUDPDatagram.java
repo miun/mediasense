@@ -31,7 +31,4 @@ public class RUDPDatagram {
 		return data;
 	}
 	
-	public Exception getException() {
-		return null;
-	}
 }

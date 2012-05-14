@@ -139,8 +139,8 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		try {
 			//Take the next datagram
 			dgram = recv_queue.take();
-			sock_exception = dgram.getException();
-			if(sock_exception != null) throw sock_exception;
+			//sock_exception = dgram.getException();
+			//if(sock_exception != null) throw sock_exception;
 
 			//Return data
 			return dgram.getData();

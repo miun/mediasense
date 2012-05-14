@@ -10,7 +10,7 @@ public class Main extends Thread {
 	public InetAddress dst;
 
 	public byte[] data;
-	public byte who = 'F';
+	public byte who = 'T';
 	
 	public static void main(String[] args) {
 		new Main();
@@ -29,7 +29,7 @@ public class Main extends Thread {
 		try {
 			RUDPDatagram dgram;
 
-			InetAddress dst = InetAddress.getByName("10.14.1.73");
+			InetAddress dst = InetAddress.getByName("10.13.1.122");
 
 			sock = new RUDPSocket(23456);
 			
@@ -42,7 +42,7 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			while(true) {
-//				sock.send(dgram);
+				sock.send(dgram);
 //				Thread.sleep(50);
 			}
 		}
