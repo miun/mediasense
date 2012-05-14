@@ -1,0 +1,12 @@
+set yrange [0:1]
+#set y2range [0:100000000]
+
+set style line 1 lt 1 lw 2 pt 1 linecolor rgb "red"
+set style line 2 lt 1 lw 2 pt 1 linecolor rgb "green"
+set style line 3 lt 1 lw 2 pt 1 linecolor rgb "blue"
+
+#set y2tics border
+
+plot [0:1000] "./keepalive.dat" using 2:3 w l ls 1,\
+	"./nokeepalive.dat" using 2:3 w l ls 2,\
+	"./predecessor.dat" using 2:3 w l ls 3

@@ -5,8 +5,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
+import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPDatagramPacket {
+	public static final int MAX_PACKET_SIZE = 65535;
+	public static final int RESERVED_ACK_COUNT = 32;
+	public static final int RESERVED_ACK_SIZE = RESERVED_ACK_COUNT * 2 * (Short.SIZE / 8) + Integer.SIZE / 8;
+	
 	//Flags
 	public static final int FLAG_FIRST = 1;
 	public static final int FLAG_RESET = 2;
@@ -21,112 +33,168 @@ public class RUDPDatagramPacket {
 	private boolean flag_data = false;
 	private boolean flag_resend = false;
 	private boolean flag_fragment = false;
+	
+	//Send attempts
+	private int attempts;
+	private int retries;
+	
+	//Resend timer
+	private Timer timer;
+	private TimerTask task_resend;
+	
+	//Interface to send packets with
+	private RUDPPacketSenderInterface listener;
 
 	//Sequence of this packet
-	private int seq;
+	private int packet_seq;
+	private int window_size;
 	
 	//If this packet is part of a fragmented datagram,
 	//these flags indicate the first and last fragment
-	private short frag_first;
 	private short frag_nr;
-	private short frag_last;
+	private short frag_count;
 
 	//ACK data
-	short ack_data[];
+	private int ack_window_start;
+	private List<Short> ack_seq_data;
+	
+	//ACK data receiver side
+	private boolean isAckSent = false;
 	
 	//Data
 	byte[] data;
 	
+	//TODO remove
+	private int id;
+	
 	public RUDPDatagramPacket() {
-		//Empty constructor also possible
+		//Create an empty packet without resend-timer stuff
+		//Used for acknowledge-only packets, that don't need to be resend
+		timer = null;
+		listener = null;
+		id = (new Random()).nextInt();
 	}
-	
-	public RUDPDatagramPacket(int seq,boolean resend,Short frag_first,Short frag_nr,Short frag_last,short[] ack_data,byte[] data) {
-		//Set all the data
-		setData(data, seq, resend);
-		setFragment(frag_first, frag_nr, frag_last);
-		setACK(ack_data);
+		
+	public RUDPDatagramPacket(Timer timer,RUDPPacketSenderInterface listener) {
+		//Create a packet with resend capabilities
+		this.timer = timer;
+		this.listener = listener;
+		id = (new Random()).nextInt();
 	}
-	
-	public RUDPDatagramPacket(byte[] packet) throws InvalidRUDPPacketException,IOException {
+
+	//Deserialize packet
+	public RUDPDatagramPacket(byte[] packet) throws InvalidRUDPPacketException {
 		ByteArrayInputStream bis;
 		DataInputStream dis;
 		int flag;
-		int ack_count = -1;
+		int ack_count = 0;
+		int ack_size = 0;
 		
 		bis = new ByteArrayInputStream(packet);
 		dis = new DataInputStream(bis);
 		
 		//Read flag
-		flag = dis.readByte();
-		flag_first = (flag & FLAG_FIRST) != 0 ? true : false; 
-		flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
-		flag_ack = (flag & FLAG_ACK) != 0 ? true : false; 
-		flag_data = (flag & FLAG_DATA) != 0 ? true : false; 
-		flag_fragment = (flag & FLAG_FRAGMENT) != 0 ? true : false; 
-		flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
-		
-		//Read static fields
-		if(flag_ack) ack_count = dis.readShort();
-		if(flag_data) seq = dis.readInt();
-		if(flag_fragment) {
-			frag_first = dis.readShort();
-			frag_nr = dis.readShort();
-			frag_last = dis.readShort();
-		}
-		
-		//Read variable length fields
-		if(flag_ack) {
-			ack_data = new short[ack_count];
-			for(int i = 0; i < ack_count; i++) {
-				ack_data[i] = dis.readShort();				
+		try {
+			//TODO remove debug
+			id = dis.readInt();
+			
+			//Read and analyze flags
+			flag = dis.readByte();
+			flag_first = (flag & FLAG_FIRST) != 0 ? true : false; 
+			flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
+			flag_ack = (flag & FLAG_ACK) != 0 ? true : false; 
+			flag_data = (flag & FLAG_DATA) != 0 ? true : false; 
+			flag_fragment = (flag & FLAG_FRAGMENT) != 0 ? true : false; 
+			flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
+			
+			//Read static fields
+			window_size = dis.readInt();
+			if(flag_data || flag_first) packet_seq = dis.readInt();
+			if(flag_ack) {
+				//Count means the number of ranges!
+				ack_count = dis.readShort();
+				
+				//Check that the ACK field is not too long
+				if(ack_count > RESERVED_ACK_COUNT) throw new InvalidRUDPPacketException();
+				
+				//Get size of ACK field
+				ack_size = ack_count * 2 * Short.SIZE/8 + Integer.SIZE/8 ;
 			}
+			
+			//Fragment data fields
+			if(flag_fragment) {
+				frag_nr = dis.readShort();
+				frag_count = dis.readShort();
+			}
+			
+			//Read data if available
+			if(flag_data) {
+				int dataSize = bis.available() - ack_size;
+				if(dataSize < 0) throw new InvalidRUDPPacketException();
+				data = new byte[dataSize];
+				dis.readFully(data,0,dataSize);
+			}
+	
+			//Read variable length fields
+			if(flag_ack) {
+				ack_window_start = dis.readInt();				
+				ack_seq_data = new ArrayList<Short>();
+				
+				//Take the count times 2, because every range has 2 elements 
+				for(int i = 0; i < ack_count * 2; i++) {
+					ack_seq_data.add(dis.readShort());				
+				}
+			}
+			
+			dis.close();
+			bis.close();
 		}
-		
-		//Read data, everything till the end of the packet
-		data = new byte[bis.available()];
-		dis.read(data);
-		dis.close();
-		bis.close();
+		catch (IOException e) {
+			//Transform to invalid packet exception
+			throw new InvalidRUDPPacketException();
+		}
 	}
 
 	//Set fragment information
-	public void setFragment(Short first,Short nr,Short last) {
-		if(first == null || last == null || nr == null) {
-			flag_fragment = false;
-		}
-		else {
-			flag_fragment = true;
-			this.frag_first = first;
-			this.frag_last = last;
-			this.frag_nr = nr; 
-		}
+	public void setFragmentFlag(boolean flag) {
+		flag_fragment = flag;
+	}
+	
+	public void setFragment(short nr,short count) {
+		this.flag_fragment = true;
+		this.frag_nr = nr; 
+		this.frag_count = count;
 	}
 	
 	//Set acknowledge 
-	public void setACK(short[] ack_data ) {
+	public void setACKData(int ack_seq,List<Short> ack_data) {
 		if(ack_data == null) {
 			flag_ack = false;
 		}
 		else {
 			flag_ack = true;
-			this.ack_data = ack_data;
+			this.ack_seq_data = ack_data;
+			this.ack_window_start = ack_seq;
 		}
 	}
 	
-	//Set data
-	public void setData(byte[] data,int seq,boolean resend) {
-		if(data == null) {
-			flag_data = false;
-			flag_resend = false;
-			this.data = null;
-		}
-		else {
-			flag_data = true;
-			flag_resend = resend;
-			this.data = data;
-			this.seq = seq;
-		}
+	//Sequence window
+	public void setWindowSize(int window_size) {
+		this.window_size = window_size;
+	}
+	
+	public int getWindowSize() {
+		return window_size;
+	}
+	
+	public void setData(byte[] data,boolean resend) {
+		flag_data = true;
+		flag_resend = resend;
+		this.data = data;
+	}
+	
+	public void setPacketSequence(int seq) {
+		this.packet_seq = seq;
 	}
 	
 	public Boolean getFlag(int flag) {
@@ -144,26 +212,47 @@ public class RUDPDatagramPacket {
 	public byte[] serializePacket() {
 		ByteArrayOutputStream bos;
 		DataOutputStream dos;
+		int ack_count = 0;
 		
 		try {
 			bos = new ByteArrayOutputStream();
 			dos = new DataOutputStream(bos);
 			
+			//TODO remove debug
+			dos.writeInt(id);
+			
 			//Write flags
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
 			
+			//Write window sequence
+			dos.writeInt(window_size);
+			
+			//Write sequence
+			if(flag_data || flag_first) dos.writeInt(packet_seq);
+
 			//Write static length fields
-			if(flag_ack) dos.writeShort(ack_data.length);
-			if(flag_data) dos.writeInt(seq);
+			if(flag_ack) {
+				ack_count = ack_seq_data.size() / 2;
+				if(ack_count > RESERVED_ACK_COUNT) ack_count = RESERVED_ACK_COUNT;
+				dos.writeShort(ack_count);
+			}
+
+			//Write fragment counters
 			if(flag_fragment) {
-				dos.writeShort(frag_first);
 				dos.writeShort(frag_nr);
-				dos.writeShort(frag_last);
+				dos.writeShort(frag_count);
 			}
 			
-			//Write variable length fields
-			if(flag_ack) for(short s: ack_data) dos.writeShort(s);
+			//Write data
 			if(flag_data) dos.write(data);
+
+			//Write variable length fields
+			if(flag_ack) {
+				dos.writeInt(ack_window_start);
+				for(int i = 0; i < ack_count * 2; i++) {
+					dos.writeShort(ack_seq_data.get(i));
+				}
+			}
 			
 			//Flush, close and write
 			dos.flush();
@@ -178,11 +267,193 @@ public class RUDPDatagramPacket {
 		}
 	}
 	
+	public int getMaxDataLength() {
+		//Subtract the IP and UDP header
+		int size;
+		
+		//Packet size minus IP, UDP header
+		size = MAX_PACKET_SIZE - 20 - 8;
+
+		//Minus reserved space for acknowledgements
+		size -= RESERVED_ACK_SIZE;
+		
+		//Flag
+		size -= Byte.SIZE / 8;
+		
+		//Window sequence number
+		size -= Integer.SIZE;
+
+		//Sequence number
+		size -= Integer.SIZE / 8;
+		
+		//Fragment
+		if(flag_fragment) size -= 2 * (Short.SIZE / 8);
+		
+		if(flag_ack) {
+			//ACK length
+			size -= Short.SIZE / 8;
+
+			//ACK field + ACK sequence number
+			size -= ack_seq_data.size() * (Short.SIZE / 8) + Integer.SIZE / 8;
+		}
+		
+		//Data field
+		return size;
+	}
+	
+	public Short getFragmentNr() {
+		return frag_nr;
+	}
+	
+	public Short getFragmentCount() {
+		return frag_count;
+	}
+	
+	public void sendPacket(Timer timer,RUDPPacketSenderInterface listener,int retries,int timeout) {
+		//Set listener and timer
+		this.timer = timer;
+		this.listener = listener;
+		this.retries = retries;
+		this.attempts = 0;
+
+		//Send packet
+		triggerSend(timeout);
+	}
+	
+	private void triggerSend(int timeout) {
+		//Set the resend flag if it is not the first attempt
+		if(attempts > 0) {
+			flag_resend = true;
+		}
+		
+		//Cancel old timer
+		synchronized(this) {
+			if(task_resend != null) {
+				task_resend.cancel();
+				task_resend = null;
+			}
+		}
+		
+		//TODO handle a failed packet
+		if(attempts >= retries) {
+			//Do not schedule the TimerTask again
+			System.out.println("PACKET failed");
+		} 
+		else {
+			//Send packet
+			listener.sendPacket(this);
+			
+			//Restart new timer
+			synchronized(this) {
+				task_resend = new TimeoutTask(timeout * 2);
+				timer.schedule(task_resend,timeout);
+			}
+
+			//Increment retries
+			attempts++;
+		}
+	}
+	
+	private class TimeoutTask extends TimerTask {
+		private int timeout;
+		
+		public TimeoutTask(int timeout) {		
+			this.timeout = timeout;
+		}
+		
+		@Override
+		public void run() {
+			triggerSend(timeout);
+		}
+	}
+	
+	public void acknowldege() {
+		//Cancel resend task
+		synchronized(this) {
+			if(task_resend != null) {
+				task_resend.cancel();
+				task_resend = null;
+			}
+		}
+	}
+	
+	public boolean isAcknowledged() {
+		synchronized(this) {
+			return task_resend == null;
+		}
+	}
+	
+	public int getPacketSeq() {
+		return packet_seq;
+	}
+	
+	public List<Short> getAckSeqData() {
+		return ack_seq_data;
+	}
+	
+	public int getAckWindowStart() {
+		return ack_window_start;
+	}
+	
+	public void setFirstFlag(boolean flag) {
+		flag_first = flag;
+	}
+	
+	public void setResetFlag(boolean flag) {
+		flag_reset = flag;
+	}
+	
+	public byte[] getData() {
+		return data;
+	}
+	
+	public String toString() {
+		String result;
+		
+		result = ">>>>>\nID:\t\t0x" + Integer.toHexString(id).toUpperCase() + "\nFlags:\t\t";
+		result += flag_first ? "FIRST" : "";
+		result += (flag_reset ? ",RESET" : "");
+		result += (flag_ack ? ",ACK" : "");
+		result += (flag_fragment ? ",FRAGMENT" : "");
+		result += (flag_data ? ",DATA" : "");
+		result += (flag_resend ? ",RESEND" : "");
+		
+		//Window start
+		result += "\nWND_SIZE:\t" + window_size; 
+		result += "\nACK_WND_START:\t" + ack_window_start; 
+		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + retries;
+		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
+		
+		if(flag_ack && ack_seq_data.size() > 0) {
+			result += "\nACK_RANGES:\t" + (new DeltaRangeList(this.getAckSeqData())).toString(ack_window_start);
+		}
+		
+		result += "\n<<<<<";
+
+		return result;
+	}
+	
+	public void setTimer(Timer t) {
+		this.timer = t;
+	}
+	
+	public void setListener(RUDPPacketSenderInterface l) {
+		this.listener = l;
+	}
+	
+	public void setIsAckSent() {
+		isAckSent = true;
+	}
+	
+	public boolean isAckSent() {
+		return isAckSent;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + seq;
+		result = prime * result + packet_seq;
 		return result;
 	}
 
@@ -195,7 +466,7 @@ public class RUDPDatagramPacket {
 		if (getClass() != obj.getClass())
 			return false;
 		RUDPDatagramPacket other = (RUDPDatagramPacket) obj;
-		if (seq != other.seq)
+		if (packet_seq != other.packet_seq)
 			return false;
 		return true;
 	}
