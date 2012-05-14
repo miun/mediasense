@@ -16,7 +16,9 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
 	private static final int MAX_ACK_DELAY = 100;
+	private static final int MAX_DATA_PACKET_RETRIES = 3;
 	private static final int WINDOW_SIZE = 4;
+	private static final int WINDOW_SIZE_BOOST = 2;
 	private static final int PERSIST_PERIOD = 1000;
 	
 	//Global variables
@@ -145,7 +147,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			//Forward to socket interface
 			//TODO replace with a nice function
 			//p.triggerSend(avg_RTT * 1.5);
-			p.triggerSend(1000);
+			p.sendPacket(timer,this,MAX_DATA_PACKET_RETRIES,1000);
 		}
 	}
 	
@@ -325,7 +327,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							dgram.setDeployed();
 							
 							//Shift range only if the packets are acknowledged
-							if(dgram.isAcknowledged()) {
+							if(dgram.isAckSent()) {
 								//Remove from list
 								packetBuffer_in.remove(ackRangeOffset);
 								

@@ -16,7 +16,6 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPDatagramPacket {
 	public static final int MAX_PACKET_SIZE = 65535;
-	public static final int MAX_PACKET_RETRY = 3;
 	public static final int RESERVED_ACK_COUNT = 32;
 	public static final int RESERVED_ACK_SIZE = RESERVED_ACK_COUNT * 2 * (Short.SIZE / 8) + Integer.SIZE / 8;
 	
@@ -37,7 +36,8 @@ public class RUDPDatagramPacket {
 	private boolean flag_fragment = false;
 	
 	//Resend timer and task
-	private int retries = 0;
+	private int attempts;
+	private int retries;
 	private Timer timer;
 	private TimerTask task_resend;
 	
@@ -314,9 +314,20 @@ public class RUDPDatagramPacket {
 		return frag_count;
 	}
 	
-	public void triggerSend(int timeout) {
+	public void sendPacket(Timer timer,RUDPPacketSenderInterface listener,int retries,int timeout) {
+		//Set listener and timer
+		this.timer = timer;
+		this.listener = listener;
+		this.retries = retries;
+		this.attempts = 0;
+
+		//Send packet
+		triggerSend(timeout);
+	}
+	
+	private void triggerSend(int timeout) {
 		//Set the resend flag if it is not the first attempt
-		if(retries > 0) {
+		if(attempts > 0) {
 			flag_resend = true;
 		}
 		
@@ -329,7 +340,7 @@ public class RUDPDatagramPacket {
 		}
 		
 		//TODO handle a failed packet
-		if(retries >= MAX_PACKET_RETRY) {
+		if(attempts >= retries) {
 			//Do not schedule the TimerTask again
 			System.out.println("PACKET failed");
 		} 
@@ -344,7 +355,7 @@ public class RUDPDatagramPacket {
 			}
 
 			//Increment retries
-			retries++;
+			attempts++;
 		}
 	}
 	
@@ -414,7 +425,7 @@ public class RUDPDatagramPacket {
 		
 		//Window start
 		result += "\nREM_WND_SIZE:\t" + remaining_window_size; 
-		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nRETRIES:\t" + retries;
+		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + retries;
 		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
 		
 		if(flag_ack && ack_seq_data.size() > 0) {

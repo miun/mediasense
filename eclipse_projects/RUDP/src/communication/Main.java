@@ -10,7 +10,7 @@ public class Main extends Thread {
 	public InetAddress dst;
 
 	public byte[] data;
-	public byte who = 'F';
+	public byte who = 'T';
 	
 	public static void main(String[] args) {
 		new Main();
@@ -29,7 +29,7 @@ public class Main extends Thread {
 		try {
 			RUDPDatagram dgram;
 
-			InetAddress dst = InetAddress.getByName("10.14.1.93");
+			InetAddress dst = InetAddress.getByName("10.13.1.122");
 
 			sock = new RUDPSocket(23456);
 			
@@ -65,7 +65,7 @@ public class Main extends Thread {
 				if(data[0] != who) {
 					//Return data if its not from us!
 					try {
-						sock.send(new RUDPDatagram(dst, 23456, data));
+//						sock.send(new RUDPDatagram(dst, 23456, data));
 					}
 					catch (Exception e) {
 						e.printStackTrace();

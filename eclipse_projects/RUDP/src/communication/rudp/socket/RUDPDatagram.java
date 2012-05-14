@@ -3,9 +3,7 @@ package communication.rudp.socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 
 public class RUDPDatagram {
@@ -18,7 +16,7 @@ public class RUDPDatagram {
 	//private byte[][] data;
 	private short fragAmount;
 	private short fragCount;
-	private RUDPDatagramPacket[] data;
+	private RUDPDatagramPacket[] packets;
 	
 	public RUDPDatagram(InetAddress dst,int port,Exception e) {
 		//Datagram contains an exception
@@ -31,17 +29,18 @@ public class RUDPDatagram {
 		//Datagram contains data
 		this.dst = dst;
 		this.port = port;
-		//this.data = new byte[1][]; 
-		//this.data[0] = data;
-		this.fragAmount = 1;
-		this.fragCount = 1;
-				
-		//TODO fragmentation
+
+		//Fragment data
+		fragment(data);
+	}
+
+	private void fragment(byte[] data) {
 		List<RUDPDatagramPacket> packetList = new ArrayList<RUDPDatagramPacket>();
+		RUDPDatagramPacket packet;
+
 		int dataSize;
 		int dataLen;
 		int remainingPacketLength;
-		RUDPDatagramPacket packet;
 		
 		dataSize = data.length;
 		dataLen = dataSize;
@@ -73,14 +72,13 @@ public class RUDPDatagram {
 			}
 			
 			//Allocate array
-			this.data = new RUDPDatagramPacket[fragmentCounter];
+			this.packets = new RUDPDatagramPacket[fragmentCounter];
 			
 			//Set fragment count, because now we know it and put to data
 			for(RUDPDatagramPacket p: packetList) {
 				p.setFragment(p.getFragmentNr(), (short)packetList.size());
-				this.data[p.getFragmentNr()] = p;
+				this.packets[p.getFragmentNr()] = p;
 			}
-			
 			
 			this.fragAmount = fragmentCounter;
 			this.fragCount = fragmentCounter;
@@ -88,17 +86,18 @@ public class RUDPDatagram {
 		else {
 			//Only one packet in this datagram
 			packet.setData(data, 0, data.length, false);
-			this.data = new RUDPDatagramPacket[1];
-			this.data[0] = packet;
+			this.packets = new RUDPDatagramPacket[1];
+			this.packets[0] = packet;
+			this.fragAmount = 1;
+			this.fragCount = 1;
 		}
-		
 	}
 	
 	public RUDPDatagram(InetAddress dst,int port,short fragCount) {
 		//Datagram is a fragmented datagram
 		this.dst = dst;
 		this.port = port;
-		this.data = new RUDPDatagramPacket[fragCount];
+		this.packets = new RUDPDatagramPacket[fragCount];
 		this.fragCount = fragCount;
 		this.fragAmount = 0;
 	}
@@ -112,12 +111,12 @@ public class RUDPDatagram {
 			synchronized(this) {
 				if(fragNr <= fragCount) {
 					//Count the fragments we already have
-					if(this.data[fragNr] == null) {
+					if(this.packets[fragNr] == null) {
 						fragAmount++;
 					}
 	
 					//Assimilate data
-					this.data[fragNr] = packet;
+					this.packets[fragNr] = packet;
 				}
 			}
 		}
@@ -140,13 +139,13 @@ public class RUDPDatagram {
 			
 			//Count total size
 			synchronized(this) {
-				for(int i = 0; i < fragCount; i++) totalSize += data[i].getData().length;
+				for(int i = 0; i < fragCount; i++) totalSize += packets[i].getData().length;
 				result = new byte[totalSize];
 				
 				//Create one large datagram
 				for(int i = 0; i < fragCount; i++) {
-					System.arraycopy(data[i].getData(),0,result,offset,data[i].getData().length);
-					offset += data[i].getData().length;
+					System.arraycopy(packets[i].getData(),0,result,offset,packets[i].getData().length);
+					offset += packets[i].getData().length;
 				}
 			}
 			
@@ -182,15 +181,15 @@ public class RUDPDatagram {
 	}
 	
 	public void setAckSent() {
-		for(RUDPDatagramPacket p: data) {
+		for(RUDPDatagramPacket p: packets) {
 			p.setIsAckSent();
 		}
 	}
 	
-	public boolean isAcknowledged() {
+	public boolean isAckSent() {
 		//TODO what to return without data or incomplete data
-		for(RUDPDatagramPacket p: data) {
-			if(!p.isAckSent()) {
+		for(RUDPDatagramPacket p: packets) {
+			if(p == null || !p.isAckSent()) {
 				return false;
 			}
 		}
@@ -199,13 +198,13 @@ public class RUDPDatagram {
 	
 	public void setPacketsSendable(Timer t, RUDPPacketSenderInterface l) {
 		//Give the timer and listener to the packets
-		for(RUDPDatagramPacket p: data) {
+		for(RUDPDatagramPacket p: packets) {
 			p.setTimer(t);
 			p.setListener(l);
 		}
 	}
 	
 	public RUDPDatagramPacket[] getFragments() {
-		return data.clone();
+		return packets.clone();
 	}
 }
