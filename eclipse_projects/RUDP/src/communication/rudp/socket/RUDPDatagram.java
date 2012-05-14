@@ -181,6 +181,12 @@ public class RUDPDatagram {
 		return isDeployed;
 	}
 	
+	public void setAckSent() {
+		for(RUDPDatagramPacket p: data) {
+			p.setIsAckSent();
+		}
+	}
+	
 	public boolean isAcknowledged() {
 		//TODO what to return without data or incomplete data
 		for(RUDPDatagramPacket p: data) {

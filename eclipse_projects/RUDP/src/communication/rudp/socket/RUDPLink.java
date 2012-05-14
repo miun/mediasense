@@ -338,6 +338,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						}
 						else break;
 					}
+					//TODO send immediate packet if the inbuffer is going to be full
 				}
 			}
 		}
@@ -361,12 +362,25 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//Inform packages that their ack is sent
 				RUDPDatagram d;
-				for(Integer i: ackRange.toElementArray()) {
-					d = packetBuffer_in.get(ackRangeOffset + i);
-					if(d.isDeployed()) {
-						//remove from the buffer
-					} else {
-						//set the information that the packets are acknowledged
+				int i;
+				boolean deleteFromBuffer = true;
+				for(i = 0 ; i < ackList.size() ; i = i +2) {
+					d = packetBuffer_in.get(ackRangeOffset + ackList.get(i));
+					if(d!=null) {
+						d.setAckSent();
+					}
+					if(deleteFromBuffer && d.isDeployed()) {
+						//Remove from list
+						packetBuffer_in.remove(ackRangeOffset);
+						
+						//Shift receive pointer
+						ackRangeOffset += d.getFragmentCount();
+
+						//Shift range and foreign window
+						ackRange.shiftRanges((short)(-1 * d.getFragmentCount()));
+					}
+					else {
+						deleteFromBuffer = false;
 					}
 				}
 				
