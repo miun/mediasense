@@ -153,6 +153,10 @@ public class RUDPDatagramBuilder {
 		return fragCount;
 	}
 	
+	public short getFragmentAmount() {
+		return fragAmount;
+	}
+	
 	public boolean isComplete() {
 		return fragAmount == fragCount;
 	}

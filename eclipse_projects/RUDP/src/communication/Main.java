@@ -61,7 +61,7 @@ public class Main extends Thread {
 		while(true) {
 			try {
 				data = sock.receive();
-				
+				Thread.sleep(1000);
 				if(data[0] != who) {
 					//Return data if its not from us!
 					try {
@@ -76,9 +76,9 @@ public class Main extends Thread {
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");
 			}
-			/*catch(InterruptedException e2) {
+			catch(InterruptedException e2) {
 				
-			}*/
+			}
 		}
 	}
 }
