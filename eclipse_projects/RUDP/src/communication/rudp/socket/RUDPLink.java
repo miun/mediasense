@@ -15,7 +15,7 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
-	private static final int MAX_ACK_DELAY = 100;
+	private static final int MAX_ACK_DELAY = 10000000;
 	private static final int MAX_DATA_PACKET_RETRIES = 3;
 	private static final int WINDOW_SIZE = 4;
 	private static final int WINDOW_SIZE_BOOST = 2;
@@ -26,6 +26,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private Timer timer;
 	private int avg_RTT;
 	private Semaphore semaphoreWindowSize;
+	private int semaphorePermitCount;
 
 	//Listener  & interfaces
 	private RUDPSocketInterface socket;
@@ -60,6 +61,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		this.listener_receive = listener_recv;
 		this.socket = socket;
 		this.semaphoreWindowSize = new Semaphore(1,true);
+		semaphorePermitCount = 1;
 		
 		//Set or create timer
 		if(timer == null) {
@@ -194,7 +196,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				isSynced = true;
 				
 				//Release semaphore
-				semaphoreWindowSize.drainPermits();
+				//semaphoreWindowSize.drainPermits();
 				semaphoreWindowSize.release(packet.getRemainingWindowSize());
 			}
 			else if(!isSynced) {
@@ -276,7 +278,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					boolean deleteFromBuffer = true;
 					List<Short> ackList = ackRange.toDifferentialArray();
 					
-					for(i = 0 ; i < ackList.size() ; i = i +2) {
+					for(i = 0 ; i < ackList.size() ; i = i + 2) {
 						d = packetBuffer_in.get(ackRangeOffset + ackList.get(i));
 						if(d!=null && d.isComplete()) {
 							

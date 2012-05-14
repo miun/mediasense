@@ -10,7 +10,7 @@ public class Main extends Thread {
 	public InetAddress dst;
 
 	public byte[] data;
-	public byte who = 'T';
+	public byte who = 'F';
 	
 	public static void main(String[] args) {
 		new Main();
@@ -42,7 +42,7 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			while(true) {
-				sock.send(dgram);
+//				sock.send(dgram);
 //				Thread.sleep(50);
 			}
 		}
