@@ -133,8 +133,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		//Handle payload data
 		handlePayloadData(packet);
-		
-		System.out.println("AckRangeOffset:\t" + receiveWindowStart + "\n");
 	}
 	
 	private void handleAckData(RUDPDatagramPacket packet) {
@@ -210,8 +208,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			}
 			else {
 				//Release semaphore
-				delta = packet.getWindowSize() - (currentPacketSeq - receiveWindowStart);
-
+				delta = packet.getWindowSize() - (currentPacketSeq - packet.getAckWindowStart() - 1);
+				System.out.println("DELTA: " + delta);
+				
 				if(delta > 0) {
 					semaphoreWindowSize.release(delta);
 				}
