@@ -55,8 +55,12 @@ public class RUDPDatagramPacket {
 	private short frag_count;
 
 	//ACK data
-	int ack_seq_offset;
-	List<Short> ack_seq_data;
+	private int ack_seq_offset;
+	private List<Short> ack_seq_data;
+	
+	//Ack data receiver side
+	private boolean isAckSent = false;
+	private boolean isDeployed = false;
 	
 	//Data
 	int data_off;
@@ -420,6 +424,30 @@ public class RUDPDatagramPacket {
 		result += "\n<<<<<";
 
 		return result;
+	}
+	
+	public void setTimer(Timer t) {
+		this.timer = t;
+	}
+	
+	public void setListener(RUDPPacketSenderInterface l) {
+		this.listener = l;
+	}
+	
+	public void setIsAckSent() {
+		isAckSent = true;
+	}
+	
+	public boolean isAckSent() {
+		return isAckSent;
+	}
+	
+	public void setDeployed() {
+		isDeployed = true;
+	}
+	
+	public boolean isDeployed() {
+		return isDeployed;
 	}
 	
 	@Override

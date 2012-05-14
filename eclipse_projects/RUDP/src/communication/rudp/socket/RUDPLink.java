@@ -78,9 +78,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	public void send(RUDPDatagram datagram) throws InterruptedException {
-		SendableRUDPDatagram sdatagram = new SendableRUDPDatagram(datagram.getDst(), datagram.getPort(), datagram.getData(), timer, this);
+		datagram.setPacketsSendable(timer, this);
 		
-		RUDPDatagramPacket[] packetList = sdatagram.getFragments();
+		RUDPDatagramPacket[] packetList = datagram.getFragments();
 		/*RUDPDatagramPacket packet;
 		int dataSize;
 		int dataLen;
@@ -320,16 +320,17 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					//Forward all ready packets to upper layer
 					while((dgram = packetBuffer_in.get(ackRangeOffset)) != null)  {
 						if(dgram.isComplete()) {
-							//Remove from list
-							packetBuffer_in.remove(ackRangeOffset);
-							
 							//Remember ready datagrams
 							readyDatagrams.add(dgram);
 							
 							//Tell the datagram it is deployed							
 							dgram.setDeployed();
 							
+							//Shift range only if the packets are acknowledged
 							if(dgram.isAcknowledged()) {
+								//Remove from list
+								packetBuffer_in.remove(ackRangeOffset);
+								
 								//Shift receive pointer
 								ackRangeOffset += dgram.getFragmentCount();
 	
@@ -359,6 +360,17 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				ackList = ackRange.toDifferentialArray();
 				if(ackList.size() == 0) ackList = ackRange.toDifferentialArray();
 				packet.setACKData(ackRangeOffset,ackList);
+				
+				//Inform packages that their ack is sent
+				RUDPDatagram d;
+				for(Integer i: ackRange.toElementArray()) {
+					d = packetBuffer_in.get(ackRangeOffset + i);
+					if(d.isDeployed()) {
+						//remove from the buffer
+					} else {
+						//set the information that the packets are acknowledged
+					}
+				}
 				
 				//DEBUG - report if the ACK list did not fit into one packet
 				if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {

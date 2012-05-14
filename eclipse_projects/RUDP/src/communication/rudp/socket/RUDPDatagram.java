@@ -184,10 +184,22 @@ public class RUDPDatagram {
 	public boolean isAcknowledged() {
 		//TODO what to return without data or incomplete data
 		for(RUDPDatagramPacket p: data) {
-			if(!p.isAcknowledged()) {
+			if(!p.isAckSent()) {
 				return false;
 			}
 		}
 		return true;
+	}
+	
+	public void setPacketsSendable(Timer t, RUDPPacketSenderInterface l) {
+		//Give the timer and listener to the packets
+		for(RUDPDatagramPacket p: data) {
+			p.setTimer(t);
+			p.setListener(l);
+		}
+	}
+	
+	public RUDPDatagramPacket[] getFragments() {
+		return data.clone();
 	}
 }
