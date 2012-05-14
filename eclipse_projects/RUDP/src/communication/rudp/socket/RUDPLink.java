@@ -17,8 +17,8 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 public class RUDPLink implements RUDPPacketSenderInterface {
 	private static final int MAX_ACK_DELAY = 100;
 	private static final int MAX_DATA_PACKET_RETRIES = 3;
-	private static final int WINDOW_SIZE = 4;
-	private static final int WINDOW_SIZE_BOOST = 2;
+	private static final int WINDOW_SIZE = 150;
+	private static final int WINDOW_SIZE_BOOST = 100;
 	private static final int PERSIST_PERIOD = 1000;
 	
 	//Global variables
@@ -260,30 +260,15 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					newRangeElement = packet.getPacketSeq() - receiveWindowStart;
 					ackRange.add((short)newRangeElement);
 					
-					//Start ACK-timer, if necessary...
-					//...or send immediately if it is the very first packet
-					//to speed up the window-size negotiation process
-					if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
-						sendPacket(new RUDPDatagramPacket());
-					}
-					else {
-						if(task_ack == null) {
-							task_ack = new AcknowledgeTask();
-							timer.schedule(task_ack, MAX_ACK_DELAY);
-						}
-					}
-					
 					//Datagrams ready for delivery
 					readyDatagrams = new ArrayList<RUDPDatagram>();
 					
 				
-					int i;
 					RUDPDatagramBuilder d;
 					boolean deleteFromBuffer = true;
-					List<Short> ackList = ackRange.toDifferentialArray();
 					
-					for(i = 0 ; i < ackList.size() ; i = i +2) {
-						d = packetBuffer_in.get(receiveWindowStart + ackList.get(i));
+					for(Integer i : ackRange.toElementArray()) {
+						d = packetBuffer_in.floorEntry(receiveWindowStart + i).getValue();
 
 						if(d!=null && d.isComplete()) {
 							
@@ -305,32 +290,23 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							}
 						}
 					}	
-					
-					/*
-					//Forward all ready packets to upper layer
-					while((dgram = packetBuffer_in.get(ackRangeOffset)) != null)  {
-						if(dgram.isComplete()) {
-							//Remember ready datagrams
-							readyDatagrams.add(dgram.toRUDPDatagram());
-							
-							//Tell the datagram it is deployed							
-							dgram.setDeployed();
-							
-							//Shift range only if the packets are acknowledged
-							if(dgram.isAckSent()) {
-								//Remove from list
-								packetBuffer_in.remove(ackRangeOffset);
-								
-								//Shift receive pointer
-								ackRangeOffset += dgram.getFragmentCount();
-	
-								//Shift range and foreign window
-								ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
-							}
+
+					//Start ACK-timer, if necessary...
+					//...or send immediately if it is the very first packet
+					//to speed up the window-size negotiation process
+					if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - receiveWindowStart >= WINDOW_SIZE_BOOST) {
+						sendPacket(new RUDPDatagramPacket());
+						if(task_ack != null) {
+							task_ack.cancel();
+							task_ack = null;
 						}
-						else break;
-					}*/
-					//TODO send immediate packet if the inbuffer is going to be full
+					}
+					else {
+						if(task_ack == null) {
+							task_ack = new AcknowledgeTask();
+							timer.schedule(task_ack, MAX_ACK_DELAY);
+						}
+					}
 				}
 			}
 		}
@@ -349,31 +325,33 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				
 				//Put ACK stream into packet
 				ackList = ackRange.toDifferentialArray();
-				if(ackList.size() == 0) ackList = ackRange.toDifferentialArray();
 				packet.setACKData(receiveWindowStart,ackList);
 				
 				//Inform packages that their ack is sent
 				RUDPDatagramBuilder d;
-				int i;
 				boolean deleteFromBuffer = true;
-				for(i = 0 ; i < ackList.size() ; i = i +2) {
-					d = packetBuffer_in.get(receiveWindowStart + ackList.get(i));
+				
+				for(Integer i : ackRange.toElementArray()) {
+					d = packetBuffer_in.floorEntry(receiveWindowStart + i).getValue();
+					
 					if(d!=null) {
 						d.setAckSent();
-					}
-					if(deleteFromBuffer && d.isDeployed()) {
-						//Remove from list
-						packetBuffer_in.remove(receiveWindowStart);
 						
-						//Shift receive pointer
-						receiveWindowStart += d.getFragmentCount();
+						if(deleteFromBuffer && d.isDeployed()) {
+							//Remove from list
+							packetBuffer_in.remove(receiveWindowStart);
+							
+							//Shift receive pointer
+							receiveWindowStart += d.getFragmentCount();
 
-						//Shift range and foreign window
-						ackRange.shiftRanges((short)(-1 * d.getFragmentCount()));
+							//Shift range and foreign window
+							ackRange.shiftRanges((short)(-1 * d.getFragmentCount()));
+						}
+						else {
+							deleteFromBuffer = false;
+						}
 					}
-					else {
-						deleteFromBuffer = false;
-					}
+					
 				}
 				
 				//DEBUG - report if the ACK list did not fit into one packet
