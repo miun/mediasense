@@ -215,7 +215,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				delta = newSemaphorePermitCount - semaphorePermitCount;
 				semaphorePermitCount = newSemaphorePermitCount;
 				
-				System.out.println("DELTA: " + delta);
+				System.out.println(semaphoreWindowSize.getQueueLength() + " / " + semaphoreWindowSize.availablePermits());
+				System.out.println(": " + delta);
 				
 				if(delta > 0) {
 					//TODO this is not correct!
@@ -340,8 +341,6 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		Range firstRange; 
 		//boolean deleteFromBuffer = true;
 
-		System.out.println("!!!!!! ACK !!!!!!!");
-		
 		//Check if we can acknowledge something
 		synchronized(this) {
 			if(!ackRange.isEmpty()) {
