@@ -35,7 +35,7 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			int n = 0;
-			while(n++ < 20) {
+			while(n++ < 200) {
 				sock.send(dgram);
 			}
 			
@@ -65,9 +65,9 @@ public class Main extends Thread {
 		while(true) {
 			try {
 				data = sock.receive();
-				System.out.println("Received " + data.length + " bytes of data");
+				//System.out.println("Received " + data.length + " bytes of data");
 				
-				Thread.sleep(1000);
+				Thread.sleep(0);
 			}
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");

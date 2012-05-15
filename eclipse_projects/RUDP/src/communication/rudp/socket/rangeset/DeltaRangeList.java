@@ -105,7 +105,7 @@ public class DeltaRangeList {
 	}
 	
 	public void remove(Range range) {
-		
+		//not implemented, because not needed
 	}
 	
 	public void clear() {

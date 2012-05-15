@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.Timer;
 
 public class RUDPDatagramBuilder {
-	private RUDPDatagramPacket[] packets;
+	private RUDPDatagramPacket packets[];
 	private Exception exception;
 
 	InetSocketAddress address;
 	
+	private short ackCount;
 	private short fragAmount;
 	private short fragCount;
 
@@ -22,6 +23,7 @@ public class RUDPDatagramBuilder {
 		this.packets = new RUDPDatagramPacket[fragCount];
 		this.fragCount = fragCount;
 		this.fragAmount = 0;
+		this.ackCount = 0;
 	}
 	
 	public RUDPDatagramBuilder(InetSocketAddress address,RUDPDatagramPacket packet) {
@@ -31,6 +33,7 @@ public class RUDPDatagramBuilder {
 		this.packets[0] = packet;
 		this.fragCount = 1;
 		this.fragAmount = 1;
+		this.ackCount = 0;
 	}
 	
 	public RUDPDatagramBuilder(RUDPDatagram dgram) {
@@ -112,7 +115,7 @@ public class RUDPDatagramBuilder {
 			//Set fragment count, because now we know it and put to data
 			for(RUDPDatagramPacket p: packetList) {
 				p.setFragment(p.getFragmentNr(), (short)packetList.size());
-				this.packets[p.getFragmentNr()] = p;
+				packets[p.getFragmentNr()] = p;
 			}
 			
 			this.fragAmount = fragmentCounter;
@@ -122,7 +125,7 @@ public class RUDPDatagramBuilder {
 			//Only one packet in this datagram
 			packet.setData(data.clone(),false);
 			this.packets = new RUDPDatagramPacket[1];
-			this.packets[0] = packet;
+			packets[0] = packet;
 			this.fragAmount = 1;
 			this.fragCount = 1;
 		}
@@ -137,12 +140,12 @@ public class RUDPDatagramBuilder {
 			synchronized(this) {
 				if(fragNr <= fragCount) {
 					//Count the fragments we already have
-					if(this.packets[fragNr] == null) {
+					if(packets[fragNr] == null) {
 						fragAmount++;
 					}
 	
 					//Assimilate data
-					this.packets[fragNr] = packet;
+					packets[fragNr] = packet;
 				}
 			}
 		}
@@ -176,31 +179,46 @@ public class RUDPDatagramBuilder {
 		return isDeployed;
 	}
 	
-	public void setAckSent() {
-		for(RUDPDatagramPacket p: packets) {
-			p.setIsAckSent();
+	public void setAckSent(int fragNr) {
+		RUDPDatagramPacket p;
+		
+		if(fragNr < 0 || fragNr >= fragCount) {
+			System.out.println("Uuuups!");
+			return;
+		}
+		
+		//This packet's ACK has been send
+		synchronized(this) {
+			if((p = packets[fragNr]) != null) {
+				if(!p.isAckSent()) {
+					p.setIsAckSent();
+					ackCount++;
+				}
+			}
 		}
 	}
 
 	public boolean isAckSent() {
-		//TODO what to return without data or incomplete data
-		for(RUDPDatagramPacket p: packets) {
-			if(p == null || !p.isAckSent()) {
-				return false;
-			}
+		//Have all packets been acknowledged?!
+		synchronized(this) {
+			return ackCount == fragCount;
 		}
-		return true;
 	}
 
 	public void setPacketsSendable(Timer t, RUDPPacketSenderInterface l) {
 		//Give the timer and listener to the packets
-		for(RUDPDatagramPacket p: packets) {
-			p.setTimer(t);
-			p.setListener(l);
+		synchronized(this) {
+			for(RUDPDatagramPacket p: packets) {
+				p.setTimer(t);
+				p.setListener(l);
+			}
 		}
 	}
 
 	public RUDPDatagramPacket[] getFragmentedPackets() {
-		return packets.clone();
+		//Return cloned list
+		synchronized(this) {
+			return packets.clone();
+		}
 	}
 }
