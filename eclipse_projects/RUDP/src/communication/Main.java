@@ -6,12 +6,6 @@ import communication.rudp.socket.RUDPDatagram;
 import communication.rudp.socket.RUDPSocket;
 
 public class Main extends Thread {
-	private RUDPSocket sock;
-	public InetAddress dst;
-
-	public byte[] data;
-	public byte who = 'T';
-	
 	public static void main(String[] args) {
 		new Main();
 	}
@@ -23,19 +17,18 @@ public class Main extends Thread {
 		CommunicationInterface comm1 = new RUDP(core1);
 		CommunicationInterface comm2 = new RUDP(core2);*/
 
-		data = new byte[1024];
+		byte data[] = new byte[1024];
 
 		//Message msg;
 		try {
+			InetAddress dst = InetAddress.getByName("localhost");
+			RUDPSocket sock;
 			RUDPDatagram dgram;
 
-			InetAddress dst = InetAddress.getByName("10.13.1.122");
-
-			sock = new RUDPSocket(23456);
+			sock = new RUDPSocket(40000);
 			
 			//Create data packet
 			for(int i = 0; i < data.length; i++) data[i] = (byte)i;
-			data[0] = who;
 			dgram = new RUDPDatagram(dst, 23456, data);
 			
 			this.start();
@@ -44,8 +37,9 @@ public class Main extends Thread {
 			int n = 0;
 			while(n++ < 20) {
 				sock.send(dgram);
-//				Thread.sleep(50);
 			}
+			
+			System.out.println("Done!");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -57,28 +51,30 @@ public class Main extends Thread {
 
 	@Override
 	public void run() {
+		RUDPSocket sock;
 		byte[] data;
 		
+		try {
+			sock = new RUDPSocket(23456);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
 		while(true) {
 			try {
 				data = sock.receive();
+				System.out.println("Received " + data.length + " bytes of data");
+				
 				Thread.sleep(1000);
-				if(data[0] != who) {
-					//Return data if its not from us!
-					try {
-//						sock.send(new RUDPDatagram(dst, 23456, data));
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				//System.out.println("Data received with length " + data.length);
 			}
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");
 			}
 			catch(InterruptedException e2) {
-				
+				System.out.println("Thread interrupted!");
+				break;
 			}
 		}
 	}

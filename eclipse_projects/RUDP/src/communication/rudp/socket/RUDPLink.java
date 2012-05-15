@@ -120,7 +120,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			return;
 		}
 		
-		System.out.println("RECEIVE\n" + packet.toString() + "\n");
+		System.out.println("RECEIVE\n" + packet.toString(sa.getPort()) + "\n");
 		
 		//Handle reset packets
 		handleResetFlag(packet);
@@ -129,7 +129,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		handleAckData(packet);
 		
 		//Handle new window sequence
-		updateReceiveWindow(packet);
+		updateReceiverWindowSize(packet);
 		
 		//Handle payload data
 		handlePayloadData(packet);
@@ -178,8 +178,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 	}
 	
-	private void updateReceiveWindow(RUDPDatagramPacket packet) {
+	private void updateReceiverWindowSize(RUDPDatagramPacket packet) {
 		//Calculate delta to old window
+		int newSemaphorePermitCount;
 		int delta;
 
 		synchronized(this) {
@@ -208,16 +209,20 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			}
 			else {
 				//Release semaphore
-				delta = packet.getWindowSize() - (currentPacketSeq - packet.getAckWindowStart() - 1);
+				newSemaphorePermitCount = (packet.getWindowSize() - (currentPacketSeq - packet.getAckWindowStart() - 1));
+				delta = newSemaphorePermitCount - semaphorePermitCount;
+				semaphorePermitCount = newSemaphorePermitCount;
+				
 				System.out.println("DELTA: " + delta);
 				
 				if(delta > 0) {
+					//TODO this is not correct!
 					semaphoreWindowSize.release(delta);
 				}
 				else {
 					//TODO handle?
 					//The other side decreased the windows size!
-					//And we have data transmitted beyond that size
+					//And we have transmitted data beyond that limit
 				}
 			}
 		}
@@ -251,7 +256,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						}
 					}
 					else {
-						//Create new normal datagram
+						//Create new non-fragmented datagram
 						dgram = new RUDPDatagramBuilder(sa, packet);
 						packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
 					}
@@ -391,7 +396,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		}
 
 		//TODO remove debug output
-		System.out.println("SEND\n" + p.toString() + "\n");
+		System.out.println("SEND\n" + p.toString(sa.getPort()) + "\n");
 
 		//Send packet
 		socket.triggerSend(this, p);
@@ -404,5 +409,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			RUDPDatagramPacket packet = new RUDPDatagramPacket();
 			sendPacket(packet);
 		}
+	}
+	
+	public void datagramConsumed() {
+		//A datagram has been consumed => shift receive window one step forward
 	}
 }

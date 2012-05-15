@@ -408,9 +408,13 @@ public class RUDPDatagramPacket {
 	}
 	
 	public String toString() {
+		return toString(0);
+	}
+	
+	public String toString(int port) {
 		String result;
 		
-		result = ">>>>>\nID:\t\t0x" + Integer.toHexString(id).toUpperCase() + "\nFlags:\t\t";
+		result = ">>>>> Port: " + port +"\nID:\t\t0x" + Integer.toHexString(id).toUpperCase() + "\nFlags:\t\t";
 		result += flag_first ? "FIRST" : "";
 		result += (flag_reset ? ",RESET" : "");
 		result += (flag_ack ? ",ACK" : "");

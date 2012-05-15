@@ -16,10 +16,6 @@ import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 
 public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTimeoutListener,RUDPReceiveListener {
-	//The capacity defines the receive queue length in packets
-	//The maximum size of each packet can be 64 kB
-	private static final int QUEUE_CAPACITY = 1;
-	
 	private DatagramSocket sock;
 	private DatagramPacket recv_buffer;
 	
@@ -33,10 +29,10 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		
 		//Receive buffer, timer and link map
 		recv_buffer = new DatagramPacket(new byte[RUDPDatagramPacket.MAX_PACKET_SIZE],RUDPDatagramPacket.MAX_PACKET_SIZE);
-		recv_queue = new LinkedBlockingQueue<RUDPDatagram>(QUEUE_CAPACITY);
+		recv_queue = new LinkedBlockingQueue<RUDPDatagram>();
 		timer = new Timer("RUDP timer");
 		links = new HashMap<InetSocketAddress,RUDPLink>();
-		
+
 		//Start receive thread
 		this.start();
 	}
@@ -133,12 +129,23 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 
 	public byte[] receive() throws DestinationNotReachableException {
 		RUDPDatagram dgram;
+		RUDPLink link;
 		Exception sock_exception;
 		
 		//Throw exception if there is one
 		try {
 			//Take the next datagram
 			dgram = recv_queue.take();
+			
+			//Inform link about datagram consumption
+			synchronized(links) {
+				link = links.get(dgram.getSocketAddress());
+				if(link != null) {
+					link.datagramConsumed();
+				}
+			}
+			
+			//TODO implement this
 			//sock_exception = dgram.getException();
 			//if(sock_exception != null) throw sock_exception;
 
