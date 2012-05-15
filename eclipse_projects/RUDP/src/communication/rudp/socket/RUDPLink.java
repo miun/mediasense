@@ -340,6 +340,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		Range firstRange; 
 		//boolean deleteFromBuffer = true;
 
+		System.out.println("!!!!!! ACK !!!!!!!");
+		
 		//Check if we can acknowledge something
 		synchronized(this) {
 			if(!ackRange.isEmpty()) {
@@ -491,6 +493,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 					//Shift range and foreign window
 					ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
+					
+					System.out.println("!!!!! Consumed " + receiveWindowStart + " - " + dgram.getFragmentAmount());
 				}
 			}
 		}

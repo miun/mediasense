@@ -29,7 +29,7 @@ public class DeltaRangeList {
 		Range higher;
 		
 		//Get range candidate
-		synchronized(set) {
+		synchronized(this) {
 			lower = set.floor(addRange);
 			higher = set.ceiling(addRange);
 	
@@ -54,13 +54,15 @@ public class DeltaRangeList {
 			else {
 				set.add(addRange);
 			}
+			
+			System.out.println(this.toString());
 		}
 	}
 	
 	public List<Integer> toElementArray() {
 		List<Integer> result = new ArrayList<Integer>();
 		
-		synchronized(set) {
+		synchronized(this) {
 			for(Range r: set) {
 				for(int i = r.getStart(); i <= r.getEnd(); i++) {
 					result.add(i);
@@ -74,7 +76,7 @@ public class DeltaRangeList {
 	public List<Short> toDifferentialArray() {
 		List<Short> result = new ArrayList<Short>();
 		
-		synchronized(set) {
+		synchronized(this) {
 			for(Range r: set) {
 				result.add(r.getStart());
 				result.add((short)(r.getEnd() + 1));
@@ -87,7 +89,7 @@ public class DeltaRangeList {
 	public Range get(short key) {
 		Range range;
 		
-		synchronized(set) {
+		synchronized(this) {
 			range = set.ceiling(new Range(key,key));
 		}
 		
@@ -122,37 +124,40 @@ public class DeltaRangeList {
 	
 	public void shiftRanges(short delta) {
 		int newStart,newEnd;
-		List<Range> rangesToDrop = new ArrayList<Range>();
+		TreeSet<Range> newSet = new TreeSet<Range>();
 		
-		synchronized(set) {
+		synchronized(this) {
 			for(Range r: set) {
 				//Calculate new positions
 				newStart = r.getStart() + delta;
 				newEnd = r.getEnd() + delta;
 				
 				//Check if range has to be dropped
-				if(newEnd < 0 && newStart < 0) {
-					rangesToDrop.add(r);
+				if(newEnd >= 0 && newStart >= 0) {
+					newSet.add(new Range((short)newStart,(short)newEnd));
 				}
-				else if(newEnd < 0) {
-					//Correct end limit
-					newEnd = 0;
-				}
-				else if(newStart < 0) {
+				else if(newEnd >= 0) {
 					//Correct start limit
-					newStart = Short.MAX_VALUE;
+					newStart = 0;
+					newSet.add(new Range((short)newStart,(short)newEnd));
 				}
 			}
 		
 			//Remove all the ranges that are fully gone
-			set.removeAll(rangesToDrop);
+			set = newSet;
 		}
+
+		System.out.println(this.toString());
+	}
+	
+	public String toString() {
+		return toString(0);
 	}
 
 	public String toString(int offset) {
 		String result = "";
 		
-		synchronized(set) {
+		synchronized(this) {
 			for(Range r: set) {
 				result += (r.getStart() + offset) + "->" + (r.getEnd() + offset) + ","; 
 			}
