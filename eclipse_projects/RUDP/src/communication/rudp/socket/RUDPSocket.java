@@ -12,6 +12,10 @@ import java.util.Timer;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import communication.DestinationNotReachableException;
+import communication.rudp.socket.datagram.RUDPAbstractDatagram;
+import communication.rudp.socket.datagram.RUDPDatagram;
+import communication.rudp.socket.datagram.RUDPDatagramPacket;
+import communication.rudp.socket.datagram.RUDPExceptionDatagram;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 
@@ -19,7 +23,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	private DatagramSocket sock;
 	private DatagramPacket recv_buffer;
 	
-	private LinkedBlockingQueue<RUDPDatagram> recv_queue;
+	private LinkedBlockingQueue<RUDPAbstractDatagram> recv_queue;
 	private HashMap<InetSocketAddress,RUDPLink> links;
 	private Timer timer;
 
@@ -29,7 +33,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		
 		//Receive buffer, timer and link map
 		recv_buffer = new DatagramPacket(new byte[RUDPDatagramPacket.MAX_PACKET_SIZE],RUDPDatagramPacket.MAX_PACKET_SIZE);
-		recv_queue = new LinkedBlockingQueue<RUDPDatagram>();
+		recv_queue = new LinkedBlockingQueue<RUDPAbstractDatagram>();
 		timer = new Timer("RUDP timer");
 		links = new HashMap<InetSocketAddress,RUDPLink>();
 
@@ -97,7 +101,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 	}
 
-	public void send(RUDPDatagram datagram) throws IOException,InterruptedException {
+	public void send(RUDPDatagram datagram) throws DestinationNotReachableException,IOException,InterruptedException {
 		RUDPLink link;
 		InetSocketAddress sa;
 		
@@ -111,6 +115,9 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				link = new RUDPLink(sa,this,this,this,timer);
 				links.put(sa, link);
 			}
+			else if(link.isFailed()) {
+				throw new DestinationNotReachableException("Link failed", sa);
+			}
 		}
 			
 		//Process send request in link
@@ -118,15 +125,15 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	}
 
 	@Override
-	public void onLinkTimeout(InetSocketAddress sa,RUDPLink link) {
+	public void onLinkTimeout(RUDPLink link) {
 		//Link timed out => remove it from list
 		synchronized(links) {
-			links.remove(sa);
+			links.remove(link.getSocketAddress());
 		}
 	}
 
 	@Override
-	public void onRUDPDatagramReceive(RUDPDatagram datagram) {
+	public void onRUDPDatagramReceive(RUDPAbstractDatagram datagram) {
 		//Enqueue datagram for delivering
 		try {
 			recv_queue.put(datagram);
@@ -136,15 +143,18 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 	}
 
-	public byte[] receive() throws DestinationNotReachableException {
+	public byte[] receive() throws InterruptedException,DestinationNotReachableException {
+		RUDPAbstractDatagram abstractDgram;
+		RUDPExceptionDatagram exceptionDgram;
 		RUDPDatagram dgram;
 		RUDPLink link;
-		Exception sock_exception;
 		
-		//Throw exception if there is one
-		try {
-			//Take the next datagram
-			dgram = recv_queue.take();
+		//Take the next datagram
+		abstractDgram = recv_queue.take();
+		
+		//Cast
+		if(abstractDgram.getClass().equals(RUDPDatagram.class)) {
+			dgram = (RUDPDatagram)abstractDgram;
 			
 			//Inform link about datagram consumption
 			synchronized(links) {
@@ -154,21 +164,13 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				}
 			}
 			
-			//TODO implement this
-			//sock_exception = dgram.getException();
-			//if(sock_exception != null) throw sock_exception;
-
 			//Return data
 			return dgram.getData();
 		}
-		catch (InterruptedException e) {
-			//Socket has been interrupted; return null
-			return null;
-		}
-		catch (Exception exception) {
-			//Other error, should not happen!
-			exception.printStackTrace();
-			return null;
+		else {
+			//Link failed
+			exceptionDgram = (RUDPExceptionDatagram)abstractDgram;
+			throw exceptionDgram.getException();
 		}
 	}
 
@@ -182,7 +184,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		
 		try {
 			//TODO remove debug output
-			System.out.println("SEND\n" + packet.toString(sa.getPort()) + "\n");
+			//System.out.println("SEND\n" + packet.toString(sa.getPort()) + "\n");
 
 			//Create UDP datagram and send it
 			dgram = new DatagramPacket(data,data.length,sa);
@@ -192,5 +194,15 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			e.printStackTrace();
 		}
 	}
-
+	
+	public void rehabilitateLink(InetSocketAddress sockAddr) {
+		RUDPLink link;
+		
+		synchronized(links) {
+			link = links.get(sockAddr);
+			if(link != null) {
+				link.rehabilitate();
+			}
+		}
+	}
 }

@@ -1,9 +1,9 @@
-package communication.rudp.socket;
+package communication.rudp.socket.datagram;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-public class RUDPDatagram {
+public class RUDPDatagram extends RUDPAbstractDatagram {
 	private InetSocketAddress address;
 	private byte[] data;
 	
@@ -30,5 +30,4 @@ public class RUDPDatagram {
 	public byte[] getData() {
 		return data;
 	}
-	
 }

@@ -2,8 +2,8 @@ package communication;
 
 import java.net.InetAddress;
 
-import communication.rudp.socket.RUDPDatagram;
 import communication.rudp.socket.RUDPSocket;
+import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
 	public static void main(String[] args) {
@@ -28,14 +28,16 @@ public class Main extends Thread {
 			sock = new RUDPSocket(23456);
 			
 			//Create data packet
-			for(int i = 0; i < data.length; i++) data[i] = (byte)i;
-			dgram = new RUDPDatagram(dst, 40000, data);
+			//for(int i = 0; i < data.length; i++) data[i] = (byte)i;
+			
 			
 			this.start();
 			Thread.sleep(1000);
 			
 			int n = 0;
-			while(n++ < 2000) {
+			while(n++ < 200000) {
+				data = new Integer(n).toString().getBytes();
+				dgram = new RUDPDatagram(dst, 40000, data);
 				sock.send(dgram);
 				//Thread.sleep(1);
 			}
@@ -62,10 +64,20 @@ public class Main extends Thread {
 			e.printStackTrace();
 			return;
 		}
+
+		int number = 0;
+		int newNumber;
 		
 		while(true) {
+				
 			try {
 				data = sock.receive();
+				newNumber = Integer.parseInt(new String(data));
+				if(newNumber != number + 1) {
+					System.out.println("FAIL " + newNumber);
+				}
+				number = newNumber;
+					
 				//System.out.println("Received " + data.length + " bytes of data");
 				
 				Thread.sleep(0);

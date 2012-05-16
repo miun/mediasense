@@ -1,7 +1,7 @@
 package communication.rudp.socket.listener;
 
-import communication.rudp.socket.RUDPDatagram;
+import communication.rudp.socket.datagram.RUDPAbstractDatagram;
 
 public interface RUDPReceiveListener {
-	public void onRUDPDatagramReceive(RUDPDatagram datagram);
+	public void onRUDPDatagramReceive(RUDPAbstractDatagram datagram);
 }

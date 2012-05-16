@@ -1,4 +1,4 @@
-package communication.rudp.socket;
+package communication.rudp.socket.datagram;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import communication.rudp.socket.RUDPDatagramPacketSenderInterface;
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
@@ -342,13 +343,14 @@ public class RUDPDatagramPacket {
 		//TODO handle a failed packet
 		if(attempts >= retries) {
 			//Do not schedule the TimerTask again
-			System.out.println("PACKET failed");
+			listener.eventLinkFailed();
 		} 
 		else {
 			//Send packet
 			listener.sendDatagramPacket(this);
 			
 			//Restart new timer
+			//The timeout is always doubled
 			synchronized(this) {
 				task_resend = new TimeoutTask(timeout * 2);
 				timer.schedule(task_resend,timeout);

@@ -1,13 +1,19 @@
 package communication.rudp.socket;
 
 import java.net.InetSocketAddress;
+import java.util.Date;
 import java.util.Timer;
+import java.util.TimerTask;
 
+import communication.rudp.socket.datagram.RUDPDatagram;
+import communication.rudp.socket.datagram.RUDPDatagramPacket;
+import communication.rudp.socket.datagram.RUDPExceptionDatagram;
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 
-public class RUDPLink implements RUDPDatagramPacketSenderInterface {
+public class RUDPLink {
+	private static final int LINK_TIMEOUT_PERIOD = 5 * 1000 * 60; //5 minutes
 	public static final int WINDOW_SIZE = 150;
 	public static final int WINDOW_SIZE_BOOST = 100;
 
@@ -21,11 +27,16 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 	//Address this link is associated with
 	private InetSocketAddress remoteSockAddr;
 
-	//Listener  & interfaces
+	//Timeout
+	private Timer timer;
+	private RUDPReceiveListener receiveListener;
 	private RUDPLinkTimeoutListener timeoutListener;
+	private TimeoutTask timeoutTask;
+	private Date lastAction;
 	
 	private boolean firstPacket;
 	private boolean linkSynced;
+	private boolean linkFailed;
 
 	public RUDPLink(InetSocketAddress sockAddr,RUDPSocketInterface socketInterface,RUDPLinkTimeoutListener timeoutListener,RUDPReceiveListener receiveListener,Timer timer) {
 		//Create an own timer if no one was specified
@@ -36,17 +47,19 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 		//The state flags
 		firstPacket = true;
 		linkSynced = false;
+		linkFailed = false;
 
 		//Set timer and listener
+		this.receiveListener = receiveListener;
 		this.socketInterface = socketInterface;
 		this.timeoutListener = timeoutListener;
-
-		//Create receiver and sender
-		sender = new RUDPSender(this,socketInterface,timer);
-		receiver = new RUDPReceiver(this,socketInterface,receiveListener,timer);
+		this.timer = timer;
 
 		//Network address
 		this.remoteSockAddr = sockAddr;
+
+		//Rehabilitate
+		rehabilitate();
 	}
 	
 	public InetSocketAddress getSocketAddress() {
@@ -54,22 +67,28 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException {
-		sender.sendDatagram(datagram);
+		synchronized(this) {
+			if(!linkFailed) {
+				sender.sendDatagram(datagram);
+			}
+		}
 	}
 	
 	public void sendDatagramPacket(RUDPDatagramPacket datagramPacket) {
-		//Flag first packet
 		synchronized(this) {
-			if(firstPacket) {
-				datagramPacket.setFirstFlag(true);
-				firstPacket = false;
+			if(!linkFailed) {
+				//Flag first packet
+				if(firstPacket) {
+					datagramPacket.setFirstFlag(true);
+					firstPacket = false;
+				}
+				
+				//Set window size
+				datagramPacket.setWindowSize(WINDOW_SIZE);
+			
+				//Add the ACK overlay stream
+				receiver.setAckStream(datagramPacket);
 			}
-		
-			//Set window size
-			datagramPacket.setWindowSize(WINDOW_SIZE);
-	
-			//Add the ACK overlay stream
-			receiver.setAckStream(datagramPacket);
 		}
 		
 		//Forward to socket interface
@@ -77,30 +96,37 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	public void handleAckPacket(RUDPDatagramPacket packet) {
-		//Forward acknowledge data to sender
-		if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
-			sender.handleAckData(packet.getAckWindowStart(), packet.getAckSeqData());
+		synchronized(this) {
+			if(!linkFailed) {
+				//Forward acknowledge data to sender
+				if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
+					sender.handleAckData(packet.getAckWindowStart(), packet.getAckSeqData());
+				}
+			}
 		}
 	}
 	
 	public void reset() {
-		RUDPDatagramPacket resetPacket;
+		RUDPDatagramPacket resetPacket = null;
 
 		//Send first packet again after reset
 		synchronized(this) {
-			firstPacket = true;
-			linkSynced = false;
-			
-			//Reset both
-			receiver.reset();
-			sender.reset();
-			
-			//Send a reset packet, because we need a first packet for synchronization
-			resetPacket = new RUDPDatagramPacket();
-			resetPacket.setResetFlag(true);
+			if(!linkFailed) {
+				firstPacket = true;
+				linkSynced = false;
+				
+				//Reset both
+				receiver.reset();
+				sender.reset();
+
+				//Send a reset packet, because we need a first packet for synchronization
+				resetPacket = new RUDPDatagramPacket();
+				resetPacket.setResetFlag(true);
+			}
 		}
 		
-		sender.sendDatagramPacket(resetPacket);
+		if(resetPacket != null) sender.sendDatagramPacket(resetPacket);
+		
 		System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
 	}
 
@@ -116,7 +142,7 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 			return;
 		}
 		
-		System.out.println("RECEIVE\n" + packet.toString(getSocketAddress().getPort()) + "\n");
+		//System.out.println("RECEIVE\n" + packet.toString(getSocketAddress().getPort()) + "\n");
 
 		//Handle reset packets
 		handleResetFlag(packet);
@@ -136,12 +162,20 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 	
 	public void datagramConsumed() {
 		//Forward that a datagram has been consumed
-		receiver.datagramConsumed();
+		synchronized(this) {
+			if(!linkFailed) {
+				receiver.datagramConsumed();
+			}
+		}
 	}
 	
 	public void updateReceiverWindow(RUDPDatagramPacket packet) {
 		//Forward new window information
-		sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize());
+		synchronized(this) {
+			if(!linkFailed) {
+				sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize());
+			}
+		}
 	}
 	
 	//Handle reset flag
@@ -153,30 +187,94 @@ public class RUDPLink implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	private void handleFirstPacket(RUDPDatagramPacket packet) {
+		RUDPDatagramPacket resetPacket;
+
 		synchronized(this) {
-			if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
-				//Take the first sequence number as the receiver window start
-				sender.resetReceiverWindow(packet.getPacketSeq(),packet.getWindowSize());
-				linkSynced = true;
-			}
-			else if (!linkSynced) {
-				RUDPDatagramPacket resetPacket;
-				
-				//TODO is this correct ???
-				resetPacket = new RUDPDatagramPacket();
-				resetPacket.setResetFlag(true);
-				socketInterface.sendDatagramPacket(resetPacket, remoteSockAddr);
-				
-				//Handle unsync'ed situation
-				//reset();
+			if(!linkFailed) {
+				if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
+					//Take the first sequence number as the receiver window start
+					sender.resetReceiverWindow(packet.getPacketSeq(),packet.getWindowSize());
+					linkSynced = true;
+				}
+				else if (!linkSynced) {
+					//TODO is this correct ???
+					resetPacket = new RUDPDatagramPacket();
+					resetPacket.setResetFlag(true);
+					socketInterface.sendDatagramPacket(resetPacket, remoteSockAddr);
+					
+					//Handle unsync'ed situation
+					//reset();
+				}
 			}
 		}
 	}
 	
 	private void handleDataPacket(RUDPDatagramPacket packet) {
 		//Handle payload data
-		if(linkSynced) {
-			receiver.handlePayloadData(packet);
+		synchronized(this) {
+			if(!linkFailed && linkSynced) {
+				receiver.handlePayloadData(packet);
+			}
+		}
+	}
+	
+	private class TimeoutTask extends TimerTask {
+		private RUDPLink link;
+		
+		public TimeoutTask(RUDPLink link) {
+			this.link = link;
+		}
+		
+		@Override
+		public void run() {
+			synchronized(this) {
+				Date now = new Date();
+				long interval;
+				
+				//Calculate interval
+				interval = now.getTime() - lastAction.getTime(); 
+				
+				if(interval >= LINK_TIMEOUT_PERIOD) {
+					//Timeout => trigger link removal
+					timeoutListener.onLinkTimeout(link);
+				}
+				else {
+					//Wait for the remaining period
+					timeoutTask = new TimeoutTask(link);
+					timer.schedule(timeoutTask,interval);
+				}
+			}
+		}
+	}
+	
+	public void eventLinkFailed() {
+		synchronized(this) {
+			sender = null;
+			receiver = null;
+			linkFailed = true;
+			
+			RUDPExceptionDatagram dgram = new RUDPExceptionDatagram(remoteSockAddr);
+			receiveListener.onRUDPDatagramReceive(dgram);
+		}
+	}
+	
+	public boolean isFailed() {
+		return linkFailed;
+	}
+	
+	public void rehabilitate() {
+		synchronized(this) {
+			//Create receiver and sender
+			sender = new RUDPSender(this,socketInterface,timer);
+			receiver = new RUDPReceiver(this,socketInterface,receiveListener,timer);
+			
+			//Prepare timeout task
+			lastAction = new Date();
+			timeoutTask = new TimeoutTask(this);
+			timer.schedule(timeoutTask, LINK_TIMEOUT_PERIOD);
+			
+			//Reset fail state
+			linkFailed = false;
 		}
 	}
 }

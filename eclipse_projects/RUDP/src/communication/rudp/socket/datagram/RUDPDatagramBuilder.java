@@ -1,17 +1,17 @@
-package communication.rudp.socket;
+package communication.rudp.socket.datagram;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 
+import communication.rudp.socket.RUDPDatagramPacketSenderInterface;
+
 public class RUDPDatagramBuilder {
 	private RUDPDatagramPacket packets[];
-	private Exception exception;
 
 	InetSocketAddress address;
 	
-	private short ackCount;
 	private short fragAmount;
 	private short fragCount;
 
@@ -21,7 +21,6 @@ public class RUDPDatagramBuilder {
 		this.packets = new RUDPDatagramPacket[fragCount];
 		this.fragCount = fragCount;
 		this.fragAmount = 0;
-		this.ackCount = 0;
 	}
 	
 	public RUDPDatagramBuilder(InetSocketAddress address,RUDPDatagramPacket packet) {
@@ -31,7 +30,6 @@ public class RUDPDatagramBuilder {
 		this.packets[0] = packet;
 		this.fragCount = 1;
 		this.fragAmount = 1;
-		this.ackCount = 0;
 	}
 	
 	public RUDPDatagramBuilder(RUDPDatagram dgram) {
@@ -161,38 +159,8 @@ public class RUDPDatagramBuilder {
 		return fragAmount == fragCount;
 	}
 	
-	public Exception getException() {
-		return exception;
-	}
-	
 	public InetSocketAddress getSocketAddress() {
 		return address;
-	}
-	
-	public void setAckSent(int fragNr) {
-		RUDPDatagramPacket p;
-		
-		if(fragNr < 0 || fragNr >= fragCount) {
-			System.out.println("Uuuups!");
-			return;
-		}
-		
-		//This packet's ACK has been send
-		synchronized(this) {
-			if((p = packets[fragNr]) != null) {
-				if(!p.isAckSent()) {
-					p.setIsAckSent();
-					ackCount++;
-				}
-			}
-		}
-	}
-
-	public boolean isAckSent() {
-		//Have all packets been acknowledged?!
-		synchronized(this) {
-			return ackCount == fragCount;
-		}
 	}
 
 	public void setPacketsSendable(Timer t, RUDPDatagramPacketSenderInterface l) {
