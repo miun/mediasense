@@ -43,7 +43,7 @@ public class RUDPDatagramPacket {
 	private TimerTask task_resend;
 	
 	//Interface to send packets with
-	private RUDPPacketSenderInterface listener;
+	private RUDPDatagramPacketSenderInterface listener;
 
 	//Sequence of this packet
 	private int packet_seq;
@@ -75,7 +75,7 @@ public class RUDPDatagramPacket {
 		id = (new Random()).nextInt();
 	}
 		
-	public RUDPDatagramPacket(Timer timer,RUDPPacketSenderInterface listener) {
+	public RUDPDatagramPacket(Timer timer,RUDPDatagramPacketSenderInterface listener) {
 		//Create a packet with resend capabilities
 		this.timer = timer;
 		this.listener = listener;
@@ -314,7 +314,7 @@ public class RUDPDatagramPacket {
 		return frag_count;
 	}
 	
-	public void sendPacket(Timer timer,RUDPPacketSenderInterface listener,int retries,int timeout) {
+	public void sendPacket(Timer timer,RUDPDatagramPacketSenderInterface listener,int retries,int timeout) {
 		//Set listener and timer
 		this.timer = timer;
 		this.listener = listener;
@@ -346,7 +346,7 @@ public class RUDPDatagramPacket {
 		} 
 		else {
 			//Send packet
-			listener.sendPacket(this);
+			listener.sendDatagramPacket(this);
 			
 			//Restart new timer
 			synchronized(this) {
@@ -450,7 +450,7 @@ public class RUDPDatagramPacket {
 		this.timer = t;
 	}
 	
-	public void setListener(RUDPPacketSenderInterface l) {
+	public void setListener(RUDPDatagramPacketSenderInterface l) {
 		this.listener = l;
 	}
 	

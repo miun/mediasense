@@ -25,11 +25,11 @@ public class Main extends Thread {
 			RUDPSocket sock;
 			RUDPDatagram dgram;
 
-			sock = new RUDPSocket(40000);
+			sock = new RUDPSocket(23456);
 			
 			//Create data packet
 			for(int i = 0; i < data.length; i++) data[i] = (byte)i;
-			dgram = new RUDPDatagram(dst, 23456, data);
+			dgram = new RUDPDatagram(dst, 40000, data);
 			
 			this.start();
 			Thread.sleep(1000);
@@ -56,13 +56,13 @@ public class Main extends Thread {
 		byte[] data;
 		
 		try {
-			sock = new RUDPSocket(23456);
+			sock = new RUDPSocket(40000);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			return;
 		}
-
+		
 		while(true) {
 			try {
 				data = sock.receive();

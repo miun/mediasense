@@ -15,8 +15,6 @@ public class RUDPDatagramBuilder {
 	private short fragAmount;
 	private short fragCount;
 
-	private boolean isDeployed = false;
-
 	public RUDPDatagramBuilder(InetSocketAddress address,short fragCount) {
 		//Datagram is a fragmented datagram
 		this.address = address;
@@ -171,14 +169,6 @@ public class RUDPDatagramBuilder {
 		return address;
 	}
 	
-	public void setDeployed() {
-		isDeployed = true;
-	}
-	
-	public boolean isDeployed() {
-		return isDeployed;
-	}
-	
 	public void setAckSent(int fragNr) {
 		RUDPDatagramPacket p;
 		
@@ -205,7 +195,7 @@ public class RUDPDatagramBuilder {
 		}
 	}
 
-	public void setPacketsSendable(Timer t, RUDPPacketSenderInterface l) {
+	public void setPacketsSendable(Timer t, RUDPDatagramPacketSenderInterface l) {
 		//Give the timer and listener to the packets
 		synchronized(this) {
 			for(RUDPDatagramPacket p: packets) {

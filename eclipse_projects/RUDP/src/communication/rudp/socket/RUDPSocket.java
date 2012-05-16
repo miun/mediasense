@@ -76,7 +76,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				
 				//Find or create link
 				synchronized(links) {
-					link = links.get(recv_buffer.getSocketAddress());
+					link = links.get(sa);
 					if(link == null) {
 						link = new RUDPLink(sa,this,this,this,timer);
 						links.put(sa,link);
@@ -89,7 +89,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				System.arraycopy(recv_buffer.getData(),0,packetBuffer, 0,packetLength);
 				
 				//Forward
-				link.putReceivedData(packetBuffer,packetLength);
+				link.putReceivedData(packetBuffer);
 			}
 			catch (IOException e) {
 				e.printStackTrace();
@@ -114,7 +114,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 			
 		//Process send request in link
-		link.send(datagram);
+		link.sendDatagram(datagram);
 	}
 
 	@Override
@@ -173,7 +173,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	}
 
 	@Override
-	public void triggerSend(RUDPLink link, RUDPDatagramPacket packet) {
+	public void sendDatagramPacket(RUDPDatagramPacket packet,InetSocketAddress sa) {
 		DatagramPacket dgram;
 		byte[] data;
 		
@@ -181,12 +181,16 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		data = packet.serializePacket();
 		
 		try {
+			//TODO remove debug output
+			System.out.println("SEND\n" + packet.toString(sa.getPort()) + "\n");
+
 			//Create UDP datagram and send it
-			dgram = new DatagramPacket(data,data.length,link.getSocketAddress());
+			dgram = new DatagramPacket(data,data.length,sa);
 			sock.send(dgram);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
 }
