@@ -58,6 +58,15 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		RUDPLink link;
 		InetSocketAddress sa;
 		
+		//Set buffer as big as WINDOW_SIZE * MAX_PACKET_SIZE;
+		try {
+			int size = sock.getReceiveBufferSize();
+			sock.setReceiveBufferSize(RUDPLink.WINDOW_SIZE * RUDPDatagramPacket.MAX_PACKET_SIZE);
+		}
+		catch (SocketException e) {
+			System.out.println(e.getMessage());
+		}
+		
 		//Receive thread
 		while(true) {
 			try {

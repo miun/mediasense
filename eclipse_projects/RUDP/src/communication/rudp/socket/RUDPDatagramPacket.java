@@ -108,7 +108,9 @@ public class RUDPDatagramPacket {
 			flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
 			
 			//Read static fields
+			ack_window_start = dis.readInt();				
 			window_size = dis.readInt();
+			
 			if(flag_data || flag_first) packet_seq = dis.readInt();
 			if(flag_ack) {
 				//Count means the number of ranges!
@@ -137,7 +139,6 @@ public class RUDPDatagramPacket {
 	
 			//Read variable length fields
 			if(flag_ack) {
-				ack_window_start = dis.readInt();				
 				ack_seq_data = new ArrayList<Short>();
 				
 				//Take the count times 2, because every range has 2 elements 
@@ -167,14 +168,15 @@ public class RUDPDatagramPacket {
 	}
 	
 	//Set acknowledge 
-	public void setACKData(int ack_seq,List<Short> ack_data) {
+	//public void setACKData(int ack_seq,List<Short> ack_data) {
+	public void setACKData(List<Short> ack_data) {
 		if(ack_data == null) {
 			flag_ack = false;
 		}
 		else {
 			flag_ack = true;
 			this.ack_seq_data = ack_data;
-			this.ack_window_start = ack_seq;
+			//this.ack_window_start = ack_seq;
 		}
 	}
 	
@@ -225,6 +227,7 @@ public class RUDPDatagramPacket {
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
 			
 			//Write window sequence
+			dos.writeInt(ack_window_start);
 			dos.writeInt(window_size);
 			
 			//Write sequence
@@ -248,7 +251,6 @@ public class RUDPDatagramPacket {
 
 			//Write variable length fields
 			if(flag_ack) {
-				dos.writeInt(ack_window_start);
 				for(int i = 0; i < ack_count * 2; i++) {
 					dos.writeShort(ack_seq_data.get(i));
 				}
@@ -280,8 +282,11 @@ public class RUDPDatagramPacket {
 		//Flag
 		size -= Byte.SIZE / 8;
 		
+		//ACK window start
+		size -= Integer.SIZE / 8;
+
 		//Window sequence number
-		size -= Integer.SIZE;
+		size -= Integer.SIZE / 8;
 
 		//Sequence number
 		size -= Integer.SIZE / 8;
@@ -293,8 +298,8 @@ public class RUDPDatagramPacket {
 			//ACK length
 			size -= Short.SIZE / 8;
 
-			//ACK field + ACK sequence number
-			size -= ack_seq_data.size() * (Short.SIZE / 8) + Integer.SIZE / 8;
+			//ACK field
+			size -= ack_seq_data.size() * (Short.SIZE / 8);
 		}
 		
 		//Data field
@@ -393,6 +398,10 @@ public class RUDPDatagramPacket {
 	
 	public int getAckWindowStart() {
 		return ack_window_start;
+	}
+	
+	public void setAckWindowStart(int seq) {
+		ack_window_start = seq;
 	}
 	
 	public void setFirstFlag(boolean flag) {

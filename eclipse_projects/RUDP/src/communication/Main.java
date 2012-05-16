@@ -35,8 +35,9 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			int n = 0;
-			while(n++ < 200) {
+			while(n++ < 2000) {
 				sock.send(dgram);
+				//Thread.sleep(1);
 			}
 			
 			System.out.println("Done!");

@@ -14,12 +14,21 @@ import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
 import communication.rudp.socket.rangeset.DeltaRangeList;
-import communication.rudp.socket.rangeset.Range;
 
 public class RUDPLink implements RUDPPacketSenderInterface {
+	private RUDPSender sender;
+	private RUDPReceiver receiver;
+	
+	public RUDPLink() {
+		sender = new RUDPSender();
+		receiver = new RUDPReceiver();
+	}
+	
+	//-----
+	
 	private static final int MAX_ACK_DELAY = 100;
 	private static final int MAX_DATA_PACKET_RETRIES = 3;
-	private static final int WINDOW_SIZE = 150;
+	public  static final int WINDOW_SIZE = 150;
 	private static final int WINDOW_SIZE_BOOST = 100;
 	private static final int PERSIST_PERIOD = 1000;
 	
@@ -40,15 +49,16 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	private boolean isSynced = false;	//Is the window in sync with the other side?!?
 	private boolean isFirst = true;		//The first packet must be marked as that!
 	
-	//Contains sent unacknowledged packets
+	//Contains sent, unprocessed packets
 	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;
+	private int senderWindowStart;
 	
 	//Receiver list
-	//private int currentReceivePointer;
+	private int receiverWindowStart;
 	private TreeMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
 	
 	//Acknowledge stuff
-	private int receiveWindowStart;
+	private int ackWindowStart;
 	private DeltaRangeList ackRange;
 	private TimerTask task_ack;
 	
@@ -64,6 +74,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		this.socket = socket;
 		this.semaphoreWindowSize = new Semaphore(1,true);
 		semaphorePermitCount = 1;
+		
+		//Out initial sequence number
+		currentPacketSeq = 0;
+		senderWindowStart = currentPacketSeq;
 		
 		//Set or create timer
 		if(timer == null) {
@@ -96,6 +110,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			
 			//Add packet to out list
 			synchronized(this) {
+				//Decrease semaphore permit count 
+				semaphorePermitCount--;
+				
 				packet.setPacketSequence(currentPacketSeq);
 				packetBuffer_out.put(currentPacketSeq,packet);
 
@@ -167,11 +184,20 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				//Reset link state
 				isFirst = true;
 				isSynced = false;
+				
+				//Stop acknowledge task
+				if(task_ack != null) {
+					task_ack.cancel();
+					task_ack = null;
+				}
 			
 				//Clear internal data structures to have a new start
 				ackRange.clear();
 				packetBuffer_in.clear();
 				packetBuffer_out.clear();
+				
+				//Reset sender window start to current seq. number
+				senderWindowStart = currentPacketSeq;
 				
 				//TODO reset semaphore
 				semaphoreWindowSize.drainPermits();
@@ -186,12 +212,9 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		int delta;
 
 		synchronized(this) {
-			//Release semaphore delta times
-			//semaphoreWindowSize.release(WINDOW_SIZE - packetBuffer_out.size());
-			
 			if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
 				//First packet => The packet sequence number is the beginning of the window
-				receiveWindowStart = packet.getPacketSeq();
+				receiverWindowStart = packet.getPacketSeq();
 				
 				//We are sync'ed now
 				isSynced = true;
@@ -210,19 +233,52 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 				System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
 			}
 			else {
+				//Inform all packets that have been acknowledged implicitly through
+				//a window shift
+				RUDPDatagramPacket p;
+				int idx = senderWindowStart;
+
+				//Check if new window start is reasonable
+				if(packet.getAckWindowStart() > senderWindowStart + WINDOW_SIZE) {
+					//TODO what to do here, ignore? reset?
+				}
+				else {
+					//Remove all packets from buffer
+					//No for-loop possible, because of the overflow
+					while(idx != packet.getAckWindowStart()) {
+						//Remove and acknowledge, if it exists
+						//Which it should, otherwise the receiver acknowledged something we did not receive...
+						if((p = packetBuffer_out.remove(idx)) != null) {
+							p.acknowldege();
+						}
+						else {
+							//TODO debug output
+							System.out.println("We can never get here! - Ohh, i see...");
+						}
+						
+						idx++;
+					}
+
+					//Set new sender window start
+					senderWindowStart = packet.getAckWindowStart();
+				}
+				
 				//Release semaphore
 				newSemaphorePermitCount = (packet.getWindowSize() - (currentPacketSeq - packet.getAckWindowStart() - 1));
 				delta = newSemaphorePermitCount - semaphorePermitCount;
 				semaphorePermitCount = newSemaphorePermitCount;
 				
-				System.out.println(semaphoreWindowSize.getQueueLength() + " / " + semaphoreWindowSize.availablePermits());
-				System.out.println(": " + delta);
+				//System.out.println(semaphoreWindowSize.getQueueLength() + " / " + semaphoreWindowSize.availablePermits());
+				//System.out.println(": " + delta);
 				
 				if(delta > 0) {
 					//TODO this is not correct!
+					//System.out.println("B " + newSemaphorePermitCount + " - " + semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits() );
 					semaphoreWindowSize.release(delta);
+					//System.out.println("A " + newSemaphorePermitCount + " - " + semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits() );
 				}
-				else {
+				else if(delta < 0){
+					System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet!");
 					//TODO handle?
 					//The other side decreased the windows size!
 					//And we have transmitted data beyond that limit
@@ -241,7 +297,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		synchronized(this) {
 			if(isSynced && packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
 				//Check if packet is within window bounds
-				if((packet.getPacketSeq() - receiveWindowStart) < 0 || (packet.getPacketSeq() - receiveWindowStart) > WINDOW_SIZE) {
+				if((packet.getPacketSeq() - receiverWindowStart) < 0 || (packet.getPacketSeq() - receiverWindowStart) > WINDOW_SIZE) {
 					//TODO send up to date ACK packet ?! 
 					System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
 				}
@@ -267,7 +323,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					}
 					
 					//Calculate relative position and add to packet range list
-					newRangeElement = packet.getPacketSeq() - receiveWindowStart;
+					newRangeElement = packet.getPacketSeq() - receiverWindowStart;
 					ackRange.add((short)newRangeElement);
 					
 					//Datagrams ready for delivery
@@ -275,7 +331,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					
 					//Add ready datagrams to deploy
 					for(Integer i : ackRange.toElementArray()) {
-						mapEntry = packetBuffer_in.floorEntry(receiveWindowStart + i); 
+						mapEntry = packetBuffer_in.floorEntry(receiverWindowStart + i); 
 						
 						if(mapEntry != null) {
 							dgram = mapEntry.getValue();
@@ -311,7 +367,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 					//Start ACK-timer, if necessary...
 					//...or send immediately if it is the very first packet
 					//to speed up the window-size negotiation process
-					if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - receiveWindowStart >= WINDOW_SIZE_BOOST) {
+					if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - receiverWindowStart >= WINDOW_SIZE_BOOST) {
 						//Send an empty packet, that will get ACK data (automatically)
 						sendPacket(new RUDPDatagramPacket());
 						if(task_ack != null) {
@@ -337,26 +393,35 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	}
 	
 	private void setAckStream(RUDPDatagramPacket packet) {
-		RUDPDatagramBuilder dgram;
-		Range firstRange; 
-		//boolean deleteFromBuffer = true;
+		//RUDPDatagramBuilder dgram;
+		//Range firstRange; 
+		
+		//Set the sequence of the ACK window start
+		packet.setAckWindowStart(receiverWindowStart);
 
 		//Check if we can acknowledge something
 		synchronized(this) {
 			if(!ackRange.isEmpty()) {
-				//Put ACK stream into packet
 				List<Short> ackList;
 				Entry<Integer,RUDPDatagramBuilder> mapEntry;
 				
+				//Put ACK stream into packet
 				ackList = ackRange.toDifferentialArray();
-				packet.setACKData(receiveWindowStart,ackRange.toDifferentialArray());
+				//packet.setACKData(receiveWindowStart,ackRange.toDifferentialArray());
+				packet.setACKData(ackRange.toDifferentialArray());
 
 				//TODO debug output
 				if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
 					System.out.println("RESERVED_ACK_COUNT OVERFLOW");
 				}
 				
-				//Inform packages that their ACK has been send
+//Don't need this anymore, because the ACK is only a gimmick
+//The movement of the receiver window start is now also used
+//as an implicit acknowledgement mechanism
+//This makes the ACK range-field smaller, and speeds up the
+//window movement by 1 ACK-step !
+//
+/*				//Inform packages that their ACK has been send
 				for(Integer i : ackRange.toElementArray()) {
 					mapEntry = packetBuffer_in.floorEntry(receiveWindowStart + i);
 					
@@ -368,10 +433,10 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							dgram.setAckSent((receiveWindowStart + i) - mapEntry.getKey());
 						}
 					}
-				}
+				}*/
 				
 				//Shift the window as far as possible
-				firstRange = ackRange.get((short)0);
+/*				firstRange = ackRange.get((short)0);
 				if(firstRange != null) {
 					while((mapEntry = packetBuffer_in.floorEntry(receiveWindowStart)) != null) {
 						//Get datagram
@@ -393,7 +458,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 							}
 						}
 					}
-					
+*/
 					
 /*					for(int i = 0; i <= firstRange.getEnd(); i++) {
 						mapEntry = packetBuffer_in.floorEntry(receiveWindowStart + i);
@@ -421,8 +486,8 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 						else {
 							break;
 						}
-					}*/
-				}
+					}
+				}*/
 				
 				//TODO there could be more ranges then we are able to send
 				//in one packet. test if this is fine
@@ -434,7 +499,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 			}
 			else {
 				//Remove ACK data
-				packet.setACKData(0, null);
+				packet.setACKData(null);
 			}
 		}
 	}
@@ -473,6 +538,7 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 	
 	public void datagramConsumed() {
 		RUDPDatagramBuilder dgram;
+		boolean windowReOpened = false;
 		
 		//TODO send an ACK message when a datagram was consumed
 		//that opened our receive window after it was 100% full
@@ -480,22 +546,34 @@ public class RUDPLink implements RUDPPacketSenderInterface {
 		
 		//A datagram has been consumed => shift receive window one step forward
 		synchronized(this) {
-			dgram = packetBuffer_in.get(receiveWindowStart);
+			dgram = packetBuffer_in.get(receiverWindowStart);
 			if(dgram != null) {
 				//Set to deployed and remove if it has been also acknowledged 
-				dgram.setDeployed();
-				if(dgram.isAckSent()) {
-					packetBuffer_in.remove(receiveWindowStart);
+				//dgram.setDeployed();
 
-					//Shift receive pointer
-					receiveWindowStart += dgram.getFragmentCount();
-		
-					//Shift range and foreign window
-					ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
-					
-					System.out.println("!!!!! Consumed " + receiveWindowStart + " - " + dgram.getFragmentAmount());
+				//Has the window been reopened
+				//TODO what do we need here???
+				//if(xxx - receiveWindowStart == 0) windowReOpened = true;
+				
+				//if(dgram.isAckSent()) {
+				packetBuffer_in.remove(receiverWindowStart);
+
+				//Shift receive pointer
+				receiverWindowStart += dgram.getFragmentCount();
+	
+				//Shift range and foreign window
+				ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
+				
+				//Inform the sender about the window reopening
+				if(windowReOpened) {
+					//Send new empty packet that will contain ACK data
+					RUDPDatagramPacket packet = new RUDPDatagramPacket();
+					sendPacket(packet);
 				}
+				
+				System.out.println("!!!!! Consumed " + receiverWindowStart + " - " + dgram.getFragmentAmount());
 			}
+			//}
 		}
 	}
 }

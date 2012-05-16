@@ -55,7 +55,7 @@ public class DeltaRangeList {
 				set.add(addRange);
 			}
 			
-			System.out.println(this.toString());
+			//System.out.println(this.toString());
 		}
 	}
 	
@@ -147,7 +147,7 @@ public class DeltaRangeList {
 			set = newSet;
 		}
 
-		System.out.println(this.toString());
+		//System.out.println(this.toString());
 	}
 	
 	public String toString() {
