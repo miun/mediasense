@@ -57,6 +57,9 @@ public class RUDPLink {
 
 		//Network address
 		this.remoteSockAddr = sockAddr;
+		
+		sender = new RUDPSender(this, socketInterface, timer);
+		receiver = new RUDPReceiver(this, socketInterface, receiveListener, timer);
 
 		//Rehabilitate
 		rehabilitate();
@@ -67,10 +70,8 @@ public class RUDPLink {
 	}
 	
 	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException {
-		synchronized(this) {
-			if(!linkFailed) {
-				sender.sendDatagram(datagram);
-			}
+		if(!linkFailed) {
+			sender.sendDatagram(datagram);
 		}
 	}
 	
@@ -249,10 +250,13 @@ public class RUDPLink {
 	
 	public void eventLinkFailed() {
 		synchronized(this) {
-			sender = null;
-			receiver = null;
 			linkFailed = true;
+
+			//Stop and reset sender and receiver immediately
+			sender.reset();
+			receiver.reset();
 			
+			//Produce exception and forward it
 			RUDPExceptionDatagram dgram = new RUDPExceptionDatagram(remoteSockAddr);
 			receiveListener.onRUDPDatagramReceive(dgram);
 		}
@@ -265,8 +269,8 @@ public class RUDPLink {
 	public void rehabilitate() {
 		synchronized(this) {
 			//Create receiver and sender
-			sender = new RUDPSender(this,socketInterface,timer);
-			receiver = new RUDPReceiver(this,socketInterface,receiveListener,timer);
+			sender.reset();
+			receiver.reset();
 			
 			//Prepare timeout task
 			lastAction = new Date();

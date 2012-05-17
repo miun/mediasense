@@ -217,21 +217,9 @@ The term peer-to-peer (P2P) refers to a computer network in which each participa
 nt (peer) acts as client and server for the other participants.
  These architecture allows, to share data over a network without the need
  of a central server.
- 
 \end_layout
 
 \begin_layout Standard
-\begin_inset Graphics
-	filename clientserver.png
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename peer2peer.png
-
-\end_inset
-
 
 \end_layout
 

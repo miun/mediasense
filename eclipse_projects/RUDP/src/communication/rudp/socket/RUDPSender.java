@@ -54,7 +54,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException {
 		RUDPDatagramBuilder dgramBuilder;
 		RUDPDatagramPacket[] packetList;
-
+		
 		//Create datagram builder from user datagram
 		dgramBuilder = new RUDPDatagramBuilder(datagram); 
 		packetList = dgramBuilder.getFragmentedPackets();
@@ -179,6 +179,11 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	
 	public void reset() {
 		synchronized(this) {
+			//Acknowledge all packets
+			for(RUDPDatagramPacket packet: packetBuffer_out.values()) {
+				packet.acknowldege();
+			}
+			
 			//Reset sender window start to current seq. number
 			senderWindowStart = currentPacketSeq;
 			packetBuffer_out.clear();
@@ -187,10 +192,5 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			semaphoreWindowSize.drainPermits();
 			semaphoreWindowSize.release(1);
 		}
-	}
-
-	@Override
-	public void eventLinkFailed() {
-		link.eventLinkFailed();
 	}
 }

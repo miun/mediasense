@@ -13,6 +13,7 @@ import java.util.TimerTask;
 
 import communication.rudp.socket.RUDPDatagramPacketSenderInterface;
 import communication.rudp.socket.exceptions.InvalidRUDPPacketException;
+import communication.rudp.socket.listener.RUDPLinkFailListener;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPDatagramPacket {
@@ -44,7 +45,8 @@ public class RUDPDatagramPacket {
 	private TimerTask task_resend;
 	
 	//Interface to send packets with
-	private RUDPDatagramPacketSenderInterface listener;
+	private RUDPDatagramPacketSenderInterface sendListener;
+	private RUDPLinkFailListener failListener;
 
 	//Sequence of this packet
 	private int packet_seq;
@@ -72,14 +74,16 @@ public class RUDPDatagramPacket {
 		//Create an empty packet without resend-timer stuff
 		//Used for acknowledge-only packets, that don't need to be resend
 		timer = null;
-		listener = null;
+		sendListener = null;
 		id = (new Random()).nextInt();
 	}
 		
-	public RUDPDatagramPacket(Timer timer,RUDPDatagramPacketSenderInterface listener) {
+	public RUDPDatagramPacket(Timer timer,RUDPDatagramPacketSenderInterface sendListener,RUDPLinkFailListener failListener) {
 		//Create a packet with resend capabilities
 		this.timer = timer;
-		this.listener = listener;
+		this.sendListener = sendListener;
+		this.failListener = failListener;
+		
 		id = (new Random()).nextInt();
 	}
 
@@ -318,7 +322,7 @@ public class RUDPDatagramPacket {
 	public void sendPacket(Timer timer,RUDPDatagramPacketSenderInterface listener,int retries,int timeout) {
 		//Set listener and timer
 		this.timer = timer;
-		this.listener = listener;
+		this.sendListener = listener;
 		this.retries = retries;
 		this.attempts = 0;
 
@@ -343,11 +347,11 @@ public class RUDPDatagramPacket {
 		//TODO handle a failed packet
 		if(attempts >= retries) {
 			//Do not schedule the TimerTask again
-			listener.eventLinkFailed();
+			failListener.eventLinkFailed();
 		} 
 		else {
 			//Send packet
-			listener.sendDatagramPacket(this);
+			sendListener.sendDatagramPacket(this);
 			
 			//Restart new timer
 			//The timeout is always doubled
@@ -453,7 +457,7 @@ public class RUDPDatagramPacket {
 	}
 	
 	public void setListener(RUDPDatagramPacketSenderInterface l) {
-		this.listener = l;
+		this.sendListener = l;
 	}
 	
 	public void setIsAckSent() {

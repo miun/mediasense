@@ -2,7 +2,7 @@
 \lyxformat 413
 \begin_document
 \begin_header
-\textclass report
+\textclass recipebook
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -217,18 +217,85 @@ The term peer-to-peer (P2P) refers to a computer network in which each participa
 nt (peer) acts as client and server for the other participants.
  These architecture allows, to share data over a network without the need
  of a central server.
- 
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename clientserver.png
+	lyxscale 50
+	scale 42
+	groupId peer2peer
 
 \end_inset
 
 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Client - server network
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename peer2peer.png
+	lyxscale 50
+	scale 42
+	groupId peer2peer
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Peer to peer network
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -450,7 +517,18 @@ Each node in a chord DHT contains a list of known nodes of the DHT called
 \begin_inset Formula $n+2^{i+1}\bmod m$
 \end_inset
 
-(n+2⁽i⁺¹⁾ mod m) Formula 1: Finger entry
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+n+2^{i+1}\bmod m
+\]
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
