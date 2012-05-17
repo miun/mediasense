@@ -50,7 +50,7 @@ public class RUDPReceiver {
 		int idx;
 		
 		//Process data packet
-		synchronized(this) {
+		synchronized(link) {
 			if(packet.getFlag(RUDPDatagramPacket.FLAG_DATA)) {
 				//Check if packet is within window bounds
 				if((packet.getPacketSeq() - receiverWindowStart) < 0 || (packet.getPacketSeq() - receiverWindowStart) > RUDPLink.WINDOW_SIZE) {
@@ -137,7 +137,7 @@ public class RUDPReceiver {
 		boolean windowReOpened = false;
 		
 		//A datagram has been consumed => shift receive window one step forward
-		synchronized(this) {
+		synchronized(link) {
 			dgram = packetBuffer_in.get(receiverWindowStart);
 			if(dgram != null) {
 				//Has the window been reopened?
@@ -169,7 +169,7 @@ public class RUDPReceiver {
 		packet.setAckWindowStart(receiverWindowStart);
 		
 		//Check if we can acknowledge something
-		synchronized(this) {
+		synchronized(link) {
 			//Set the window start the sender could know about to the actual receiver window start
 			lastSentReceiverWindowStart = receiverWindowStart;
 
@@ -210,7 +210,7 @@ public class RUDPReceiver {
 	}
 	
 	public void reset() {
-		synchronized(this) {
+		synchronized(link) {
 			//Stop acknowledge task
 			if(task_ack != null) {
 				task_ack.cancel();

@@ -4,6 +4,9 @@
 \begin_header
 \textclass report
 \use_default_options true
+\begin_modules
+customHeadersFooters
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -25,7 +28,7 @@
 \bibtex_command default
 \index_command default
 \paperfontsize default
-\spacing single
+\spacing onehalf
 \use_hyperref false
 \papersize default
 \use_geometry false
@@ -45,12 +48,12 @@
 \end_index
 \secnumdepth 3
 \tocdepth 3
-\paragraph_separation indent
-\paragraph_indentation default
+\paragraph_separation skip
+\defskip smallskip
 \quotes_language english
 \papercolumns 1
 \papersides 1
-\paperpagestyle default
+\paperpagestyle fancy
 \tracking_changes false
 \output_changes false
 \html_math_output 0
@@ -59,6 +62,18 @@
 \end_header
 
 \begin_body
+
+\begin_layout Left Header
+Left
+\end_layout
+
+\begin_layout Center Header
+Center
+\end_layout
+
+\begin_layout Right Header
+Right
+\end_layout
 
 \begin_layout Chapter
 Introduction
@@ -473,7 +488,1648 @@ where n is the key of the node, i is the finger table entry and m is the
 This means that a node can have up to n finger entries (where m is the maximum
  value of the hash function).
  Using this method the effort to find a position is at maximum O(log2(m))
- because after every step the distance is decreased to the half.#
+ because after every step the distance is decreased to the half.
+\end_layout
+
+\begin_layout Subsection
+Successor
+\end_layout
+
+\begin_layout Standard
+The successor, that is also the very first finger in the finger table, is
+ the direct succeeding node in the DHT.
+ If the finger table contains wrong links the efficiency is decreased.
+ Despite that, the direct successor has a special role as it is important
+ to have the DHT circular and not containing side-loops, intersections or
+ orphaned nodes, because this could cause the queries to fail.
+ Because of that check and repair mechanisms are used to keep the correct
+ successor.
+ This is described in Section XX (Repair) more in detail.
+\end_layout
+
+\begin_layout Subsection
+Join
+\end_layout
+
+\begin_layout Standard
+A joining node has to do the following steps to safely enter the DHT:
+\end_layout
+
+\begin_layout Itemize
+query the position it is supposed to be
+\end_layout
+
+\begin_layout Itemize
+ask the predecessor of that position to update its successor to that of
+ the new node and
+\end_layout
+
+\begin_layout Itemize
+ask the predecessor for its last successor which becomes the new successor
+ of the new node
+\end_layout
+
+\begin_layout Itemize
+the preceding node has to register the key-value pairs, it is no longer
+ responsible for, to the new node
+\end_layout
+
+\begin_layout Itemize
+start a finger table update process at the new node
+\end_layout
+
+\begin_layout Subsection
+A node that wants to leave the DHT regularly has to do the following steps:
+\end_layout
+
+\begin_layout Itemize
+register all of its key-value pairs to the predecessor
+\end_layout
+
+\begin_layout Itemize
+send the succeeding node to the predecessor so that this node can form a
+ circle again
+\end_layout
+
+\begin_layout Subsection
+Repair
+\end_layout
+
+\begin_layout Standard
+Every node should do checking and repairing to keep the DHT functional and
+ stable.
+ This can be but is not limited to the following list:
+\end_layout
+
+\begin_layout Itemize
+Ask for the predecessor of the succeeding node and check if it is the asking
+ node
+\end_layout
+
+\begin_layout Itemize
+Regularly update the finger table entries to keep the query time at 
+\begin_inset Formula $O(log2(n))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Query
+\end_layout
+
+\begin_layout Standard
+Every node in the DHT can query the predecessor of a position in the DHT.
+ This query is either forwarded to the closest preceding node in the finger
+ table or, if a node finds itself being the predecessor of that position,
+ answering it directly.
+ As explained earlier in the finger table chapter this takes 
+\begin_inset Formula $O(log2(n))$
+\end_inset
+
+ steps if the finger tables of all involved nodes are correct.
+\end_layout
+
+\begin_layout Subsection
+Broadcast
+\end_layout
+
+\begin_layout Standard
+Chord itself does not specify a method for broadcasting.
+ But in [1] an efficient approach is demonstrated.
+\end_layout
+
+\begin_layout Standard
+A node that wants to initiate a broadcast is seen as the root of a spanning
+ tree that covers all nodes in the DHT.
+ The broadcast process uses unicast message that originate at the root node
+ and are propagated from other nodes until every node has received the broadcast.
+ So broadcast in this case must not be confused with network layer broadcast
+ as used in TCP / IP for example.
+\end_layout
+
+\begin_layout Standard
+To avoid redundancy the broadcast message contains a limit value that defines
+ the upper key in the DHT to which the broadcast shall be forwarded to.
+ The lower limit is the node itself.
+\end_layout
+
+\begin_layout Standard
+Assumed that Node 0 in figure XX wants to initiate a broadcast the range
+ is the whole circle from his key to his key minus one.
+ The first step is that Node 0 then sends messages with the following limits
+ to its fingers:
+\end_layout
+
+\begin_layout Itemize
+Node 1: [1,2) - covering one 16th of the DHT
+\end_layout
+
+\begin_layout Itemize
+Node 2: [2,4) - covering one 8th of the DHT
+\end_layout
+
+\begin_layout Itemize
+Node 4: [4,8) - covering one 4th of the DHT
+\end_layout
+
+\begin_layout Itemize
+Node 8: [8,0) - covering one half of the DHT
+\end_layout
+
+\begin_layout Standard
+The receiving nodes forward the message to all fingers that are in the range
+ of their own key and the received limit, without changing the limit.
+ See figure XX for visualization of the message propagation in several steps
+ and figure XX for the corresponding tree structure.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Broadcast Circle.svg
+	lyxscale 30
+	groupId broadcast_graphics
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename Broadcast Tree.svg
+	lyxscale 30
+	groupId broadcast_graphics
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Broadcast Legend.svg
+	lyxscale 30
+	groupId broadcast_graphics
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+All ranges combined cover the whole DHT excluding the originating node 0.
+ If multiple fingers point to the same node, because the DHT is not complete,
+ the message is just send once to avoid duplicates.
+ If a finger is missing the broadcast is propagated correctly anyhow (assumed
+ that the DHT is a correct continuous circle), but the efficiency will decrease.
+\end_layout
+
+\begin_layout Section
+Network data transmission
+\end_layout
+
+\begin_layout Itemize
+Connection oriented
+\end_layout
+
+\begin_layout Itemize
+Packet oriented
+\end_layout
+
+\begin_layout Itemize
+Packet numbers
+\end_layout
+
+\begin_layout Itemize
+Packet window
+\end_layout
+
+\begin_layout Itemize
+Automatic request (ARQ)
+\end_layout
+
+\begin_layout Chapter
+Methodology
+\end_layout
+
+\begin_layout Standard
+The project consists of two separate parts.
+ Part one is the development of a Distributed Hash Table (DHT) and part
+ two the development of a Reliable User Datagram Protocol (RUDP).
+\end_layout
+
+\begin_layout Standard
+The approach to solve each milestone as defined in chapter 1 will be described
+ in this chapter.
+\end_layout
+
+\begin_layout Standard
+All the development is done using the Eclipse# Integrated Development Environmen
+t (IDE) and all project related content will be shared through a Git repository.
+\end_layout
+
+\begin_layout Section
+Develop a simulation environment for DHT clients
+\end_layout
+
+\begin_layout Standard
+The simulation environment should have the identical API as the MediaSense
+ platform to ease the later transfer of the implemented DHT.
+ Furthermore the simulation environment should enable the following operations:
+\end_layout
+
+\begin_layout Itemize
+Host an theoretical unlimited amount of DHT clients (limited by resources
+ only)
+\end_layout
+
+\begin_layout Itemize
+Allow clients to join the network
+\end_layout
+
+\begin_layout Itemize
+Allow clients to leave the network
+\end_layout
+
+\begin_layout Itemize
+Simulate network connection delays and failures
+\end_layout
+
+\begin_layout Itemize
+Regularly record client and DHT properties for statistical evaluation
+\end_layout
+
+\begin_layout Itemize
+Monitor messages exchanged between clients
+\end_layout
+
+\begin_layout Itemize
+Allow listing of detailed client information like finger-table, successor,
+ predecessor, internal state etc.
+\end_layout
+
+\begin_layout Itemize
+Visualise the DHT in a Graphical User Interface (GUI)
+\end_layout
+
+\begin_layout Section
+Implementation of a circular DHT
+\end_layout
+
+\begin_layout Standard
+As described in the background chapter a DHT is a virtual space of addresses
+ containing at least one client.
+ Each client is responsible for the address range between his own address
+ and its successor, further each client has exactly the same responsibilities
+ and rights in the DHT.
+ The following list shows the function each DHT client should have:
+\end_layout
+
+\begin_layout Itemize
+Insert a joining node as the new successor if the clients address is between
+ the current clients and successors address
+\end_layout
+
+\begin_layout Itemize
+Forward queries to the client in the finger-table whose address is closest
+ to the destination address
+\end_layout
+
+\begin_layout Itemize
+Maintain a list of fingers to other clients in the DHT.
+ The address of clients in question is described in chapter XX in detail
+\end_layout
+
+\begin_layout Itemize
+Detect and handle unreachable clients
+\end_layout
+
+\begin_layout Itemize
+Execute self-checks regularly and correct wrong links if necessary
+\end_layout
+
+\begin_layout Itemize
+Initiate and forward broadcast messages
+\end_layout
+
+\begin_layout Standard
+Generally each query to a client that is participant of a DHT should return
+ an answer.
+\end_layout
+
+\begin_layout Section
+Evaluate the performance of the DHT
+\end_layout
+
+\begin_layout Standard
+To produce comparable characteristics the DHT solution should be evaluated
+ as specified in the following list.
+ The comparison to other implementations is not a part of this work.
+ 
+\end_layout
+
+\begin_layout Itemize
+Measure the health of the DHT in the following situations: (N represents
+ a different amount of nodes)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+N nodes join
+\end_layout
+
+\begin_layout Itemize
+N nodes leave
+\end_layout
+
+\begin_layout Itemize
+N nodes fail
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Measure average transmitted data per node in the following situations: (N
+ means different amounts of nodes)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+N nodes joining
+\end_layout
+
+\begin_layout Itemize
+N nodes leaving
+\end_layout
+
+\begin_layout Itemize
+N nodes failing
+\end_layout
+
+\begin_layout Itemize
+Idle DHT with N nodes
+\end_layout
+
+\end_deeper
+\begin_layout Section
+Transfer the DHT solution to the MediaSense platform
+\end_layout
+
+\begin_layout Standard
+After successful simulation and evaluation, the DHT should be transferred
+ to the MediaSense platform.
+ Although the API is the same it must be verified that the DHT still fulfills
+ the desired functionality.
+ The DHT will be tested by installing the MediaSense platform on several
+ computer systems inside the University network.
+\end_layout
+
+\begin_layout Section
+Develop a simulation environment for communication protocols
+\end_layout
+
+\begin_layout Standard
+The simulation environment should have the identical API as the MediaSense
+ platform to ease the later transfer of the implemented RUDP.
+ Furthermore the simulation environment should enable the following operations:
+ 
+\end_layout
+
+\begin_layout Itemize
+Host two MediaSense communication instances
+\end_layout
+
+\begin_layout Itemize
+The first instance should be used to send data and the second to receive
+ data
+\end_layout
+
+\begin_layout Itemize
+Check the transmitted data for errors
+\end_layout
+
+\begin_layout Itemize
+Record statistical data during data transmission
+\end_layout
+
+\begin_layout Itemize
+Simulate network delay, packet corruption, packet loss, packet reordering
+ and packet duplication
+\end_layout
+
+\begin_layout Section
+Develop a reliable packet-based communication protocol
+\end_layout
+
+\begin_layout Standard
+The RUDP protocol should be a reliable and packet-oriented communication
+ protocol using UDP as the underlying transmission protocol.
+ The protocol should have the following properties:
+\end_layout
+
+\begin_layout Itemize
+Connectionless (no connection establishment and disestablishment needed)
+\end_layout
+
+\begin_layout Itemize
+Detect and request the re-sending of corrupted and lost packets
+\end_layout
+
+\begin_layout Itemize
+Detect and drop duplicate packets
+\end_layout
+
+\begin_layout Itemize
+Reorder disordered packets if possible; request re-sending otherwise
+\end_layout
+
+\begin_layout Section
+Compare RUDP with TCP
+\end_layout
+
+\begin_layout Standard
+With the developed simulation environment the following comparisons between
+ TCP and RUDP will be done:
+\end_layout
+
+\begin_layout Itemize
+transmission speed in error free environment
+\end_layout
+
+\begin_layout Itemize
+transmission speed in erroneous environments
+\end_layout
+
+\begin_layout Itemize
+transmission overhead
+\end_layout
+
+\begin_layout Itemize
+required additional traffic in error situations
+\end_layout
+
+\begin_layout Section
+Transfer RUDP to MediaSense
+\end_layout
+
+\begin_layout Standard
+After successful simulation, the RUDP protocol should be transferred to
+ the MediaSense platform.
+ Although the API is the same it must be verified that the protocol still
+ fulfills the desired functionality.
+ RUDP will be tested by installing the MediaSense platform on several computer
+ systems inside the University network.
+\end_layout
+
+\begin_layout Chapter
+Implementation
+\end_layout
+
+\begin_layout Standard
+This chapter describes the implementation process of the goals defined in
+ chapter XX.
+ Figure XX illustrates this process.
+ A sub-chapter to each defined goal describes detailed the important points.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Implementation.svg
+	lyxscale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Develop a simulation environment for DHT clients
+\end_layout
+
+\begin_layout Standard
+Since an other goal defined in XX is to integrate the developed DHT solution
+ to the MediaSense framework, the simulation environment is build upon the
+ same interfaces as the framework uses.
+ Figure XX shows a rough class diagramm about how the simulation environment
+ is structured.
+\end_layout
+
+\begin_layout Standard
+TODO insert the class diagram here.
+ could not find it
+\end_layout
+
+\begin_layout Subsection
+Manager
+\end_layout
+
+\begin_layout Standard
+The Manager class is the main entry point to the simulation environment.
+ Here everything is tied up, what in fact means, the debug log is started,
+ the statistic for performance measuring is controlled and the commands
+ from the console are forwarded.
+\end_layout
+
+\begin_layout Subsection
+Client Simulation
+\end_layout
+
+\begin_layout Standard
+To simulate exactly the same pre-requirements that follow from the MediaSense
+ framework, each client consists of an Communication object and an LookupService
+ object running separately in independent threads.
+ The Communication object is responsible to send (send means, receive from
+ the LookupService and forward to the network layer) and receive (receive
+ means, receive from the network layer and forward to the LookupService)
+ messages, and can be seen as the glue between the network and the DHT implement
+ation.
+\end_layout
+
+\begin_layout Subsection
+Network
+\end_layout
+
+\begin_layout Standard
+Because the development of the lookup-service is independent from the physical
+ network layer, the simulated network is a fully reliable message forwarding
+ service between the nodes.
+ It allows to define different communication delays for each node or the
+ whole network.
+ To be able to forward messages to all clients, the network holds a map
+ with Communication objects related to their address.
+ Because it is only possible to have one big network, this class is implemented
+ as singleton.
+\end_layout
+
+\begin_layout Subsection
+Console
+\end_layout
+
+\begin_layout Standard
+The Console class is the main interface to the user, to control the simulation
+ environment.
+ The most important functionality is that clients can be added or removed
+ from the network and that sensor can be registered and resolve attempts
+ can be started.
+ A complete overview of all commands and a short description is placed in
+ appendix XX.
+\end_layout
+
+\begin_layout Subsection
+Graphical User Interface
+\end_layout
+
+\begin_layout Standard
+From the console it is possible with the command “g” to start a graphical
+ user interface.
+ The GUI is built with basic Java Swing components, and kept as simple as
+ possible.
+ Further the GUI draws a visualization of the hash space and how the clients
+ act in this space, therefore Java AWT Graphics classes are used.
+\end_layout
+
+\begin_layout Subsection
+Log
+\end_layout
+
+\begin_layout Standard
+The Log class writes a text file with all possible debug outputs from the
+ simulation environment.
+ The debug outputs do in include the following points:
+\end_layout
+
+\begin_layout Itemize
+Joining, leaving and disappearing nodes
+\end_layout
+
+\begin_layout Itemize
+All messages forwarded by the network.
+\end_layout
+
+\begin_layout Itemize
+Keep-alive initiations
+\end_layout
+
+\begin_layout Itemize
+Finger changes
+\end_layout
+
+\begin_layout Section
+Implementation of a circular DHT based on Chord
+\end_layout
+
+\begin_layout Standard
+Figure XX shows a finite-state machine (FSM) which illustrates the lifecycle
+ of a node.
+ It has to be mentioned that this FSM is only a brief mapping of the real
+ implementation, but nevertheless shows the most important functionalities.
+\end_layout
+
+\begin_layout Standard
+The state q0 is the entry point when a node starts and q5 is the final state,
+ which will be reached when a node shuts down.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Finite State Machine.svg
+	lyxscale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Join process
+\end_layout
+
+\begin_layout Standard
+The join process is illustrated in the box “connection establishment” in
+ Figure XX.
+ Starting in q0 there are two different possibilities.
+ The first one is, that the node has no bootstrap address and therefore
+ acts itself as a bootstrap node (create a new DHT instance).
+ Is that the case, the node immediately changes to the connected status
+ and the connection establishment box is left.
+ The second possibility is, that the node gets a regular bootstrap address.
+ In that case, the node will try to establish a connection to a already
+ running DHT instance.
+ If the connecting node does not get an answer in a specified time, it will
+ start a new attempt to join the DHT.
+\end_layout
+
+\begin_layout Standard
+TODO write about blocking
+\end_layout
+
+\begin_layout Subsection
+Leave
+\end_layout
+
+\begin_layout Standard
+There are two possible ways in a DHT how the nodes might finish their availabili
+ty.
+ The regular way should be that the node sends a NOTIFY_LEAVE message to
+ the DHT to inform all other nodes about its disappearance, but there are
+ of course also problems like failing links when the node is not able to
+ inform the DHT about its disappearance.
+ In that case, the first node that recognizes the a failing node, has to
+ send a NODE_SUSPICIOUS message to all participants in the DHT.
+\end_layout
+
+\begin_layout Subsection
+Message types
+\end_layout
+
+\begin_layout Standard
+The DHT implementation uses 3 different categories of propagating messages.
+ Each category contains several message types, where each type can contain
+ additional data that is associated with that type.
+\end_layout
+
+\begin_layout Subsubsection
+Direct node to node communication
+\end_layout
+
+\begin_layout Standard
+These messages are directly send to another node without being further forwarded.
+ The following message are direct node to node messages:
+\end_layout
+
+\begin_layout Itemize
+REGISTER_RESPONSE - Response from a node that register a key-value pair
+ that it is responsible for to the initiating node 
+\end_layout
+
+\begin_layout Itemize
+RESOLVE_RESPONSE - JOIN_RESPONSE - Response from the predecessor of a new
+ joining node that the new node can enter the DHT directly after the predecessor
+\end_layout
+
+\begin_layout Itemize
+JOIN_ACK - Acknowledge that a new joining node has accepted the response
+ and accepted the predecessors former successor is its new successor
+\end_layout
+
+\begin_layout Itemize
+JOIN_FINALIZE - Last message in the 3-way handshake to join the DHT that
+ informs the joining node to consider itself to be regularly connected 
+\end_layout
+
+\begin_layout Itemize
+DUPLICATE_NODE_ID - Response to a JOIN-message if the joining node tries
+ to join with an already existing hash value 
+\end_layout
+
+\begin_layout Itemize
+FIND_PREDECESSOR_RESPONSE - Response from a responsible node to a 
+\end_layout
+
+\begin_layout Itemize
+FIND_PREDECESSOR-message to find the predecessor of a certain hash-value
+ 
+\end_layout
+
+\begin_layout Itemize
+CHECK_PREDECESSOR - Request the predecessor of the destined node; See chapter
+ XX for detailed repairing mechanisms CHECK_PREDECESSOR_RESPONSE - Response
+ to a CHECK_PREDECESSOR-message, containing the predecessor of the answering
+ node 
+\end_layout
+
+\begin_layout Itemize
+CHECK_SUCCESSOR - Request the successor of the destined node; See chapter
+ XX for detailed repairing mechanisms 
+\end_layout
+
+\begin_layout Itemize
+CHECK_SUCCESSOR_RESPONSE - Response to a CHECK_SUCCESSOR-message, containing
+ the successor of the answering node
+\end_layout
+
+\begin_layout Subsubsection
+Queries
+\end_layout
+
+\begin_layout Standard
+Query messages can be send to any node in the DHT regardless a node is responsib
+le or not.
+ The message is either forwarded to a node of the finger that is closest
+ to the queried destination or answered if the receiving node is one responsible
+ for the destination.
+ For this reason every message must at least contain a hash value (key)
+ that represents the destination position.
+ The following messages are query messages:
+\end_layout
+
+\begin_layout Itemize
+REGISTER - Query to register a key-value (usually a sensor / actor) pair
+ in the DHT 
+\end_layout
+
+\begin_layout Itemize
+RESOLVE - Query to resolve a value associated to a key stored in the DHT
+ 
+\end_layout
+
+\begin_layout Itemize
+JOIN - Query of a new node to enter the DHT 
+\end_layout
+
+\begin_layout Itemize
+FIND_PREDECESSOR - Find the predecessor of a key specified inside the message
+\end_layout
+
+\begin_layout Subsubsection
+Broadcasts
+\end_layout
+
+\begin_layout Standard
+A broadcast message is a container that can encapsulate any other message.
+ As described in chapter XX a broadcast message needs a limit which is the
+ maximum hash value to which a certain node should forward a message.
+ The initiating node sets these limits according the position in the finger
+ table.
+ For this to work a broadcast message must at least contain a start-key
+ and an end-key to to specify this range.
+ For a normal broadcast the start-key is always the initiating / forwarding
+ node.
+ But to be able to send multicast messages in the future a start-key field
+ is also present that contains the redundant information of the current
+ node at the moment.
+ The following messages are used for broadcast propagation:
+\end_layout
+
+\begin_layout Itemize
+BROADCAST - Container itself; Only contains the start-key, end-key and the
+ encapsulated message
+\end_layout
+
+\begin_layout Itemize
+KEEPALIVE - Message that is regularly send to check the network connection
+ and to advertise nodes for finger table upgrading.
+ See chapter XX for a detailed description if keepalive messages
+\end_layout
+
+\begin_layout Itemize
+NOTIFY_JOIN - Send by a node after the join process to inform all other
+ nodes of its arrival
+\end_layout
+
+\begin_layout Itemize
+NOTIFY_LEAVE - Send by a node before the shutdown process to inform all
+ other nodes of its planned leaving
+\end_layout
+
+\begin_layout Itemize
+NODE_SUSPICIOUS - Send by a node that has encountered a network problem
+ with another node to inform all other nodes in the DHT of that
+\end_layout
+
+\begin_layout Section
+Evaluation of the DHT solution
+\end_layout
+
+\begin_layout Subsection
+Health
+\end_layout
+
+\begin_layout Subsection
+Statistic
+\end_layout
+
+\begin_layout Standard
+With the command “statistic filepath”, it is possible to write a statistic
+ to a specified file.
+ The statistic is triggered once per second and writes the following points
+ to matrix in the specified file:
+\end_layout
+
+\begin_layout Itemize
+Timestamp: A timestamp when the data in this line has been collected
+\end_layout
+
+\begin_layout Itemize
+Sec: Absolut seconds since the statistic has started to collect data
+\end_layout
+
+\begin_layout Itemize
+Hth: The health of the DHT.
+ See chapter XX how the health is calculated
+\end_layout
+
+\begin_layout Itemize
+Con: Currently connected nodes in the network
+\end_layout
+
+\begin_layout Itemize
+Fin: Fingerchanges that happened
+\end_layout
+
+\begin_layout Itemize
+Data: Data that has been submitted over the network
+\end_layout
+
+\begin_layout Itemize
+Pkt: Number of messages that have been submitted over the network
+\end_layout
+
+\begin_layout Itemize
+ConD, FinD, DataD, PktD: See upper definition, but as delta since the last
+ second
+\end_layout
+
+\begin_layout Section
+Transfer the DHT solution to the MediaSense platform
+\end_layout
+
+\begin_layout Standard
+As the API of the simulation environment was adopted from the MediaSense
+ platform moving the source files was enough despite the removal of the
+ debug functions.
+ These were designed in a way where they could be removed easily without
+ influencing other program parts.
+\end_layout
+
+\begin_layout Section
+Develop a simulation environment for communication protocols
+\end_layout
+
+\begin_layout Section
+Develop a reliable packet-based communication protocol
+\end_layout
+
+\begin_layout Section
+Compare RUDP with TCP
+\end_layout
+
+\begin_layout Section
+Transfer RUDP to MediaSense 
+\end_layout
+
+\begin_layout Section
+Additional changes
+\end_layout
+
+\begin_layout Standard
+Some improvements have been made apart from the mentioned milestones.
+ The improvements have been implemented during the DHT implementation phase.
+ 
+\end_layout
+
+\begin_layout Subsection
+Message serializer interface
+\end_layout
+
+\begin_layout Standard
+The source and destination addresses are now passed as arguments to each
+ message serializer as this information is available from the context of
+ the underlying network layer.
+ Also it is not necessary to include the source and destination addresses
+ in the application layer protocol as they are always available from the
+ network layer.
+ 
+\end_layout
+
+\begin_layout Subsection
+Binary message serializer
+\end_layout
+
+\begin_layout Standard
+Additionally to the “EnterSeparatedMessageSerializer” a binary message serialize
+r was implemented to have an efficient protocol without any redundancies.
+ See figure XX and YY for details of the message fields for unicast and
+ broadcast messages respectively.
+\end_layout
+
+\begin_layout Standard
+TODO insert Packet graphic
+\end_layout
+
+\begin_layout Chapter
+Result
+\end_layout
+
+\begin_layout Section
+Simulation environment
+\end_layout
+
+\begin_layout Standard
+The simulation environment contains 2 input / output methods.
+ The first is a command line that allows every possible action on the DHT
+ and to monitor events of the DHT.
+ The second is a GUI whose main purpose is to visualize the structure of
+ the DHT in a graphical way.
+ The GUI contains only a basic set of DHT actions.
+\end_layout
+
+\begin_layout Section
+Command line
+\end_layout
+
+\begin_layout Standard
+The command line takes commands, where each command has a different amount
+ of parameters or no parameters.
+ A command is always one contiguous word.
+ If parameters follow, they are separated by a coma from each other and
+ with a space from the command.
+ Output is printed to the same command line.
+ For a complete reference of all commands and their parameters see Appendix
+ XX.
+ The functions of the command line are as follows:
+\end_layout
+
+\begin_layout Itemize
+Add, remove and kill nodes
+\end_layout
+
+\begin_layout Itemize
+Watch events like transmitted messages, node changes and finger changes
+\end_layout
+
+\begin_layout Itemize
+Print node information like fingers, id and network address
+\end_layout
+
+\begin_layout Itemize
+Print the health of the DHT
+\end_layout
+
+\begin_layout Itemize
+Control other simulation functions like the GUI and the statistics function
+\end_layout
+
+\begin_layout Section
+GUI
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename GUI.png
+	lyxscale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the GUI the DHT is visualized in a circle that represents the hash space
+ of the DHT.
+ [Insert picture] Every node is marked as a small rectangle on the position
+ of its hash value on the circle and the network address attached to it.
+ By hovering a node with the mouse the current finger table of that node
+ is displayed in a different color (purple).
+\end_layout
+
+\begin_layout Standard
+Every finger change of a node is indicated by a line going from the node
+ that contains the finger to the finger itself.
+ Different colors indicate which finger action was monitored as described
+ in the following list:
+\end_layout
+
+\begin_layout Itemize
+New finger added
+\end_layout
+
+\begin_layout Itemize
+Finger removed
+\end_layout
+
+\begin_layout Itemize
+Better finger added (that replaces a worse finger)
+\end_layout
+
+\begin_layout Itemize
+Worse finger removed (that was replaced by a better finger)
+\end_layout
+
+\begin_layout Itemize
+Every finger change is added up.
+ The lines can be removed by either clicking “Deletes lines” manually or
+ on every keep-alive broadcast message by checking the box “Clear on ka”.
+ The later allows for good visualization on which effects the last keepalive
+ event had on the health of the DHT.
+\end_layout
+
+\begin_layout Standard
+The GUI allows some basic control of the DHT.
+ That is adding nodes, removing nodes and changing the network and node
+ delay.
+\end_layout
+
+\begin_layout Section
+Log file
+\end_layout
+
+\begin_layout Standard
+When the amount of events is too high inspection of events on the command
+ line could become too complicated.
+ For that purpose a log-file is created that contains exactly the same informati
+on.
+ The log file can be used for further evaluation like using in a text editor.
+\end_layout
+
+\begin_layout Standard
+The log file is automatically created every time the simulation environment
+ is started and is saved to a file in the users directory called “media_sense.log
+”.
+\end_layout
+
+\begin_layout Standard
+Every event produces a new line in the file always starting with a timestamp.
+ The following events are logged:
+\end_layout
+
+\begin_layout Itemize
+Transmitted messages
+\end_layout
+
+\begin_layout Itemize
+Node add, remove and kill events
+\end_layout
+
+\begin_layout Itemize
+Finger change events
+\end_layout
+
+\begin_layout Itemize
+Keepalive events
+\end_layout
+
+\begin_layout Section
+Statistic
+\end_layout
+
+\begin_layout Chapter
+Conclusion
+\end_layout
+
+\begin_layout Chapter
+\start_of_appendix
+Console commands
+\end_layout
+
+\begin_layout Standard
+The command is separated with a space from arguments.
+ Arguments are separated by a comma from each other.
+ The command usage syntax is as follows:
+\end_layout
+
+\begin_layout Standard
+Bold - type exactly like that
+\end_layout
+
+\begin_layout Standard
+Italic - replace with an appropriate argument
+\end_layout
+
+\begin_layout Standard
+Underlined - argument can be repeated
+\end_layout
+
+\begin_layout Standard
+[Brackets] - argument is optional
+\end_layout
+
+\begin_layout Standard
+node_add_n count
+\end_layout
+
+\begin_layout Standard
+Add count nodes to the DHT.
+ The network addresses are the next free addresses in continuous order.
+\end_layout
+
+\begin_layout Standard
+node_add address
+\end_layout
+
+\begin_layout Standard
+Add multiple nodes with the specified network address(es).
+ Address could be any string.
+\end_layout
+
+\begin_layout Standard
+node_remove address
+\end_layout
+
+\begin_layout Standard
+Remove multiple nodes specified by their network address(es).
+ The node(s) is / are shutdown normally.
+\end_layout
+
+\begin_layout Standard
+node_remove_n count
+\end_layout
+
+\begin_layout Standard
+Remove count nodes.
+ The node(s) is / are selected randomly.
+ The node(s) is / are shutdown normally.
+\end_layout
+
+\begin_layout Standard
+node_kill address
+\end_layout
+
+\begin_layout Standard
+Kill multiple nodes specified by their network address(es).
+ The node(s) is / are killed without any notice.
+ This is the simulation of a network failure.
+\end_layout
+
+\begin_layout Standard
+node_kill_n count
+\end_layout
+
+\begin_layout Standard
+Kill count nodes.
+ The node(s) is / are selected randomly.
+ The node(s) is / are killed without any warning.
+ This is the simulation of a network failure.
+\end_layout
+
+\begin_layout Standard
+msg_watch ([! | all | broadcast | !broadcast] | [[!]join | [!]join_response
+ | [!]join_ack | [!]join_fainalize | [!]join_busy | [!]duplicate | [!]register
+ | [!]register_response | [!]resolve | [!]resolve_response | [!]keepalive
+ | [!]find_predecessor | [!]find_predecessor_response | [!]check_successor
+ | [!]check_successor_response | [!]check_predecessor | [!]check_predecessor_res
+ponse | [!]join_notify | [!]leave_notify])
+\end_layout
+
+\begin_layout Standard
+Activate and / or deactivate monitoring of the specified message categories
+ or specified messages.
+ The categories are ! for none, all for all, broadcast for activating keepalive,
+ notify_join, notify_leave and node_suspicious, and !broadcast for deactivating
+ them.
+ [!]broadcast does not interfere with other message types.
+ Either a category or a list of specified messages can be entered.
+\end_layout
+
+\begin_layout Standard
+register address, sensor
+\end_layout
+
+\begin_layout Standard
+Register the sensor sensor at the node node specified by address.
+\end_layout
+
+\begin_layout Standard
+resolve address, sensor
+\end_layout
+
+\begin_layout Standard
+Try to resolve the sensor starting at the node specified by address.
+\end_layout
+
+\begin_layout Standard
+g radius
+\end_layout
+
+\begin_layout Standard
+Start the GUI.
+ Optionally specify the radius of the DHT circle in pixel.
+\end_layout
+
+\begin_layout Standard
+node_info [address]
+\end_layout
+
+\begin_layout Standard
+Print information about all nodes or the node specified by address.
+ The information contains state of connectivity, state of blocking and if
+ blocked, for which node the block is held, and the hash value of the node(s).
+\end_layout
+
+\begin_layout Standard
+sensor address
+\end_layout
+
+\begin_layout Standard
+Show sensor information for the node specified by the network address address.
+ The information contains a list of own sensors and where these are registered,
+ and a list of foreign sensors this node is responsible for and the network
+ address of the originating node.
+\end_layout
+
+\begin_layout Standard
+node_watch address
+\end_layout
+
+\begin_layout Standard
+Opens a small window for every node specified by its network address address.
+ The list contains the finger finger-table of that node and is automatically
+ updated on changes.
+\end_layout
+
+\begin_layout Standard
+msg_delay [[delay], address]
+\end_layout
+
+\begin_layout Standard
+Shows the current global network delay when no parameter is specified.
+ Sets the global network delay when delay is specified, and sets the node
+ specific network delay if an address is specified.
+\end_layout
+
+\begin_layout Standard
+circle address
+\end_layout
+
+\begin_layout Standard
+Iterate through the DHT circle starting by the node specified by the network
+ address address.
+ Every traversed node is shown in order including network address and hash
+ value.
+ The traversal stops if the starting specified by address node is reached
+ again, a side-loop or a hole has been detected.
+ After the traversal orphaned nodes, if any, are listed.
+\end_layout
+
+\begin_layout Standard
+finger address
+\end_layout
+
+\begin_layout Standard
+List the finger table of the node specified by the network address address.
+ The information includes the logarithmic position to the base of 2 of the
+ finger, the hash value of the finger and the network address.
+ The predecessor, that is not a part of the finger table, is also included
+ in the listing.
+ Successor and predecessor are marked with SUC and PRE respectively.
+\end_layout
+
+\begin_layout Standard
+ka_watch
+\end_layout
+
+\begin_layout Standard
+Switches the monitoring of keepalive events on or off depending on the former
+ state.
+\end_layout
+
+\begin_layout Standard
+health [m]
+\end_layout
+
+\begin_layout Standard
+This command shows the current health of the DHT.
+ The health is the percentage of correct fingers of all nodes.
+ Fingers that are present but not perfect are treated as not present.
+ The m option includes a list of missing fingers that were needed to reach
+ 100% health.
+\end_layout
+
+\begin_layout Standard
+wait delay, [random_delay]
+\end_layout
+
+\begin_layout Standard
+Waits the specified delay in milliseconds.
+ If random_delay is also specified this command waits between delay and
+ (delay + random_delay) milliseconds selected by a random number generator.
+ This command is only useful inside script files.
+ See the exec command for further details
+\end_layout
+
+\begin_layout Standard
+exec file
+\end_layout
+
+\begin_layout Standard
+Execute the script file specified by file.
+ A script must contain valid command line commands or comments.
+ A comment line starts with a # and is valid for the current line only.
+ There is one command that is only valid inside script files, which is the
+ goto command.
+ See description of the goto command in the section for more details.
+\end_layout
+
+\begin_layout Standard
+statistic file
+\end_layout
+
+\begin_layout Standard
+Start a statistic and write it to the file file.
+ Only one statistic can be run at a time.
+ If a statistic was already running before, it is closed before the new
+ statistic is started.
+ See chapter XX inside the project report for more detail on statistics.
+\end_layout
+
+\begin_layout Standard
+break address
+\end_layout
+
+\begin_layout Standard
+This command is for debugging purposes only and works only when the simulation
+ environment is started within a java debugger.
+ It stops the execution of the node specified the network address address.
+ Outside the debugging mode this command does nothing.
+\end_layout
+
+\begin_layout Standard
+goto mark
+\end_layout
+
+\begin_layout Standard
+This command is only valid within script files.
+ It jumps the current execution pointer to the line that is marked with
+ mark.
+ A mark can be specified by a colon followed by a mark-name.
+ A mark cannot be combined with other commands on the same line.
+\end_layout
+
+\begin_layout Standard
+This example waits 1000 ms, adds 2 nodes and then jumps to the beginning.
+\end_layout
+
+\begin_layout Standard
+:make_nodes
+\end_layout
+
+\begin_layout Standard
+wait 1000
+\end_layout
+
+\begin_layout Standard
+node_add_n 2
+\end_layout
+
+\begin_layout Standard
+goto make_nodes
+\end_layout
+
+\begin_layout Chapter
+Example log file
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+Logging started Sat May 05 18:02:56 CEST 2012
+\end_layout
+
+\begin_layout LyX-Code
+----------
+\end_layout
+
+\begin_layout LyX-Code
+18:03:04.783 | MSG: type: MSG-JOIN - from: (1) - to: (0) key: {356a...} - origAdr:
+ (1)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:05.036 | MSG: type: MSG-JOIN-RESPONSE - from: (0) - to: (1) | joinKey:
+ {356a...} suc: {b658...} pre : {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:05.288 | MSG: type: MSG-JOIN_ACK - from: (1) - to: (0) key: {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (1)-{356a...} @NODE: (0)-{b658...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (1)-{356a...} @NODE: (0)-{b658...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (0)-{b658...} @NODE: (1)-{356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:05.541 | MSG: type: MSG-JOIN_FINALIZE - from: (0) - to: (1) key: {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (0)-{b658...} @NODE: (1)-{356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:08.640 | MSG: type: MSG-JOIN - from: (2) - to: (1) key: {da4b...} - origAdr:
+ (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:08.892 | MSG: type: MSG-JOIN - from: (1) - to: (0) key: {da4b...} - origAdr:
+ (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:09.144 | MSG: type: MSG-JOIN-RESPONSE - from: (0) - to: (2) | joinKey:
+ {da4b...} suc: {356a...} pre : {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:09.396 | MSG: type: MSG-JOIN_ACK - from: (2) - to: (0) key: {da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (2)-{da4b...} @NODE: (0)-{b658...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-BETTER finger: (2)-{da4b...} @NODE: (1)-{356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:09.649 | BROADCAST:{356a...} -> {b658...} | MSG: type: MSG-JOIN-NOTIFY -
+ from: (0) - to: (1) hash: {da4b...} - Adr: (2)
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (1)-{356a...} @NODE: (2)-{da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:09.649 | MSG: type: MSG-JOIN_FINALIZE - from: (0) - to: (2) key: {da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (0)-{b658...} @NODE: (2)-{da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:09.901 | MSG: type: KEEP-ALIVE - from: (1) - to: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:13.106 | MSG: type: MSG-CHECK_SUCCESSOR - from: (0) - to: (1) | hash:
+ {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:13.107 | MSG: type: MSG-CHECK_PREDECESSOR - from: (0) - to: (1) | hash:
+ {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:13.359 | MSG: type: MSG-CHECK_SUCCESSOR_RESPONSE - from: (1) - to:
+ (0) | preHash: {b658...} preAddr: (0)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:13.359 | MSG: type: MSG-CHECK_PREDECESSOR_RESPONSE - from: (1) - to:
+ (0) | preHash: {da4b...} preAddr: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:15.793 | MSG: type: MSG-CHECK_SUCCESSOR - from: (1) - to: (2) | hash:
+ {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:15.794 | MSG: type: MSG-CHECK_PREDECESSOR - from: (1) - to: (2) | hash:
+ {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:16.046 | MSG: type: MSG-CHECK_SUCCESSOR_RESPONSE - from: (2) - to:
+ (1) | preHash: {356a...} preAddr: (1)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:16.046 | MSG: type: MSG-CHECK_PREDECESSOR_RESPONSE - from: (2) - to:
+ (1) | preHash: {b658...} preAddr: (0)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:18.298 | Node: {b658...} Addr: 0 initiated KEEP-ALIVE
+\end_layout
+
+\begin_layout LyX-Code
+ADD-NEW finger: (0)-{b658...} @NODE: (2)-{da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:18.551 | BROADCAST:{da4b...} -> {356a...} | MSG: type: KEEP-ALIVE - from:
+ (0) - to: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:18.551 | BROADCAST:{356a...} -> {b658...} | MSG: type: KEEP-ALIVE - from:
+ (0) - to: (1)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:19.903 | MSG: type: MSG-CHECK_SUCCESSOR - from: (2) - to: (0) | hash:
+ {da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:19.903 | MSG: type: MSG-CHECK_PREDECESSOR - from: (2) - to: (0) | hash:
+ {da4b...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:20.155 | MSG: type: MSG-CHECK_SUCCESSOR_RESPONSE - from: (0) - to:
+ (2) | preHash: {da4b...} preAddr: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:20.155 | MSG: type: MSG-CHECK_PREDECESSOR_RESPONSE - from: (0) - to:
+ (2) | preHash: {356a...} preAddr: (1)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:23.107 | MSG: type: MSG-CHECK_SUCCESSOR - from: (0) - to: (1) | hash:
+ {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:23.107 | MSG: type: MSG-CHECK_PREDECESSOR - from: (0) - to: (1) | hash:
+ {b658...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:23.359 | MSG: type: MSG-CHECK_SUCCESSOR_RESPONSE - from: (1) - to:
+ (0) | preHash: {b658...} preAddr: (0)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:23.359 | MSG: type: MSG-CHECK_PREDECESSOR_RESPONSE - from: (1) - to:
+ (0) | preHash: {da4b...} preAddr: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:25.794 | MSG: type: MSG-CHECK_SUCCESSOR - from: (1) - to: (2) | hash:
+ {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:25.794 | MSG: type: MSG-CHECK_PREDECESSOR - from: (1) - to: (2) | hash:
+ {356a...}
+\end_layout
+
+\begin_layout LyX-Code
+18:03:26.046 | MSG: type: MSG-CHECK_SUCCESSOR_RESPONSE - from: (2) - to:
+ (1) | preHash: {356a...} preAddr: (1)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:26.046 | MSG: type: MSG-CHECK_PREDECESSOR_RESPONSE - from: (2) - to:
+ (1) | preHash: {b658...} preAddr: (0)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:28.759 | Node: {b658...} Addr: 0 initiated KEEP-ALIVE
+\end_layout
+
+\begin_layout LyX-Code
+18:03:29.011 | BROADCAST:{da4b...} -> {356a...} | MSG: type: KEEP-ALIVE - from:
+ (0) - to: (2)
+\end_layout
+
+\begin_layout LyX-Code
+18:03:29.011 | BROADCAST:{356a...} -> {b658...} | MSG: type: KEEP-ALIVE - from:
+ (0) - to: (1)
 \end_layout
 
 \end_body

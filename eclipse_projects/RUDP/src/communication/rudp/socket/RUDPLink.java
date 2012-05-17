@@ -227,7 +227,7 @@ public class RUDPLink {
 		
 		@Override
 		public void run() {
-			synchronized(this) {
+			synchronized(link) {
 				Date now = new Date();
 				long interval;
 				
@@ -253,6 +253,7 @@ public class RUDPLink {
 			receiver = null;
 			linkFailed = true;
 			
+			//Forward exception
 			RUDPExceptionDatagram dgram = new RUDPExceptionDatagram(remoteSockAddr);
 			receiveListener.onRUDPDatagramReceive(dgram);
 		}

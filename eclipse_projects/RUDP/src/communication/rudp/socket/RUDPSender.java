@@ -65,7 +65,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			semaphoreWindowSize.acquire();
 			
 			//Add packet to out list
-			synchronized(this) {
+			synchronized(link) {
 				//Decrease semaphore permit count 
 				semaphorePermitCount--;
 				
@@ -96,7 +96,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		//Recreate range list
 		rangeList = new DeltaRangeList(ackSeqData);
 		
-		synchronized(this) {
+		synchronized(link) {
 			//Acknowledge all packets
 			for(Integer i: rangeList.toElementArray()) {
 				ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
@@ -110,9 +110,6 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	public void resetReceiverWindow(int receiverWindowStart,int receiverWindowSize) {
 		//Reset out window
 		this.receiverWindowStart = receiverWindowStart;
-
-		//Update
-		//updateReceiverWindow(receiverWindowStart, receiverWindowSize);
 	}
 	
 	public void updateReceiverWindow(int receiverWindowStart,int receiverWindowSize) {
@@ -178,7 +175,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	public void reset() {
-		synchronized(this) {
+		synchronized(link) {
 			//Reset sender window start to current seq. number
 			senderWindowStart = currentPacketSeq;
 			packetBuffer_out.clear();
