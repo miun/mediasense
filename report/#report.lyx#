@@ -952,9 +952,9 @@ status open
 \begin_inset Graphics
 	filename Broadcast Circle.svg
 	lyxscale 30
-	scale 20
-	BoundingBox 0bp 0bp 960bp 720bp
-	clip
+	scale 30
+	BoundingBox 0bp 0bp 960bp 150bp
+	groupId broadcast_graphics
 
 \end_inset
 
@@ -962,9 +962,9 @@ status open
 \begin_inset Graphics
 	filename Broadcast Tree.svg
 	lyxscale 30
-	scale 20
-	BoundingBox 0bp 0bp 960bp 720bp
-	clip
+	scale 30
+	BoundingBox 0bp 0bp 960bp 150bp
+	groupId broadcast_graphics
 
 \end_inset
 
@@ -975,9 +975,9 @@ status open
 \begin_inset Graphics
 	filename Broadcast Legend.svg
 	lyxscale 30
-	scale 35
-	BoundingBox 0bp 0bp 960bp 720bp
-	clip
+	scale 30
+	BoundingBox 0bp 0bp 960bp 150bp
+	groupId broadcast_graphics
 
 \end_inset
 
