@@ -3,6 +3,7 @@ package communication.rudp.socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 
 import communication.DestinationNotReachableException;
@@ -19,13 +20,14 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 
 	//Link; Socket interface to send UDP datagrams
 	private RUDPLink link;
-	private RUDPSocketInterface socketInterface;
+//	private RUDPSocketInterface socketInterface;
 	
-	//
+	//The sender is shutdown and waits for rehabilitate()
 	private boolean isShutdown;
 	
 	//Timer
 	private Timer timer;
+	private TimerTask persistTask;
 	
 	//Semaphore to stay within window size
 	private Semaphore semaphoreWindowSize;
@@ -42,7 +44,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	public RUDPSender(RUDPLink link,RUDPSocketInterface socketInterface,Timer timer) {
 		this.link = link;
 		this.timer = timer;
-		this.socketInterface = socketInterface;
+		//this.socketInterface = socketInterface;
 
 		//Init buffer
 		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacketOut>();
@@ -63,7 +65,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		
 		//If sender is shut down
 		synchronized(this) {
-			if(isShutdown) throw new DestinationNotReachableException("Link failed",link.getSocketAddress());
+			if(isShutdown) throw new DestinationNotReachableException(link.getSocketAddress());
 		}
 
 		//Create datagram builder from user datagram
@@ -80,9 +82,10 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			
 			//Add packet to out list
 			synchronized(this) {
-				//Everybody who is listening should get an exception 
 				if(isShutdown) {
-					semaphoreWindowSize.release(Integer.MAX_VALUE);
+					//Tell everybody that the link failed
+					semaphoreWindowSize.release(1);
+					throw new DestinationNotReachableException(link.getSocketAddress());					
 				}
 				
 				//Decrease semaphore permit count 
@@ -212,17 +215,18 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			
 			//TODO reset semaphore
 			semaphoreWindowSize.drainPermits();
-			semaphoreWindowSize.release(1);
 		}
 	}
 	
 	public void shutdown() {
 		synchronized(this) {
-//			reset();
 			isShutdown = true;
-			
+
+			//Reset state of sender
+			reset();
+
 			//Open semaphore and let everybody run into an exception
-			semaphoreWindowSize.release(Integer.MAX_VALUE);
+			semaphoreWindowSize.release(1);
 		}
 	}
 	
@@ -230,5 +234,15 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		synchronized(this) {
 			isShutdown = false;
 		}
+	}
+	
+	private class persistTask extends TimerTask {
+
+		@Override
+		public void run() {
+			//TODO do persist here...
+			
+		}
+		
 	}
 }

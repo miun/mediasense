@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import communication.DestinationNotReachableException;
 import communication.rudp.socket.datagram.RUDPDatagram;
 import communication.rudp.socket.datagram.RUDPDatagramPacket;
 import communication.rudp.socket.datagram.RUDPDatagramPacketIn;
@@ -72,7 +73,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 		return remoteSockAddr;
 	}
 	
-	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException {
+	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException,DestinationNotReachableException {
 		sender.sendDatagram(datagram);
 	}
 	

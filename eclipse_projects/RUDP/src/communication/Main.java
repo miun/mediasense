@@ -1,6 +1,7 @@
 package communication;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
@@ -38,7 +39,14 @@ public class Main extends Thread {
 			while(n++ < 200000) {
 				data = new Integer(n).toString().getBytes();
 				dgram = new RUDPDatagram(dst, 40001, data);
-				sock.send(dgram);
+				
+				try {
+					sock.send(dgram);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					sock.rehabilitateLink(new InetSocketAddress(dst,40001));
+				}
 				//Thread.sleep(1);
 			}
 			
@@ -48,6 +56,13 @@ public class Main extends Thread {
 			e.printStackTrace();
 		}
 		
+		try {
+			Thread.sleep(10000);
+		}
+		catch (Exception e) {
+			
+		}
+
 		//Shutdown
 		//comm1.shutdown();
 	}

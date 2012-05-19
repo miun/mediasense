@@ -102,7 +102,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 	}
 
-	public void send(RUDPDatagram datagram) throws DestinationNotReachableException,IOException,InterruptedException {
+	public void send(RUDPDatagram datagram) throws DestinationNotReachableException,InterruptedException {
 		RUDPLink link;
 		InetSocketAddress sa;
 		

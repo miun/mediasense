@@ -12,6 +12,6 @@ public class RUDPExceptionDatagram extends RUDPAbstractDatagram {
 	}
 	
 	public DestinationNotReachableException getException() {
-		return new DestinationNotReachableException("Link failed",socketAddress);
+		return new DestinationNotReachableException(socketAddress);
 	}
 }

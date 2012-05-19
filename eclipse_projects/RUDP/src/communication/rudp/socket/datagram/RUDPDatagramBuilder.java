@@ -65,7 +65,7 @@ public class RUDPDatagramBuilder {
 		short fragmentCount;
 
 		//Calculate the number of fragments needed
-		fragmentCount = (short)Math.ceil(data.length / RUDPDatagramPacketOut.getMaxDataLength());
+		fragmentCount = (short)Math.ceil((double)data.length / RUDPDatagramPacketOut.getMaxDataLength());
 		
 		//Create array for packets
 		this.packets = new RUDPDatagramPacket[fragmentCount];

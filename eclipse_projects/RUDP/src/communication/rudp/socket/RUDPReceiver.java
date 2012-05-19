@@ -1,10 +1,10 @@
 package communication.rudp.socket;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 
 import communication.rudp.socket.datagram.RUDPDatagram;
 import communication.rudp.socket.datagram.RUDPDatagramBuilder;
@@ -33,7 +33,7 @@ public class RUDPReceiver {
 	private int receiverWindowEnd;
 	private int lastSentReceiverWindowStart;
 	private int deliverWindowPos;
-	private TreeMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
+	private HashMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
 	
 	//Acknowledge stuff
 	private DeltaRangeList ackRange;
@@ -44,7 +44,7 @@ public class RUDPReceiver {
 		this.timer = timer;
 		this.receiveListener = receiveListener;
 		
-		packetBuffer_in = new TreeMap<Integer,RUDPDatagramBuilder>();
+		packetBuffer_in = new HashMap<Integer,RUDPDatagramBuilder>();
 		ackRange = new DeltaRangeList();
 	}
 
@@ -246,6 +246,7 @@ public class RUDPReceiver {
 	
 	public void shutdown() {
 		synchronized(this) {
+			//Reset state
 			reset();
 			isShutdown = true;
 		}
