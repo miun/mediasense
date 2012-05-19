@@ -1,5 +1,7 @@
 package communication.rudp.socket;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -27,7 +29,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	private LinkedBlockingQueue<RUDPAbstractDatagram> recv_queue;
 	private HashMap<InetSocketAddress,RUDPLink> links;
 	private Timer timer;
-
+	
 	public RUDPSocket(DatagramSocket sock) {
 		//Set socket
 		this.sock = sock;
@@ -37,7 +39,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		recv_queue = new LinkedBlockingQueue<RUDPAbstractDatagram>();
 		timer = new Timer("RUDP timer");
 		links = new HashMap<InetSocketAddress,RUDPLink>();
-
+		
 		//Start receive thread
 		this.start();
 	}
@@ -203,4 +205,6 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			}
 		}
 	}
+	
+	public void 
 }

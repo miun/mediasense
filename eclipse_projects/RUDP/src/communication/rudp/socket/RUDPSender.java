@@ -20,7 +20,6 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 
 	//Link; Socket interface to send UDP datagrams
 	private RUDPLink link;
-//	private RUDPSocketInterface socketInterface;
 	
 	//The sender is shutdown and waits for rehabilitate()
 	private boolean isShutdown;

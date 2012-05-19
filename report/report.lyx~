@@ -73,6 +73,7 @@ Center
 
 \begin_layout Right Header
 Right
+\end_layout
 
 \begin_layout Title
 Reliable UDP and Circular DHT implementation for the MediaSense Open-Source
@@ -299,7 +300,6 @@ Finite State Machine
 \end_inset
 
 
->>>>>>> 7df833cef97502aca01256855190a46080a9b388
 \end_layout
 
 \begin_layout Chapter
@@ -733,11 +733,38 @@ To be able to forward requests, and to know the responsible range of hashes
 \end_layout
 
 \begin_layout Standard
+\noindent
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename Circle.svg
 	lyxscale 50
 	scale 30
 	rotateOrigin center
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Chord ring with finger table
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -939,10 +966,20 @@ The receiving nodes forward the message to all fingers that are in the range
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename Broadcast Circle.svg
 	lyxscale 30
-	groupId broadcast_graphics
+	scale 17
+	BoundingBox 0bp 0bp 960bp 720bp
+	clip
 
 \end_inset
 
@@ -950,18 +987,40 @@ The receiving nodes forward the message to all fingers that are in the range
 \begin_inset Graphics
 	filename Broadcast Tree.svg
 	lyxscale 30
-	groupId broadcast_graphics
+	scale 17
+	BoundingBox 0bp 0bp 960bp 720bp
+	clip
 
 \end_inset
 
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename Broadcast Legend.svg
 	lyxscale 30
-	groupId broadcast_graphics
+	scale 35
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Broadcast process
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -1284,9 +1343,39 @@ This chapter describes the implementation process of the goals defined in
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename Implementation.svg
-	lyxscale 30
+	lyxscale 50
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Project structure
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
 
 \end_inset
 
@@ -1422,9 +1511,39 @@ The state q0 is the entry point when a node starts and q5 is the final state,
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename Finite State Machine.svg
-	lyxscale 30
+	lyxscale 40
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Mealy / Moore machine of DHT implementation
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
 
 \end_inset
 
@@ -1489,54 +1608,102 @@ These messages are directly send to another node without being further forwarded
 \end_layout
 
 \begin_layout Itemize
-REGISTER_RESPONSE - Response from a node that register a key-value pair
- that it is responsible for to the initiating node 
+REGISTER_RESPONSE
+\begin_inset Newline newline
+\end_inset
+
+Response from a node that register a key-value pair that it is responsible
+ for to the initiating node 
 \end_layout
 
 \begin_layout Itemize
-RESOLVE_RESPONSE - JOIN_RESPONSE - Response from the predecessor of a new
- joining node that the new node can enter the DHT directly after the predecessor
+RESOLVE_RESPONSE
+\begin_inset Newline newline
+\end_inset
+
+Response from a node to a RESOLVE message.
+ Contains to value to the queried key.
 \end_layout
 
 \begin_layout Itemize
-JOIN_ACK - Acknowledge that a new joining node has accepted the response
- and accepted the predecessors former successor is its new successor
+JOIN_RESPONSE
+\begin_inset Newline newline
+\end_inset
+
+Response from the predecessor of a new joining node that the new node can
+ enter the DHT directly after the predecessor
 \end_layout
 
 \begin_layout Itemize
-JOIN_FINALIZE - Last message in the 3-way handshake to join the DHT that
- informs the joining node to consider itself to be regularly connected 
+JOIN_ACK
+\begin_inset Newline newline
+\end_inset
+
+Acknowledge that a new joining node has accepted the response and accepted
+ the predecessors former successor is its new successor
 \end_layout
 
 \begin_layout Itemize
-DUPLICATE_NODE_ID - Response to a JOIN-message if the joining node tries
- to join with an already existing hash value 
+JOIN_FINALIZE
+\begin_inset Newline newline
+\end_inset
+
+Last message in the 3-way handshake to join the DHT that informs the joining
+ node to consider itself to be regularly connected 
 \end_layout
 
 \begin_layout Itemize
-FIND_PREDECESSOR_RESPONSE - Response from a responsible node to a 
+DUPLICATE_NODE_ID
+\begin_inset Newline newline
+\end_inset
+
+Response to a JOIN-message if the joining node tries to join with an already
+ existing hash value 
 \end_layout
 
 \begin_layout Itemize
-FIND_PREDECESSOR-message to find the predecessor of a certain hash-value
- 
+FIND_PREDECESSOR_RESPONS
+\begin_inset Newline newline
+\end_inset
+
+Response from a responsible node to a FIND_PREDECESSOR message to find the
+ predecessor of a certain hash-value 
 \end_layout
 
 \begin_layout Itemize
-CHECK_PREDECESSOR - Request the predecessor of the destined node; See chapter
- XX for detailed repairing mechanisms CHECK_PREDECESSOR_RESPONSE - Response
- to a CHECK_PREDECESSOR-message, containing the predecessor of the answering
- node 
+CHECK_PREDECESSOR
+\begin_inset Newline newline
+\end_inset
+
+Request the predecessor of the destined node; See chapter XX for detailed
+ repairing mechanisms
 \end_layout
 
 \begin_layout Itemize
-CHECK_SUCCESSOR - Request the successor of the destined node; See chapter
- XX for detailed repairing mechanisms 
+CHECK_PREDECESSOR_RESPONSE
+\begin_inset Newline newline
+\end_inset
+
+Response to a CHECK_PREDECESSOR message, containing the predecessor of the
+ answering node 
 \end_layout
 
 \begin_layout Itemize
-CHECK_SUCCESSOR_RESPONSE - Response to a CHECK_SUCCESSOR-message, containing
- the successor of the answering node
+CHECK_SUCCESSOR
+\begin_inset Newline newline
+\end_inset
+
+Request the successor of the destined node; See chapter XX for detailed
+ repairing mechanisms 
+\end_layout
+
+\begin_layout Itemize
+CHECK_SUCCESSOR_RESPONSE
+\begin_inset Newline newline
+\end_inset
+
+Response to a CHECK_SUCCESSOR message, containing the successor of the answering
+ node
 \end_layout
 
 \begin_layout Subsubsection
@@ -1555,21 +1722,36 @@ le or not.
 \end_layout
 
 \begin_layout Itemize
-REGISTER - Query to register a key-value (usually a sensor / actor) pair
- in the DHT 
-\end_layout
+REGISTER
+\begin_inset Newline newline
+\end_inset
 
-\begin_layout Itemize
-RESOLVE - Query to resolve a value associated to a key stored in the DHT
+Query to register a key-value (usually a sensor / actor) pair in the DHT
  
 \end_layout
 
 \begin_layout Itemize
-JOIN - Query of a new node to enter the DHT 
+RESOLVE
+\begin_inset Newline newline
+\end_inset
+
+Query to resolve a value associated to a key stored in the DHT 
 \end_layout
 
 \begin_layout Itemize
-FIND_PREDECESSOR - Find the predecessor of a key specified inside the message
+JOIN
+\begin_inset Newline newline
+\end_inset
+
+Query of a new node to enter the DHT 
+\end_layout
+
+\begin_layout Itemize
+FIND_PREDECESSOR
+\begin_inset Newline newline
+\end_inset
+
+Find the predecessor of a key specified inside the message
 \end_layout
 
 \begin_layout Subsubsection
@@ -1593,29 +1775,48 @@ A broadcast message is a container that can encapsulate any other message.
 \end_layout
 
 \begin_layout Itemize
-BROADCAST - Container itself; Only contains the start-key, end-key and the
- encapsulated message
+BROADCAST
+\begin_inset Newline newline
+\end_inset
+
+Container itself; Only contains the start-key, end-key and the encapsulated
+ message
 \end_layout
 
 \begin_layout Itemize
-KEEPALIVE - Message that is regularly send to check the network connection
- and to advertise nodes for finger table upgrading.
+KEEPALIVE
+\begin_inset Newline newline
+\end_inset
+
+Message that is regularly send to check the network connection and to advertise
+ nodes for finger table upgrading.
  See chapter XX for a detailed description if keepalive messages
 \end_layout
 
 \begin_layout Itemize
-NOTIFY_JOIN - Send by a node after the join process to inform all other
- nodes of its arrival
+NOTIFY_JOIN
+\begin_inset Newline newline
+\end_inset
+
+Send by a node after the join process to inform all other nodes of its arrival
 \end_layout
 
 \begin_layout Itemize
-NOTIFY_LEAVE - Send by a node before the shutdown process to inform all
- other nodes of its planned leaving
+NOTIFY_LEAVE
+\begin_inset Newline newline
+\end_inset
+
+Send by a node before the shutdown process to inform all other nodes of
+ its planned leaving
 \end_layout
 
 \begin_layout Itemize
-NODE_SUSPICIOUS - Send by a node that has encountered a network problem
- with another node to inform all other nodes in the DHT of that
+NODE_SUSPICIOUS
+\begin_inset Newline newline
+\end_inset
+
+Send by a node that has encountered a network problem with another node
+ to inform all other nodes in the DHT of that
 \end_layout
 
 \begin_layout Section
@@ -1796,9 +1997,35 @@ GUI
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
 \begin_inset Graphics
 	filename GUI.png
 	lyxscale 50
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+DHT Graphical User Interface
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 

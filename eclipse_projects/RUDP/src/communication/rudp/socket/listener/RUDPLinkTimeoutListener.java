@@ -1,7 +1,5 @@
 package communication.rudp.socket.listener;
 
-import java.net.InetSocketAddress;
-
 import communication.rudp.socket.RUDPLink;
 
 public interface RUDPLinkTimeoutListener {
