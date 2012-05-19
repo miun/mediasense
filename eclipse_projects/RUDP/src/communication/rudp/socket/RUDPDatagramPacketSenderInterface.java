@@ -1,7 +1,7 @@
 package communication.rudp.socket;
 
-import communication.rudp.socket.datagram.RUDPDatagramPacket;
+import communication.rudp.socket.datagram.RUDPDatagramPacketOut;
 
 public interface RUDPDatagramPacketSenderInterface {
-	public void sendDatagramPacket(RUDPDatagramPacket p);
+	public void sendDatagramPacket(RUDPDatagramPacketOut p);
 }

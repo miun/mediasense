@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.Semaphore;
 
+import communication.DestinationNotReachableException;
 import communication.rudp.socket.datagram.RUDPDatagram;
 import communication.rudp.socket.datagram.RUDPDatagramBuilder;
 import communication.rudp.socket.datagram.RUDPDatagramPacket;
+import communication.rudp.socket.datagram.RUDPDatagramPacketOut;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPSender implements RUDPDatagramPacketSenderInterface {
@@ -16,11 +18,14 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private static final int PERSIST_PERIOD = 1000;
 
 	//Link; Socket interface to send UDP datagrams
-	RUDPLink link;
-	RUDPSocketInterface socketInterface;
+	private RUDPLink link;
+	private RUDPSocketInterface socketInterface;
+	
+	//
+	private boolean isShutdown;
 	
 	//Timer
-	Timer timer;
+	private Timer timer;
 	
 	//Semaphore to stay within window size
 	private Semaphore semaphoreWindowSize;
@@ -30,8 +35,8 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private int currentPacketSeq;
 
 	//Contains sent, unprocessed packets
-	private HashMap<Integer,RUDPDatagramPacket> packetBuffer_out;
-	private int receiverWindowStart;
+	private HashMap<Integer,RUDPDatagramPacketOut> packetBuffer_out;
+	private int receiverWindowSize;
 	private int senderWindowStart;
 	
 	public RUDPSender(RUDPLink link,RUDPSocketInterface socketInterface,Timer timer) {
@@ -40,7 +45,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		this.socketInterface = socketInterface;
 
 		//Init buffer
-		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacket>();
+		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacketOut>();
 
 		//Our initial sequence number
 		currentPacketSeq = 0;
@@ -51,26 +56,40 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		semaphorePermitCount = 1;
 	}
 
-	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException {
+	public void sendDatagram(RUDPDatagram datagram) throws InterruptedException,DestinationNotReachableException {
 		RUDPDatagramBuilder dgramBuilder;
 		RUDPDatagramPacket[] packetList;
+		RUDPDatagramPacketOut packetOut;
 		
+		//If sender is shut down
+		synchronized(this) {
+			if(isShutdown) throw new DestinationNotReachableException("Link failed",link.getSocketAddress());
+		}
+
 		//Create datagram builder from user datagram
 		dgramBuilder = new RUDPDatagramBuilder(datagram); 
 		packetList = dgramBuilder.getFragmentedPackets();
 		
 		//Send packets
 		for(RUDPDatagramPacket packet: packetList) {
+			//Create output packet
+			packetOut = new RUDPDatagramPacketOut(packet);
+				
 			//Enter the semaphore to stay within window size
 			semaphoreWindowSize.acquire();
 			
 			//Add packet to out list
-			synchronized(link) {
+			synchronized(this) {
+				//Everybody who is listening should get an exception 
+				if(isShutdown) {
+					semaphoreWindowSize.release(Integer.MAX_VALUE);
+				}
+				
 				//Decrease semaphore permit count 
 				semaphorePermitCount--;
 				
-				packet.setPacketSequence(currentPacketSeq);
-				packetBuffer_out.put(currentPacketSeq,packet);
+				packetOut.setPacketSequence(currentPacketSeq);
+				packetBuffer_out.put(currentPacketSeq,packetOut);
 
 				//Increment sequence number
 				currentPacketSeq++;
@@ -79,24 +98,24 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			//Forward to socket interface
 			//TODO replace with a nice function
 			//p.triggerSend(avg_RTT * 1.5);
-			packet.sendPacket(timer,this,MAX_DATA_PACKET_RETRIES,PACKET_FIRST_RETRY_PERIOD);
+			packetOut.sendPacket(this,link,timer,PACKET_FIRST_RETRY_PERIOD,MAX_DATA_PACKET_RETRIES);
 		}
 	}
 
 	@Override
-	public void sendDatagramPacket(RUDPDatagramPacket p) {
+	public void sendDatagramPacket(RUDPDatagramPacketOut p) {
 		//Forward to link
 		link.sendDatagramPacket(p);
 	}
 
 	public void handleAckData(int ackSeqOffset,List<Short> ackSeqData) {
-		RUDPDatagramPacket ack_pkt;
+		RUDPDatagramPacketOut ack_pkt;
 		DeltaRangeList rangeList;
 		
 		//Recreate range list
 		rangeList = new DeltaRangeList(ackSeqData);
 		
-		synchronized(link) {
+		synchronized(this) {
 			//Acknowledge all packets
 			for(Integer i: rangeList.toElementArray()) {
 				ack_pkt = packetBuffer_out.get(i + ackSeqOffset);
@@ -107,36 +126,42 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		}
 	}
 	
-	public void resetReceiverWindow(int receiverWindowStart,int receiverWindowSize) {
+	public void setReceiverWindowSize(int receiverWindowSize) {
 		//Reset out window
-		this.receiverWindowStart = receiverWindowStart;
+		this.receiverWindowSize = receiverWindowSize;
 	}
 	
-	public void updateReceiverWindow(int receiverWindowStart,int receiverWindowSize) {
-		RUDPDatagramPacket packet;
+	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize) {
+		RUDPDatagramPacketOut packet;
 		int newSemaphorePermitCount;
 		int idx;
 		int delta;
 		
+		//Check for window size change
+		if(newReceiverWindowSize != receiverWindowSize) {
+			System.out.println("RESIZE OF WINDOW_SIZE NOT IMPLEMENTED YET!!!");
+			return;
+		}
+		
 		//Check if new window start is reasonable
 		if(senderWindowStart > senderWindowStart + receiverWindowSize) {
-			if(receiverWindowStart < senderWindowStart  && receiverWindowStart > (senderWindowStart + receiverWindowSize)) {
+			if(newReceiverWindowStart < senderWindowStart  && newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
 				System.out.println("INVALID RECEIVER_WINDOW_START!!!");
 				return;
 			}
 		}
 		else {
-			if(receiverWindowStart < senderWindowStart || receiverWindowStart > (senderWindowStart + receiverWindowSize)) {
+			if(newReceiverWindowStart < senderWindowStart || newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
 				System.out.println("INVALID RECEIVER_WINDOW_START!!!");
 				return;
 			}
 		}
-
+		
 		//Remove all packets from buffer
 		//No for-loop possible, because of the overflow
 		idx = senderWindowStart;
 		
-		while(idx != receiverWindowStart) {
+		while(idx != newReceiverWindowStart) {
 			//Remove and acknowledge, if it exists
 			//Which it should, otherwise the receiver acknowledged something we did not receive...
 			if((packet = packetBuffer_out.remove(idx)) != null) {
@@ -151,12 +176,12 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		}
 
 		//Set new sender window start
-		senderWindowStart = receiverWindowStart;
+		senderWindowStart = newReceiverWindowStart;
 
 		//-----
 		
 		//Release semaphore
-		newSemaphorePermitCount = receiverWindowSize - (currentPacketSeq - receiverWindowStart);
+		newSemaphorePermitCount = receiverWindowSize - (currentPacketSeq - newReceiverWindowStart);
 		
 		delta = newSemaphorePermitCount - semaphorePermitCount;
 		semaphorePermitCount = newSemaphorePermitCount;
@@ -175,16 +200,12 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	public void reset() {
-<<<<<<< HEAD
-		synchronized(link) {
-=======
 		synchronized(this) {
 			//Acknowledge all packets
-			for(RUDPDatagramPacket packet: packetBuffer_out.values()) {
+			for(RUDPDatagramPacketOut packet: packetBuffer_out.values()) {
 				packet.acknowldege();
 			}
 			
->>>>>>> 7df833cef97502aca01256855190a46080a9b388
 			//Reset sender window start to current seq. number
 			senderWindowStart = currentPacketSeq;
 			packetBuffer_out.clear();
@@ -192,6 +213,22 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			//TODO reset semaphore
 			semaphoreWindowSize.drainPermits();
 			semaphoreWindowSize.release(1);
+		}
+	}
+	
+	public void shutdown() {
+		synchronized(this) {
+//			reset();
+			isShutdown = true;
+			
+			//Open semaphore and let everybody run into an exception
+			semaphoreWindowSize.release(Integer.MAX_VALUE);
+		}
+	}
+	
+	public void rehabilitate() {
+		synchronized(this) {
+			isShutdown = false;
 		}
 	}
 }

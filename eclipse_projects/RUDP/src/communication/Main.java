@@ -37,7 +37,7 @@ public class Main extends Thread {
 			int n = 0;
 			while(n++ < 200000) {
 				data = new Integer(n).toString().getBytes();
-				dgram = new RUDPDatagram(dst, 40000, data);
+				dgram = new RUDPDatagram(dst, 40001, data);
 				sock.send(dgram);
 				//Thread.sleep(1);
 			}

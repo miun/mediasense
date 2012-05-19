@@ -1,11 +1,6 @@
 package communication.rudp.socket.datagram;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-
-import communication.rudp.socket.RUDPDatagramPacketSenderInterface;
 
 public class RUDPDatagramBuilder {
 	private RUDPDatagramPacket packets[];
@@ -65,66 +60,39 @@ public class RUDPDatagramBuilder {
 	}
 
 	private void fragment(byte[] data) {
-		List<RUDPDatagramPacket> packetList = new ArrayList<RUDPDatagramPacket>();
-		RUDPDatagramPacket packet;
-	
+		RUDPDatagramPacketOut packet;
 		byte[] packetData;
-		int dataSize;
-		int dataLen;
-		int remainingPacketLength;
+		short fragmentCount;
+
+		//Calculate the number of fragments needed
+		fragmentCount = (short)Math.ceil(data.length / RUDPDatagramPacketOut.getMaxDataLength());
 		
-		dataSize = data.length;
-		dataLen = dataSize;
-		
-		//new packet
-		packet = new RUDPDatagramPacket();
-		
-		if(dataSize > packet.getMaxDataLength()) {
-			short fragmentCounter = 0;
+		//Create array for packets
+		this.packets = new RUDPDatagramPacket[fragmentCount];
+
+		for(short i = 0; i < fragmentCount; i++) {
+			//New packet
+			packet = new RUDPDatagramPacketOut();
 			
-			//fragmentation
-			for(int offset = 0; offset < dataSize;) {
-				//Create datagram packet
-				packet.setFragment(fragmentCounter,(short)0);
-				remainingPacketLength = packet.getMaxDataLength();
-				
-				packetData = new byte[remainingPacketLength < dataLen ? remainingPacketLength : dataLen];
-				System.arraycopy(data,offset,packetData,0,packetData.length);
-				packet.setData(packetData,false);
-				packetList.add(packet);
-				
-				//Increment offset
-				offset += remainingPacketLength;
-				dataLen -= remainingPacketLength; 
-				
-				//Create new packet
-				packet = new RUDPDatagramPacket();
-				//packet.setDataFlag(true);
-				
-				//Increment fragment and sequence counter
-				fragmentCounter++;
+			//Generate new buffer with correct size
+			if(i == (fragmentCount - 1)) {
+				//The last packet
+				packetData = new byte[data.length - (i * RUDPDatagramPacketOut.getMaxDataLength())];
 			}
-			
-			//Allocate array
-			this.packets = new RUDPDatagramPacket[fragmentCounter];
-			
-			//Set fragment count, because now we know it and put to data
-			for(RUDPDatagramPacket p: packetList) {
-				p.setFragment(p.getFragmentNr(), (short)packetList.size());
-				packets[p.getFragmentNr()] = p;
+			else {
+				//Every other packet is FULL
+				packetData = new byte[RUDPDatagramPacketOut.getMaxDataLength()];
 			}
-			
-			this.fragAmount = fragmentCounter;
-			this.fragCount = fragmentCounter;
+
+			//Create
+			System.arraycopy(data,RUDPDatagramPacketOut.getMaxDataLength() * i,packetData,0,packetData.length);
+			packet.setData(packetData,false);
+			packet.setFragment(i, fragmentCount);
+			packets[i] = packet;
 		}
-		else {
-			//Only one packet in this datagram
-			packet.setData(data.clone(),false);
-			this.packets = new RUDPDatagramPacket[1];
-			packets[0] = packet;
-			this.fragAmount = 1;
-			this.fragCount = 1;
-		}
+
+		this.fragAmount = fragmentCount;
+		this.fragCount = fragmentCount;
 	}
 	
 	public void assimilateFragment(RUDPDatagramPacket packet) {
@@ -161,16 +129,6 @@ public class RUDPDatagramBuilder {
 	
 	public InetSocketAddress getSocketAddress() {
 		return address;
-	}
-
-	public void setPacketsSendable(Timer t, RUDPDatagramPacketSenderInterface l) {
-		//Give the timer and listener to the packets
-		synchronized(this) {
-			for(RUDPDatagramPacket p: packets) {
-				p.setTimer(t);
-				p.setListener(l);
-			}
-		}
 	}
 
 	public RUDPDatagramPacket[] getFragmentedPackets() {

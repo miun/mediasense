@@ -15,6 +15,7 @@ import communication.DestinationNotReachableException;
 import communication.rudp.socket.datagram.RUDPAbstractDatagram;
 import communication.rudp.socket.datagram.RUDPDatagram;
 import communication.rudp.socket.datagram.RUDPDatagramPacket;
+import communication.rudp.socket.datagram.RUDPDatagramPacketOut;
 import communication.rudp.socket.datagram.RUDPExceptionDatagram;
 import communication.rudp.socket.listener.RUDPLinkTimeoutListener;
 import communication.rudp.socket.listener.RUDPReceiveListener;
@@ -115,9 +116,6 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 				link = new RUDPLink(sa,this,this,this,timer);
 				links.put(sa, link);
 			}
-			else if(link.isFailed()) {
-				throw new DestinationNotReachableException("Link failed", sa);
-			}
 		}
 			
 		//Process send request in link
@@ -175,7 +173,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 	}
 
 	@Override
-	public void sendDatagramPacket(RUDPDatagramPacket packet,InetSocketAddress sa) {
+	public void sendDatagramPacket(RUDPDatagramPacketOut packet,InetSocketAddress sa) {
 		DatagramPacket dgram;
 		byte[] data;
 		
