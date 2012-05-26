@@ -145,8 +145,6 @@ public class RUDPLink implements RUDPLinkFailListener {
 			return;
 		}
 		
-		//System.out.println("RECEIVE\n" + packet.toString(getSocketAddress().getPort()) + "\n");
-
 		//Handle reset packets
 		handleResetFlag(packet);
 

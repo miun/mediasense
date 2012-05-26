@@ -43,7 +43,6 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	public RUDPSender(RUDPLink link,RUDPSocketInterface socketInterface,Timer timer) {
 		this.link = link;
 		this.timer = timer;
-		//this.socketInterface = socketInterface;
 
 		//Init buffer
 		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacketOut>();
