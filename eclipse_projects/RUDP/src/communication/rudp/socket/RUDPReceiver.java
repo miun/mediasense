@@ -88,8 +88,8 @@ public class RUDPReceiver {
 						ackRange.add((short)newRangeElement);
 						
 						//Shift end of window
-						if(receiverWindowEnd - receiverWindowStart < packet.getPacketSeq() - receiverWindowEnd) {
-							receiverWindowEnd = packet.getPacketSeq() - receiverWindowEnd;
+						if(packet.getPacketSeq() - receiverWindowStart <= receiverWindowEnd - receiverWindowStart) {
+							receiverWindowEnd = packet.getPacketSeq() + 1;
 						}
 	
 				//-----
@@ -120,13 +120,13 @@ public class RUDPReceiver {
 								task_ack.cancel();
 								task_ack = null;
 							}
-							task_ack = new AcknowledgeTask();
+							task_ack = new AcknowledgeTask(this);
 							timer.schedule(task_ack, 0);
 						}
 						else {
 							//Wait some time for more packets, so we can combine several ACKs
 							if(task_ack == null) {
-								task_ack = new AcknowledgeTask();
+								task_ack = new AcknowledgeTask(this);
 								timer.schedule(task_ack, MAX_ACK_DELAY);
 							}
 						}
@@ -151,7 +151,7 @@ public class RUDPReceiver {
 				dgram = packetBuffer_in.get(receiverWindowStart);
 				if(dgram != null) {
 					//Has the window been reopened?
-					if((receiverWindowEnd - receiverWindowStart) + 1 == RUDPLink.WINDOW_SIZE) windowReOpened = true;
+					if((receiverWindowEnd - receiverWindowStart) == RUDPLink.WINDOW_SIZE) windowReOpened = true;
 					
 					//if(dgram.isAckSent()) {
 					packetBuffer_in.remove(receiverWindowStart);
@@ -214,6 +214,12 @@ public class RUDPReceiver {
 	}
 
 	private class AcknowledgeTask extends TimerTask {
+		Object taskSync;
+		
+		public AcknowledgeTask(Object taskSync) {
+			this.taskSync = taskSync;
+		}
+		
 		@Override
 		public void run() {
 			//Send new empty packet that will contain ACK data
@@ -221,12 +227,17 @@ public class RUDPReceiver {
 			link.sendDatagramPacket(packet);
 			
 			//Set taskAck null
-			task_ack = null;
+			synchronized(taskSync) {
+				task_ack = null;
+			}
 		}
 	}
 	
 	public void setReceiverWindowStart(int receiverWindowStart) {
 		this.receiverWindowStart = receiverWindowStart;
+		
+		//The window is empty in this situation
+		this.receiverWindowEnd = receiverWindowStart; 
 	}
 	
 	public void reset() {

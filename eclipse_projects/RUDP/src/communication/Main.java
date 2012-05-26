@@ -2,6 +2,7 @@ package communication;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
@@ -12,11 +13,12 @@ public class Main extends Thread {
 	}
 	
 	public Main() {
+		this.start();
 		//Create 2 communication end points
 		/*DisseminationCore core1 = new DisseminationCore();
 		DisseminationCore core2 = new DisseminationCore();
 		CommunicationInterface comm1 = new RUDP(core1);
-		CommunicationInterface comm2 = new RUDP(core2);*/
+		CommunicationInterface comm2 = new RUDP(core2);
 
 		byte data[] = new byte[1024];
 
@@ -64,9 +66,9 @@ public class Main extends Thread {
 		}
 
 		//Shutdown
-		//comm1.shutdown();
+		//comm1.shutdown(); */
 	}
-/*
+
 	@Override
 	public void run() {
 		RUDPSocket sock;
@@ -92,10 +94,10 @@ public class Main extends Thread {
 					System.out.println("FAIL " + newNumber);
 				}
 				number = newNumber;
+				System.out.println(newNumber + " received");
 					
 				//System.out.println("Received " + data.length + " bytes of data");
 				
-//				Thread.sleep(0);
 			}
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");
@@ -105,5 +107,5 @@ public class Main extends Thread {
 				break;
 			}
 		}
-	}*/
+	}
 }
