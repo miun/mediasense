@@ -88,8 +88,8 @@ public class RUDPReceiver {
 						ackRange.add((short)newRangeElement);
 						
 						//Shift end of window
-						if(receiverWindowEnd - receiverWindowStart < packet.getPacketSeq() - receiverWindowEnd) {
-							receiverWindowEnd = packet.getPacketSeq() - receiverWindowEnd;
+						if(receiverWindowEnd - receiverWindowStart < packet.getPacketSeq() - receiverWindowStart) {
+							receiverWindowEnd = packet.getPacketSeq() - receiverWindowStart;
 						}
 	
 				//-----

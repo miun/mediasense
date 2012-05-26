@@ -209,9 +209,9 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	}
 	
 	public void setFragment(short nr,short count) {
-		this.flag_fragment = true;
 		this.frag_nr = nr; 
 		this.frag_count = count;
+		this.flag_fragment = count == 0 ? false : true;
 	}
 	
 	//Set acknowledge 

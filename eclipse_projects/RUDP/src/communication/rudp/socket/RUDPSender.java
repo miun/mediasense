@@ -15,7 +15,7 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private static final int MAX_DATA_PACKET_RETRIES = 5;
-	private static final int PACKET_FIRST_RETRY_PERIOD = 200;
+	private static final int PACKET_FIRST_RETRY_PERIOD = 200000000;
 	private static final int PERSIST_PERIOD = 1000;
 
 	//Link; Socket interface to send UDP datagrams
@@ -130,74 +130,83 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	
 	public void setReceiverWindowSize(int receiverWindowSize) {
 		//Reset out window
-		this.receiverWindowSize = receiverWindowSize;
+		synchronized(this) {
+			this.receiverWindowSize = receiverWindowSize;
+		}
 	}
 	
 	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize) {
 		RUDPDatagramPacketOut packet;
-		int newSemaphorePermitCount;
 		int idx;
-		int delta;
 		
-		//Check for window size change
-		if(newReceiverWindowSize != receiverWindowSize) {
-			System.out.println("RESIZE OF WINDOW_SIZE NOT IMPLEMENTED YET!!!");
-			return;
-		}
-		
-		//Check if new window start is reasonable
-		if(senderWindowStart > senderWindowStart + receiverWindowSize) {
-			if(newReceiverWindowStart < senderWindowStart  && newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-				System.out.println("INVALID RECEIVER_WINDOW_START!!!");
+		synchronized(this) {
+			//Check for window size change
+			if(newReceiverWindowSize != receiverWindowSize) {
+				System.out.println("RESIZE OF WINDOW_SIZE NOT IMPLEMENTED YET!!!");
 				return;
 			}
-		}
-		else {
-			if(newReceiverWindowStart < senderWindowStart || newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-				System.out.println("INVALID RECEIVER_WINDOW_START!!!");
-				return;
-			}
-		}
-		
-		//Remove all packets from buffer
-		//No for-loop possible, because of the overflow
-		idx = senderWindowStart;
-		
-		while(idx != newReceiverWindowStart) {
-			//Remove and acknowledge, if it exists
-			//Which it should, otherwise the receiver acknowledged something we did not receive...
-			if((packet = packetBuffer_out.remove(idx)) != null) {
-				packet.acknowldege();
+			
+			//Check if new window start is reasonable
+			if(senderWindowStart > senderWindowStart + receiverWindowSize) {
+				if(newReceiverWindowStart < senderWindowStart  && newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
+					System.out.println("INVALID RECEIVER_WINDOW_START!!!");
+					return;
+				}
 			}
 			else {
-				//TODO debug output
-				System.out.println("We can never get here! - Ohh, i see...");
+				if(newReceiverWindowStart < senderWindowStart || newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
+					System.out.println("INVALID RECEIVER_WINDOW_START!!!");
+					return;
+				}
 			}
 			
-			idx++;
-		}
-
-		//Set new sender window start
-		senderWindowStart = newReceiverWindowStart;
-
-		//-----
-		
-		//Release semaphore
-		newSemaphorePermitCount = receiverWindowSize - (currentPacketSeq - newReceiverWindowStart);
-		
-		delta = newSemaphorePermitCount - semaphorePermitCount;
-		semaphorePermitCount = newSemaphorePermitCount;
-
-		if(delta > 0) {
-			semaphoreWindowSize.release(delta);
+			//Remove all packets from buffer
+			//No for-loop possible, because of the overflow
+			idx = senderWindowStart;
 			
-			System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
+			while(idx != newReceiverWindowStart) {
+				//Remove and acknowledge, if it exists
+				//Which it should, otherwise the receiver acknowledged something we did not receive...
+				if((packet = packetBuffer_out.remove(idx)) != null) {
+					packet.acknowldege();
+				}
+				else {
+					//TODO debug output
+					System.out.println("We can never get here! - Ohh, i see...");
+				}
+				
+				idx++;
+			}
+	
+			//Set new sender window start
+			senderWindowStart = newReceiverWindowStart;
 		}
-		else if(delta < 0){
-			System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet!");
-			//TODO handle?
-			//The other side decreased the windows size!
-			//And we have transmitted data beyond that limit
+
+		//Update semaphore
+		updateSemaphorePermitCount(newReceiverWindowStart);
+	}
+	
+	private void updateSemaphorePermitCount(int newReceiverWindowStart) {
+		int newSemaphorePermitCount;
+		int delta;
+
+		synchronized(this) {
+			//Release semaphore
+			newSemaphorePermitCount = receiverWindowSize - (currentPacketSeq - newReceiverWindowStart);
+			delta = newSemaphorePermitCount - semaphorePermitCount;
+			semaphorePermitCount = newSemaphorePermitCount;
+	
+			if(delta > 0) {
+				semaphoreWindowSize.release(delta);
+				
+				System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
+			}
+			else if(delta < 0){
+				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet!");
+				//TODO handle?
+				//The other side decreased the windows size!
+				//And we have transmitted data beyond that limit
+			}
 		}
 	}
 	

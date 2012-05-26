@@ -22,15 +22,11 @@ public class Main extends Thread {
 
 		//Message msg;
 		try {
-			InetAddress dst = InetAddress.getByName("localhost");
+			InetAddress dst = InetAddress.getByName("10.13.1.150");
 			RUDPSocket sock;
 			RUDPDatagram dgram;
 
 			sock = new RUDPSocket(23456);
-			
-			//Create data packet
-			//for(int i = 0; i < data.length; i++) data[i] = (byte)i;
-			
 			
 			this.start();
 			Thread.sleep(1000);
@@ -38,14 +34,15 @@ public class Main extends Thread {
 			int n = 0;
 			while(n++ < 200000) {
 				data = new Integer(n).toString().getBytes();
-				dgram = new RUDPDatagram(dst, 40001, data);
+				dgram = new RUDPDatagram(dst, 40000, data);
 				
 				try {
 					sock.send(dgram);
+					System.out.println(n + " sent");
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					sock.rehabilitateLink(new InetSocketAddress(dst,40001));
+					sock.rehabilitateLink(new InetSocketAddress(dst,40000));
 				}
 				//Thread.sleep(1);
 			}
@@ -56,13 +53,6 @@ public class Main extends Thread {
 			e.printStackTrace();
 		}
 		
-		try {
-			Thread.sleep(10000);
-		}
-		catch (Exception e) {
-			
-		}
-
 		//Shutdown
 		//comm1.shutdown();
 	}
