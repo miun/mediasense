@@ -2,7 +2,6 @@ package communication;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
