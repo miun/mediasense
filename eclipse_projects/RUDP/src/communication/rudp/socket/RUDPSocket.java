@@ -205,6 +205,5 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			}
 		}
 	}
-	
-	public void 
+
 }

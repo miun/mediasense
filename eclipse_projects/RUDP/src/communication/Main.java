@@ -22,7 +22,7 @@ public class Main extends Thread {
 
 		//Message msg;
 		try {
-			InetAddress dst = InetAddress.getByName("localhost");
+			InetAddress dst = InetAddress.getByName("10.14.1.163");
 			RUDPSocket sock;
 			RUDPDatagram dgram;
 
@@ -36,9 +36,9 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			int n = 0;
-			while(n++ < 200000) {
+			while(n++ < 2000) {
 				data = new Integer(n).toString().getBytes();
-				dgram = new RUDPDatagram(dst, 40001, data);
+				dgram = new RUDPDatagram(dst, 23456, data);
 				
 				try {
 					sock.send(dgram);
@@ -47,7 +47,7 @@ public class Main extends Thread {
 					e.printStackTrace();
 					sock.rehabilitateLink(new InetSocketAddress(dst,40001));
 				}
-				//Thread.sleep(1);
+//				Thread.sleep(10);
 			}
 			
 			System.out.println("Done!");
@@ -66,7 +66,7 @@ public class Main extends Thread {
 		//Shutdown
 		//comm1.shutdown();
 	}
-
+/*
 	@Override
 	public void run() {
 		RUDPSocket sock;
@@ -95,7 +95,7 @@ public class Main extends Thread {
 					
 				//System.out.println("Received " + data.length + " bytes of data");
 				
-				Thread.sleep(0);
+//				Thread.sleep(0);
 			}
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");
@@ -105,5 +105,5 @@ public class Main extends Thread {
 				break;
 			}
 		}
-	}
+	}*/
 }

@@ -116,7 +116,10 @@ public class RUDPReceiver {
 						if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - lastSentReceiverWindowStart == RUDPLink.WINDOW_SIZE_BOOST) {
 							//Send an empty packet, that will get ACK data (automatically)
 							//link.sendDatagramPacket(new RUDPDatagramPacket());
-							if(task_ack != null) task_ack.cancel();
+							if(task_ack != null) {
+								task_ack.cancel();
+								task_ack = null;
+							}
 							task_ack = new AcknowledgeTask();
 							timer.schedule(task_ack, 0);
 						}
@@ -216,6 +219,9 @@ public class RUDPReceiver {
 			//Send new empty packet that will contain ACK data
 			RUDPDatagramPacketOut packet = new RUDPDatagramPacketOut();
 			link.sendDatagramPacket(packet);
+			
+			//Set taskAck null
+			task_ack = null;
 		}
 	}
 	
