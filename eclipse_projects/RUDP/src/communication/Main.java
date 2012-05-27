@@ -73,8 +73,10 @@ public class Main extends Thread {
 				if(newNumber != number + 1) {
 					System.out.println("FAIL " + newNumber);
 				}
-				number = newNumber;
-				System.out.println(newNumber + " received");
+				else {
+					number = newNumber;
+					System.out.println(newNumber + " received");
+				}
 			}
 			catch(DestinationNotReachableException e1) {
 				System.out.println("Destination not reachable");
