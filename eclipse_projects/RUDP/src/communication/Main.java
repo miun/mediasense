@@ -8,14 +8,13 @@ import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public static RUDPSocket sock;
+	public RUDPSocket sock;
 
 	public static void main(String[] args) {
 		new Main();
 	}
 	
 	public Main() {
-		this.start();
 		//Create 2 communication end points
 		//DisseminationCore core1 = new DisseminationCore();
 		//DisseminationCore core2 = new DisseminationCore();
@@ -26,7 +25,7 @@ public class Main extends Thread {
 
 		//Message msg;
 		try {
-			InetAddress dst = InetAddress.getByName("10.13.1.150");
+			InetAddress dst = InetAddress.getByName("10.14.1.70");
 			RUDPDatagram dgram;
 
 			sock = new RUDPSocket(23456);
@@ -70,7 +69,7 @@ public class Main extends Thread {
 		while(true) {
 				
 			try {
-				data = Main.sock.receive();
+				data = sock.receive();
 				newNumber = Integer.parseInt(new String(data));
 				if(newNumber != number + 1) {
 					System.out.println("FAIL " + newNumber);
