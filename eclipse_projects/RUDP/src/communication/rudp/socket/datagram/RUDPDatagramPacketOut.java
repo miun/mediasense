@@ -114,6 +114,8 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	}
 	
 	private void triggerSend(int timeout) {
+		boolean resend = false;
+		
 		//Set the resend flag if it is not the first attempt
 		if(attempts > 0) {
 			flag_resend = true;
@@ -125,30 +127,33 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 				taskResend.cancel();
 				taskResend = null;
 			}
-		}
 		
-		//TODO handle a failed packet
-		if(attempts >= maxAttempts) {
-			System.out.println("Packet failed - " + id);
-			
-			//Call the fail listener if one has been specified
-			if(failListener != null) {
-				failListener.eventLinkFailed();
-			}
-		} 
-		else {
-			//Send packet
-			sendInterface.sendDatagramPacket(this);
-			
-			//Restart new timer
-			//The timeout is always doubled
-			synchronized(this) {
+			//TODO handle a failed packet
+			if(attempts >= maxAttempts) {
+				System.out.println("Packet failed - " + id);
+				
+				//Call the fail listener if one has been specified
+				if(failListener != null) {
+					failListener.eventLinkFailed();
+				}
+			} 
+			else {
+				//Sending should be outside of the sync block
+				resend = true;
+				
+				//Restart new timer
+				//The timeout is always doubled
 				taskResend = new TimeoutTask(timeout * 2);
 				timer.schedule(taskResend,timeout);
+	
+				//Increment retries
+				attempts++;
 			}
-
-			//Increment retries
-			attempts++;
+		}
+		
+		if(resend) {
+			//Send packet
+			sendInterface.sendDatagramPacket(this);
 		}
 	}
 	

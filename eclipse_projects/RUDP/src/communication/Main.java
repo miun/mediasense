@@ -33,7 +33,7 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			int n = 0;
-			while(n++ < 20000) {
+			while(n++ < 200000) {
 				data = new Integer(n).toString().getBytes();
 				dgram = new RUDPDatagram(dst, 23456, data);
 				
