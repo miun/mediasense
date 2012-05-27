@@ -51,6 +51,7 @@ public class RUDPReceiver {
 	public void handlePayloadData(RUDPDatagramPacketIn packet) {
 		RUDPDatagramBuilder dgram;
 		int newRangeElement;
+		boolean sendBoostACK = false;
 		List<RUDPDatagram> readyDatagrams = null;
 		
 		//Process data packet
@@ -120,8 +121,9 @@ public class RUDPReceiver {
 								task_ack.cancel();
 								task_ack = null;
 							}
-							task_ack = new AcknowledgeTask(this);
-							timer.schedule(task_ack, 0);
+
+							//Send boost ACK
+							sendBoostACK = true;
 						}
 						else {
 							//Wait some time for more packets, so we can combine several ACKs
@@ -133,6 +135,13 @@ public class RUDPReceiver {
 					}
 				}
 			}
+		}
+		
+		//Send boost ACK
+		if(sendBoostACK) {
+			//Send new empty packet that will contain ACK data
+			RUDPDatagramPacketOut boostACK = new RUDPDatagramPacketOut();
+			link.sendDatagramPacket(boostACK);
 		}
 		
 		//Forward all ready datagrams to upper layer
