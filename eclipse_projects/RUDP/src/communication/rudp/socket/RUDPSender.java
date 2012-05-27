@@ -37,7 +37,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private int currentPacketSeq;
 
 	//Contains sent, unprocessed packets
-	private TreeMap<Integer,RUDPDatagramPacketOut> packetBuffer_out;
+	private HashMap<Integer,RUDPDatagramPacketOut> packetBuffer_out;
 	private int receiverWindowSize;
 	private int senderWindowStart;
 	
@@ -46,7 +46,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		this.timer = timer;
 
 		//Init buffer
-		packetBuffer_out = new TreeMap<Integer,RUDPDatagramPacketOut>();
+		packetBuffer_out = new HashMap<Integer,RUDPDatagramPacketOut>();
 
 		//Our initial sequence number
 		currentPacketSeq = 0;
@@ -159,12 +159,6 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 					return;
 				}
 			}
-			
-			//TODO debug
-			if(packetBuffer_out.lowerEntry(senderWindowStart) != null) {
-				System.out.println("Bad motherfucker!");
-			}
-			
 			
 			//Remove all packets from buffer
 			//No for-loop possible, because of the overflow
