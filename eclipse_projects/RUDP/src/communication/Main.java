@@ -24,7 +24,7 @@ public class Main extends Thread {
 
 		//Message msg;
 		try {
-			InetAddress dst = InetAddress.getByName("10.13.1.150");
+			InetAddress dst = InetAddress.getByName("10.14.1.70");
 			RUDPDatagram dgram;
 
 			sock = new RUDPSocket(23456);
