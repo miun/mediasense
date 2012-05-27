@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -25,10 +24,13 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	//Interface to send packets with
 	protected RUDPDatagramPacketSenderInterface sendInterface;
 	protected RUDPLinkFailListener failListener;
+	
+	//TODO for debug
+	private static int newId = 0; 
 
 	public RUDPDatagramPacketOut() {
 		//Random id for debugging
-		id = (new Random()).nextInt();
+		id = newId++;
 	}
 	
 	public RUDPDatagramPacketOut(RUDPDatagramPacket packet) {
