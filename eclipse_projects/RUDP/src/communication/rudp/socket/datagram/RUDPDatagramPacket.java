@@ -133,4 +133,8 @@ public class RUDPDatagramPacket {
 	public byte[] getData() {
 		return data;
 	}
+	
+	public int getId() {
+		return id;
+	}
 }
