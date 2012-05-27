@@ -129,6 +129,8 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 		
 		//TODO handle a failed packet
 		if(attempts >= maxAttempts) {
+			System.out.println("Packet failed - " + id);
+			
 			//Call the fail listener if one has been specified
 			if(failListener != null) {
 				failListener.eventLinkFailed();
