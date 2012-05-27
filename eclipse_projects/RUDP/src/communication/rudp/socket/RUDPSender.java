@@ -134,7 +134,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		}
 	}
 	
-	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize) {
+	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize,int id) {
 		RUDPDatagramPacketOut packet;
 		int idx;
 		
@@ -148,13 +148,13 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			//Check if new window start is reasonable
 			if(senderWindowStart > senderWindowStart + receiverWindowSize) {
 				if(newReceiverWindowStart < senderWindowStart  && newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-					System.out.println("INVALID RECEIVER_WINDOW_START!!!");
+					System.out.println("INVALID RECEIVER_WINDOW_START!!! " + id);
 					return;
 				}
 			}
 			else {
 				if(newReceiverWindowStart < senderWindowStart || newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-					System.out.println("INVALID RECEIVER_WINDOW_START!!!");
+					System.out.println("INVALID RECEIVER_WINDOW_START!!! " + id);
 					return;
 				}
 			}
@@ -182,10 +182,10 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		}
 
 		//Update semaphore
-		updateSemaphorePermitCount(newReceiverWindowStart);
+		updateSemaphorePermitCount(newReceiverWindowStart,id);
 	}
 	
-	private void updateSemaphorePermitCount(int newReceiverWindowStart) {
+	private void updateSemaphorePermitCount(int newReceiverWindowStart,int id) {
 		int newSemaphorePermitCount;
 		int delta;
 
@@ -201,7 +201,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 				System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
 			}
 			else if(delta < 0){
-				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet!");
+				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet! " + id);
 				//TODO handle?
 				//The other side decreased the windows size!
 				//And we have transmitted data beyond that limit

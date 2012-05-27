@@ -174,7 +174,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 		//Forward new window information
 		synchronized(this) {
 			if(!linkFailed) {
-				sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize());
+				sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize(),packet.getId());
 			}
 		}
 	}

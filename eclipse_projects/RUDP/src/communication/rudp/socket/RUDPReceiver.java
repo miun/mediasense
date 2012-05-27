@@ -60,7 +60,7 @@ public class RUDPReceiver {
 					//Check if packet is within window bounds
 					if((packet.getPacketSeq() - receiverWindowStart) < 0 || (packet.getPacketSeq() - receiverWindowStart) > RUDPLink.WINDOW_SIZE) {
 						//TODO send up to date ACK packet ?! 
-						System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS");
+						System.out.println("INVALID PACKET RECEIVED - PACKET SEQ OUT OF WINDOW BOUNDS " + packet.getId() + " - " + packet.getPacketSeq());
 					}
 					else {
 						//Insert into receiving packet buffer
