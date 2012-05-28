@@ -63,7 +63,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 			dos.writeInt(id);
 			
 			//Write flags
-			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0));
+			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0) + (flag_persist ? FLAG_PERSIST : 0));
 			
 			//Write window sequence
 			dos.writeInt(packet_seq);

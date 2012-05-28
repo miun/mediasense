@@ -91,9 +91,10 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 					persistTask = null;
 				}
 				
-				// Everybody who is listening should get an exception
-				if (isShutdown) {
-					semaphoreWindowSize.release(Integer.MAX_VALUE);
+				if(isShutdown) {
+					//Tell everybody that the link failed
+					semaphoreWindowSize.release(1);
+					throw new DestinationNotReachableException(link.getSocketAddress());
 				}
 
 				// Decrease semaphore permit count
@@ -279,7 +280,12 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		
 		@Override
 		public boolean cancel() {
-			packet.acknowldege();
+			synchronized(lockObj) {
+				if(packet != null) {
+					packet.acknowldege();
+				}
+			}
+
 			return super.cancel();
 		}
 	}
