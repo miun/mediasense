@@ -1,67 +1,113 @@
 package communication;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Date;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public RUDPSocket sock;
-
+	public static final int BUFFER_SIZE = 10240;
+	public long dataCount = 0;
+	public Date startDate;
+	
 	public static void main(String[] args) {
 		new Main();
 	}
 	
 	public Main() {
-		//Create 2 communication end points
-		//DisseminationCore core1 = new DisseminationCore();
-		//DisseminationCore core2 = new DisseminationCore();
-		//CommunicationInterface comm1 = new RUDP(core1);
-		//CommunicationInterface comm2 = new RUDP(core2);
+		RUDPSocket sockSend;
+		RUDPDatagram dgram;
 
-		byte data[] = new byte[1024];
+		Timer timer;
+		TimerTask refreshTask;
+		
+		Integer checkCounter = 0;
+		
+		byte buffer[] = new byte[BUFFER_SIZE];
+		new Random().nextBytes(buffer);
+		
+		this.start();
 
-		//Message msg;
+		timer = new Timer();
+		refreshTask = new RefreshTask();
+		
 		try {
-
-			InetAddress dst = InetAddress.getByName("10.14.1.78");
-
-			RUDPDatagram dgram;
-
-			sock = new RUDPSocket(23456);
+			InetAddress dst = InetAddress.getByName("localhost");
+			sockSend = new RUDPSocket(23456);
 			
-			this.start();
 			Thread.sleep(1000);
-			
-			int n = 0;
-/*
-			while(n++ < 200000) {
-				data = new Integer(n).toString().getBytes();
-				dgram = new RUDPDatagram(dst, 23456, data);
+			startDate = new Date();
+			timer.schedule(refreshTask, 500,500);
+
+			while(true) {
+				byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
+				System.arraycopy(number, 0, buffer, 0, 4);
+				dgram = new RUDPDatagram(dst, 40000, buffer);
+				checkCounter++;
 				
 				try {
-					sock.send(dgram);
-					System.out.println(n + " sent");
+					sockSend.send(dgram);
+					//Thread.sleep(1);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					sock.rehabilitateLink(new InetSocketAddress(dst,40000));
+					System.exit(0);
 				}
-				//Thread.sleep(1);
-			}*/
-			
-			System.out.println("Done!");
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		//Shutdown
-		//comm1.shutdown(); */
 	}
 
 	@Override
+	public void run() {
+		RUDPSocket sockRecv;
+		byte[] data;
+		int currentCheck;
+		int oldCheck = -1;
+		
+		try {
+			sockRecv = new RUDPSocket(40000);
+
+			while(true) {
+				data = sockRecv.receive();
+				
+				//Check data
+				currentCheck = ByteBuffer.wrap(data,0,4).getInt();
+				if(currentCheck != oldCheck + 1) {
+					System.out.println("EPIC FAIL");
+				}
+				else {
+					oldCheck = currentCheck;
+				}
+				
+				dataCount += data.length;
+				//System.out.println(dataCount);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	private class RefreshTask extends TimerTask {
+		@Override
+		public void run() {
+			long time;
+			
+			time = new Date().getTime() - startDate.getTime();
+			System.out.println((double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
+		}
+	}
+	
+	/*	@Override
 	public void run() {
 		byte[] data;
 		
@@ -89,5 +135,5 @@ public class Main extends Thread {
 				break;
 			}
 		}
-	}
+	}*/
 }
