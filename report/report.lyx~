@@ -2,7 +2,7 @@
 \lyxformat 413
 \begin_document
 \begin_header
-\textclass report
+\textclass scrreprt
 \use_default_options true
 \begin_modules
 customHeadersFooters
@@ -15,7 +15,7 @@ customHeadersFooters
 \font_roman default
 \font_sans default
 \font_typewriter default
-\font_default_family default
+\font_default_family sfdefault
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
@@ -64,15 +64,19 @@ customHeadersFooters
 \begin_body
 
 \begin_layout Left Header
-Left
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+title
 \end_layout
 
-\begin_layout Center Header
-Center
-\end_layout
+\end_inset
 
-\begin_layout Right Header
-Right
+
 \end_layout
 
 \begin_layout Title
@@ -2008,7 +2012,7 @@ status open
 \begin_inset Graphics
 	filename GUI.png
 	lyxscale 50
-	scale 25
+	scale 30
 
 \end_inset
 
