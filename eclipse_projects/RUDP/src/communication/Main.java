@@ -25,7 +25,7 @@ public class Main extends Thread {
 		//Message msg;
 		try {
 
-			InetAddress dst = InetAddress.getByName("10.14.1.78");
+			InetAddress dst = InetAddress.getByName("10.13.1.150");
 
 			RUDPDatagram dgram;
 

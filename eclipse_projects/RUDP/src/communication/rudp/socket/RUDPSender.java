@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
 import communication.DestinationNotReachableException;
@@ -61,88 +60,59 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		RUDPDatagramBuilder dgramBuilder;
 		RUDPDatagramPacket[] packetList;
 		RUDPDatagramPacketOut packetOut;
-		boolean persistUsed = false;
-		
+
 		//If sender is shut down
 		synchronized(this) {
 			if(isShutdown) throw new DestinationNotReachableException(link.getSocketAddress());
 		}
 
 		//Create datagram builder from user datagram
-		dgramBuilder = new RUDPDatagramBuilder(datagram); 
+		dgramBuilder = new RUDPDatagramBuilder(datagram);
 		packetList = dgramBuilder.getFragmentedPackets();
-		
-		//Send packets
-		for(int i = 0; i < packetList.length; ) {
-			//Create output packet
-			packetOut = new RUDPDatagramPacketOut(packetList[i]);
-			
-			//Enter the semaphore to stay within window size
-			if(semaphoreWindowSize.tryAcquire()) {
-				//Enter the semaphore to stay within window size
-				//semaphoreWindowSize.acquire();
-				sendPacket(packetOut);
-				i++;
-			}
-			else {
-				//start the persist timer task
-				synchronized(this) {
-					if(!persistUsed) {
-						persistTask = new PersistTask(packetOut);
-						timer.schedule(persistTask, PERSIST_PERIOD);
-						persistUsed = true;
-					}
-				}
-				
-				//Stop as long as no new window size has been received
-				semaphoreWindowSize.acquire();
-				
-				synchronized(this) {
-					if(persistTask != null) {
-						persistTask.cancel();
-						persistTask = null;
-					}
-					
-					//Reset persist state when the window has been reopened
-					if(currentPacketSeq - senderWindowStart < receiverWindowSize) {
-						persistUsed = false;
-					}
-						
-					semaphoreWindowSize.release();
-				}
-			}
-		}
-	}
-	
-	private void sendPacket(RUDPDatagramPacketOut p) throws DestinationNotReachableException {
-		//Add packet to out list
-		synchronized(this) {
-			//break persist timertask if it was on
-			if(persistTask != null) {
-				persistTask.cancel();
-				persistTask = null;
-			}
-			
-			if(isShutdown) {
-				//Tell everybody that the link failed
-				semaphoreWindowSize.release(1);
-				throw new DestinationNotReachableException(link.getSocketAddress());					
-			}
-			
-			//Decrease semaphore permit count 
-			semaphorePermitCount--;
-			
-			p.setPacketSequence(currentPacketSeq);
-			packetBuffer_out.put(currentPacketSeq,p);
 
-			//Increment sequence number
-			currentPacketSeq++;
+		// Send packets
+		for (RUDPDatagramPacket packet : packetList) {
+			synchronized(this) {
+				//Activate persist timer?
+				if(semaphorePermitCount == 0) {
+					persistTask = new PersistTask(this,this);
+					timer.schedule(persistTask, PERSIST_PERIOD);
+				}
+			}
+			
+			// Enter the semaphore to stay within window size
+			semaphoreWindowSize.acquire();
+
+			// Add packet to out list
+			synchronized (this) {
+				//Cancel persist timer again
+				if(persistTask != null) {
+					persistTask.cancel();
+					persistTask = null;
+				}
+				
+				// Everybody who is listening should get an exception
+				if (isShutdown) {
+					semaphoreWindowSize.release(Integer.MAX_VALUE);
+				}
+
+				// Decrease semaphore permit count
+				semaphorePermitCount--;
+
+				// Create output packet
+				packetOut = new RUDPDatagramPacketOut(packet);
+				packetOut.setPacketSequence(currentPacketSeq);
+				packetBuffer_out.put(currentPacketSeq, packetOut);
+
+				// Increment sequence number
+				currentPacketSeq++;
+			}
+
+			// Forward to socket interface
+			// TODO replace with a nice function
+			// p.triggerSend(avg_RTT * 1.5);
+			packetOut.sendPacket(this, link, timer, PACKET_FIRST_RETRY_PERIOD,MAX_DATA_PACKET_RETRIES);
 		}
-		
-		//Forward to socket interface
-		//TODO replace with a nice function
-		//p.triggerSend(avg_RTT * 1.5);
-		p.sendPacket(this,link,timer,PACKET_FIRST_RETRY_PERIOD,MAX_DATA_PACKET_RETRIES);
 	}
 
 	@Override
@@ -287,16 +257,24 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	
 	private class PersistTask extends TimerTask {
 		private Object lockObj;
+		private RUDPDatagramPacketSenderInterface sendInterface;
+		private int count;
 		
-		public PersistTask(Object lockObj) {
+		public PersistTask(Object lockObj,RUDPDatagramPacketSenderInterface sendInterface) {
 			this.lockObj = lockObj;
+			this.sendInterface = sendInterface;
+			this.count = 0;
 		}
 		
 		@Override
 		public void run() {
 			synchronized (lockObj) {
 				if(persistTask != null) {
-					semaphoreWindowSize.release();
+					//Send persist packet
+					RUDPDatagramPacketOut packet = new RUDPDatagramPacketOut();
+					packet.sendPacket(sendInterface, link, timer, PACKET_FIRST_RETRY_PERIOD, MAX_DATA_PACKET_RETRIES);
+					
+					//...and cancel timer
 					persistTask = null;
 				}
 			}
