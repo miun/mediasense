@@ -24,7 +24,9 @@ public class Main extends Thread {
 
 		//Message msg;
 		try {
-			InetAddress dst = InetAddress.getByName("10.13.1.150");
+
+			InetAddress dst = InetAddress.getByName("10.14.1.78");
+
 			RUDPDatagram dgram;
 
 			sock = new RUDPSocket(23456);
@@ -33,6 +35,7 @@ public class Main extends Thread {
 			Thread.sleep(1000);
 			
 			int n = 0;
+
 			while(n++ < 200000) {
 				data = new Integer(n).toString().getBytes();
 				dgram = new RUDPDatagram(dst, 23456, data);
