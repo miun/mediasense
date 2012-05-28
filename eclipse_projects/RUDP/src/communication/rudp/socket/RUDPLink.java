@@ -152,7 +152,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 		handleFirstPacket(packet);
 		
 		//Handle persist packets
-		handlepersistPacket(packet);
+		handlePersistPacket(packet);
 
 		//Update receiver window and 
 		updateReceiverWindow(packet);
@@ -218,11 +218,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 		//Handle payload data
 		synchronized(this) {
 			if(!linkFailed && linkSynced) {
-				if(packet.getFlag(RUDPDatagramPacket.FLAG_PERSIST)) {
-					//create packet
-					RUDPDatagramPacketOut ack = new RUDPDatagramPacketOut();
-					ack.sendPacket(sender, this, timer, 0, 0);
-				}
+				receiver.handlePayloadData(packet);
 			}
 		}
 	}
@@ -230,8 +226,12 @@ public class RUDPLink implements RUDPLinkFailListener {
 	private void handlePersistPacket(RUDPDatagramPacketIn packet) {
 		//Send an ack packet back if this was an persist packet
 		synchronized(this) {
-			if(!linkFailed) {
-				receiver.datagramConsumed();
+			if(!linkFailed && linkSynced) {
+				if(packet.getFlag(RUDPDatagramPacket.FLAG_PERSIST)) {
+					//create packet
+					RUDPDatagramPacketOut ack = new RUDPDatagramPacketOut();
+					ack.sendPacket(sender, this, timer, 0, 0);
+				}
 			}
 		}
 	}
