@@ -139,8 +139,4 @@ public class RUDPDatagramPacket {
 	public int getId() {
 		return id;
 	}
-	
-	public boolean getPersistFlag() {
-		return flag_persist;
-	}
 }
