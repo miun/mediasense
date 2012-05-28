@@ -256,14 +256,13 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	}
 	
 	private class PersistTask extends TimerTask {
-		private Object lockObj;
 		private RUDPDatagramPacketSenderInterface sendInterface;
-		private int count;
+		private RUDPDatagramPacketOut packet;
+		private Object lockObj;
 		
 		public PersistTask(Object lockObj,RUDPDatagramPacketSenderInterface sendInterface) {
 			this.lockObj = lockObj;
 			this.sendInterface = sendInterface;
-			this.count = 0;
 		}
 		
 		@Override
@@ -271,13 +270,17 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			synchronized (lockObj) {
 				if(persistTask != null) {
 					//Send persist packet
-					RUDPDatagramPacketOut packet = new RUDPDatagramPacketOut();
+					packet = new RUDPDatagramPacketOut();
+					packet.setPersistFlag(true);
 					packet.sendPacket(sendInterface, link, timer, PACKET_FIRST_RETRY_PERIOD, MAX_DATA_PACKET_RETRIES);
-					
-					//...and cancel timer
-					persistTask = null;
 				}
 			}
+		}
+		
+		@Override
+		public boolean cancel() {
+			packet.acknowldege();
+			return super.cancel();
 		}
 	}
 }
