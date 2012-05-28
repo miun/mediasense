@@ -2,54 +2,54 @@ package communication;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.util.Random;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public RUDPSocket sock;
+	public RUDPSocket send;
+	public RUDPSocket receive;
+	
+	byte[][] data;
 
 	public static void main(String[] args) {
 		new Main();
 	}
 	
 	public Main() {
-		//Create 2 communication end points
-		//DisseminationCore core1 = new DisseminationCore();
-		//DisseminationCore core2 = new DisseminationCore();
-		//CommunicationInterface comm1 = new RUDP(core1);
-		//CommunicationInterface comm2 = new RUDP(core2);
+		this.start();
+		
+		data = new byte[1024][];
+		
+		for(byte[] d : data) {
+			d = new byte[1024];
+			new Random().nextBytes(d);
+		}
+		
+		
+		RUDPDatagram dgram;
 
-		byte data[] = new byte[1024];
-
-		//Message msg;
 		try {
 
-			InetAddress dst = InetAddress.getByName("10.14.1.78");
-
-			RUDPDatagram dgram;
-
-			sock = new RUDPSocket(23456);
+			InetAddress dst = InetAddress.getByName("localhost");
+			send = new RUDPSocket(23456);
 			
-			this.start();
+			
 			Thread.sleep(1000);
 			
-			int n = 0;
-/*
-			while(n++ < 200000) {
-				data = new Integer(n).toString().getBytes();
-				dgram = new RUDPDatagram(dst, 23456, data);
+			for(byte[] d : data) {
+				dgram = new RUDPDatagram(dst, 40000, d);
 				
 				try {
-					sock.send(dgram);
-					System.out.println(n + " sent");
+					send.send(dgram);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					sock.rehabilitateLink(new InetSocketAddress(dst,40000));
+					send.rehabilitateLink(new InetSocketAddress(dst,40000));
 				}
-				//Thread.sleep(1);
-			}*/
+			}
 			
 			System.out.println("Done!");
 		}
@@ -63,22 +63,26 @@ public class Main extends Thread {
 
 	@Override
 	public void run() {
-		byte[] data;
+		byte[][] receiveBuf = new byte[1024][];
 		
-		int number = 0;
-		int newNumber;
+		try {
+			receive = new RUDPSocket(40000);
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		int i = 0;
 		while(true) {
 				
 			try {
-				data = sock.receive();
-				newNumber = Integer.parseInt(new String(data));
-				if(newNumber != number + 1) {
-					System.out.println("FAIL " + newNumber);
+				receiveBuf[i] = receive.receive();
+				
+				if(receiveBuf[i].equals(data[i])) {
+					System.out.println(i + "received and okay");
 				}
 				else {
-					number = newNumber;
-					System.out.println(newNumber + " received");
+					System.out.println(i + "received and NOT okay");
 				}
 			}
 			catch(DestinationNotReachableException e1) {
@@ -88,6 +92,7 @@ public class Main extends Thread {
 				System.out.println("Thread interrupted!");
 				break;
 			}
+		i++;
 		}
 	}
 }
