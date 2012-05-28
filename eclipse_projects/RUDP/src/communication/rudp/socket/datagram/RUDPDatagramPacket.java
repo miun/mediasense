@@ -15,6 +15,7 @@ public class RUDPDatagramPacket {
 	public static final int FLAG_DATA = 8;
 	public static final int FLAG_RESEND = 16;
 	public static final int FLAG_FRAGMENT = 32;
+	public static final int FLAG_PERSIST = 64;
 	
 	//Flags
 	protected boolean flag_first = false;
@@ -23,6 +24,7 @@ public class RUDPDatagramPacket {
 	protected boolean flag_data = false;
 	protected boolean flag_resend = false;
 	protected boolean flag_fragment = false;
+	protected boolean flag_persist = false;
 	
 	//Sequence of this packet
 	protected int packet_seq;
@@ -136,5 +138,9 @@ public class RUDPDatagramPacket {
 	
 	public int getId() {
 		return id;
+	}
+	
+	public boolean getPersistFlag() {
+		return flag_persist;
 	}
 }

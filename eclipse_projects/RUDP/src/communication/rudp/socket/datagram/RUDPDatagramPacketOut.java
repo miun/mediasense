@@ -260,4 +260,8 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	public void setResetFlag(boolean flag) {
 		flag_reset = flag;
 	}
+	
+	public void setPersistFlag(boolean flag) {
+		flag_persist = flag;
+	}
 }
