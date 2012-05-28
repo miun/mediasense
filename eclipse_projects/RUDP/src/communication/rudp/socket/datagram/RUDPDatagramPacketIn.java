@@ -33,6 +33,7 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 			flag_data = (flag & FLAG_DATA) != 0 ? true : false; 
 			flag_fragment = (flag & FLAG_FRAGMENT) != 0 ? true : false; 
 			flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
+			flag_persist = (flag & FLAG_PERSIST) != 0 ? true : false;
 			
 			//Read static fields
 			packet_seq = dis.readInt();

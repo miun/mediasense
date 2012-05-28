@@ -108,6 +108,7 @@ public class RUDPDatagramPacket {
 			case FLAG_DATA: return flag_data;
 			case FLAG_RESEND: return flag_resend;
 			case FLAG_FRAGMENT: return flag_fragment;
+			case FLAG_PERSIST: return flag_persist;
 			default: return null;
 		}
 	}
