@@ -230,7 +230,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_PERSIST)) {
 					//create packet
 					RUDPDatagramPacketOut ack = new RUDPDatagramPacketOut();
-					ack.sendPacket(sender, this, timer, 0, 0);
+					sendDatagramPacket(ack);
 				}
 			}
 		}
