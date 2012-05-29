@@ -1,98 +1,132 @@
 package communication;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public RUDPSocket send;
-	public RUDPSocket receive;
-	
-	byte[][] data;
+	public static final int BUFFER_SIZE = 10240;
+	public long dataCount = 0;
+	public Date startDate;
 
 	public static void main(String[] args) {
 		new Main();
 	}
 	
 	public Main() {
-		this.start();
-		
-		data = new byte[1024][];
-		
-		for(byte[] d : data) {
-			d = new byte[1024];
-			new Random().nextBytes(d);
-		}
-		
-		
+		RUDPSocket sockSend;
 		RUDPDatagram dgram;
 
-		try {
+		Timer timer;
+		TimerTask refreshTask;
+		
+		Integer checkCounter = 0;
+		
+		byte buffer[] = new byte[BUFFER_SIZE];
+		new Random().nextBytes(buffer);
+		
+		this.start();
 
+		timer = new Timer();
+		refreshTask = new RefreshTask();
+		/*
+		try {
 			InetAddress dst = InetAddress.getByName("localhost");
-			send = new RUDPSocket(23456);
-			
+			sockSend = new RUDPSocket(23456);
 			
 			Thread.sleep(1000);
-			
-			for(byte[] d : data) {
-				dgram = new RUDPDatagram(dst, 40000, d);
+			startDate = new Date();
+			timer.schedule(refreshTask, 500,500);
+
+			while(true) {
+				byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
+				System.arraycopy(number, 0, buffer, 0, 4);
+				dgram = new RUDPDatagram(dst, 40000, buffer);
+				checkCounter++;
 				
 				try {
-					send.send(dgram);
+					sockSend.send(dgram);
+					//Thread.sleep(1);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					send.rehabilitateLink(new InetSocketAddress(dst,40000));
+					System.exit(0);
 				}
 			}
-			
-			System.out.println("Done!");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		//Shutdown
-		//comm1.shutdown(); */
+		*/
 	}
 
 	@Override
 	public void run() {
-		byte[][] receiveBuf = new byte[1024][];
+		Timer timer = new Timer();
+		
+		RUDPSocket sockRecv;
+		/*ServerSocket welcomeSocket = null;
+		try {
+			welcomeSocket = new ServerSocket(40000);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		Socket connectionSocket;*/
+		byte[] data = new byte[1024];
+		int currentCheck;
+		int oldCheck = -1;
 		
 		try {
-			receive = new RUDPSocket(40000);
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		int i = 0;
-		while(true) {
+			sockRecv = new RUDPSocket(40000);
+			//connectionSocket = welcomeSocket.accept();
+			while(true) {
+				//DataInputStream in = new DataInputStream(connectionSocket.getInputStream());
 				
-			try {
-				receiveBuf[i] = receive.receive();
+				//in.readFully(data);
+				data = sockRecv.receive();
 				
-				if(receiveBuf[i].equals(data[i])) {
-					System.out.println(i + "received and okay");
+				if(startDate == null) {
+					startDate = new Date();
+					timer.schedule(new RefreshTask(), 500,500);
+				}
+				
+				//Check data
+				currentCheck = ByteBuffer.wrap(data,0,4).getInt();
+				if(currentCheck != oldCheck + 1) {
+					System.out.println("EPIC FAIL");
 				}
 				else {
-					System.out.println(i + "received and NOT okay");
+					oldCheck = currentCheck;
 				}
+				
+				dataCount += data.length;
+				//System.out.println(dataCount);
 			}
-			catch(DestinationNotReachableException e1) {
-				System.out.println("Destination not reachable");
-			}
-			catch(InterruptedException e2) {
-				System.out.println("Thread interrupted!");
-				break;
-			}
-		i++;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	private class RefreshTask extends TimerTask {
+		@Override
+		public void run() {
+			long time;
+			
+			time = new Date().getTime() - startDate.getTime();
+			System.out.println((double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
 		}
 	}
 }

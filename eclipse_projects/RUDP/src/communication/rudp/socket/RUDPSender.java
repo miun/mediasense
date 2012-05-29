@@ -15,7 +15,7 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private static final int MAX_DATA_PACKET_RETRIES = 5;
-	private static final int PACKET_FIRST_RETRY_PERIOD = 1000;
+	private static final int PACKET_FIRST_RETRY_PERIOD = 250;
 	private static final int PERSIST_PERIOD = 1000;
 
 	//Link; Socket interface to send UDP datagrams
@@ -211,7 +211,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			if(delta > 0) {
 				semaphoreWindowSize.release(delta);
 				
-				System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
+				//System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
 			}
 			else if(delta < 0){
 				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet! " + id);
