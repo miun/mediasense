@@ -185,7 +185,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 					//Receiver is sync'ed
 					linkSynced = true;
 				} 
-				else if(!linkSynced){
+				else if(!linkSynced) {
 					//Send a reset packet, because we need a first packet for synchronization
 					resetPacket = new RUDPDatagramPacketOut();
 					resetPacket.setResetFlag(true);
