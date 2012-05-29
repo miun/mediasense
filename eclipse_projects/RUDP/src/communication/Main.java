@@ -1,7 +1,6 @@
 package communication;
 
 import java.net.InetAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.Random;
