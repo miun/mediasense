@@ -224,17 +224,18 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	
 	public void reset() {
 		synchronized(this) {
-			//Acknowledge all packets
-			for(RUDPDatagramPacketOut packet: packetBuffer_out.values()) {
-				packet.acknowldege();
-			}
-			
-			//Reset sender window start to current seq. number
-			senderWindowStart = currentPacketSeq;
+			//Acknowledge and remove all packets
+			for(RUDPDatagramPacketOut packet: packetBuffer_out.values()) packet.acknowldege();
 			packetBuffer_out.clear();
+
+			//Reset sender window start to current seq. number
+			currentPacketSeq = 100;
+			senderWindowStart = currentPacketSeq;
 			
-			//TODO reset semaphore
+			//Reset semaphore
 			semaphoreWindowSize.drainPermits();
+			semaphorePermitCount = 1;
+			semaphoreWindowSize.release();
 		}
 	}
 	
@@ -244,9 +245,6 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 
 			//Reset state of sender
 			reset();
-
-			//Open semaphore and let everybody run into an exception
-			semaphoreWindowSize.release(1);
 		}
 	}
 	
