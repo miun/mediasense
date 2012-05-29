@@ -15,7 +15,7 @@ import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private static final int MAX_DATA_PACKET_RETRIES = 5;
-	private static final int PACKET_FIRST_RETRY_PERIOD = 250;
+	private static final int PACKET_FIRST_RETRY_PERIOD = 250000000;
 	private static final int PERSIST_PERIOD = 1000;
 
 	//Link; Socket interface to send UDP datagrams
@@ -145,6 +145,12 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		synchronized(this) {
 			this.receiverWindowSize = receiverWindowSize;
 		}
+	}
+	
+	public void resetReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize) {
+		//Reset receiver window information
+		senderWindowStart = newReceiverWindowStart;
+		receiverWindowSize = newReceiverWindowSize;
 	}
 	
 	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize,int id) {

@@ -180,8 +180,8 @@ public class RUDPLink implements RUDPLinkFailListener {
 					
 					//Take the first sequence number as the receiver window start
 					receiver.setReceiverWindowStart(packet.getPacketSeq());
-					sender.setReceiverWindowSize(packet.getWindowSize());
-
+					//sender.resetReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize());
+					
 					//Receiver is sync'ed
 					linkSynced = true;
 				} 
