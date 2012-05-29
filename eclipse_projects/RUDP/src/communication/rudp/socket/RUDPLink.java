@@ -86,6 +86,11 @@ public class RUDPLink implements RUDPLinkFailListener {
 					firstPacket = false;
 				}
 				
+				//Flag reset packet
+				if(!linkSynced) {
+					datagramPacket.setResetFlag(true);
+				}
+				
 				//Set window size
 				datagramPacket.setWindowSize(WINDOW_SIZE);
 			
