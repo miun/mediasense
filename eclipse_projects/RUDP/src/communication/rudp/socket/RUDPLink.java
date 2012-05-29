@@ -123,12 +123,12 @@ public class RUDPLink implements RUDPLinkFailListener {
 				sender.reset();
 
 				//Send a reset packet, because we need a first packet for synchronization
-				resetPacket = new RUDPDatagramPacketOut();
-				resetPacket.setResetFlag(true);
+				//resetPacket = new RUDPDatagramPacketOut();
+				//resetPacket.setResetFlag(true);
 			}
 		}
 		
-		if(resetPacket != null) sender.sendDatagramPacket(resetPacket);
+		//if(resetPacket != null) sender.sendDatagramPacket(resetPacket);
 		
 		System.out.println("UNSYNCHRONIZED PACKET RECEIVED - FIRST PACKET MISSING");
 	}
@@ -191,24 +191,24 @@ public class RUDPLink implements RUDPLinkFailListener {
 	}
 	
 	private void handleFirstPacket(RUDPDatagramPacketIn packet) {
-		RUDPDatagramPacketOut resetPacket;
-
+		RUDPDatagramPacketOut resetPacket = null;
+		
 		synchronized(this) {
 			if(!linkFailed) {
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
+					//Handle unsync'ed situation
+					reset();
+					
 					//Take the first sequence number as the receiver window start
 					receiver.setReceiverWindowStart(packet.getPacketSeq());
 					sender.setReceiverWindowSize(packet.getWindowSize());
 					linkSynced = true;
-				}
-				else if (!linkSynced) {
-					//TODO is this correct ???
+				} 
+				else if(!linkSynced){
+					//Send a reset packet, because we need a first packet for synchronization
 					resetPacket = new RUDPDatagramPacketOut();
 					resetPacket.setResetFlag(true);
-					socketInterface.sendDatagramPacket(resetPacket, remoteSockAddr);
-					
-					//Handle unsync'ed situation
-					//reset();
+					sendDatagramPacket(resetPacket);
 				}
 			}
 		}
