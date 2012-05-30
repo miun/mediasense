@@ -100,7 +100,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 	
 	public void handleAckPacket(RUDPDatagramPacket packet) {
 		synchronized(this) {
-			if(!linkFailed) {
+			if(!linkFailed && linkSynced) {
 				//Forward acknowledge data to sender
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
 					sender.handleAckData(packet.getAckWindowStart(), packet.getAckSeqData());
@@ -152,7 +152,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 	public void updateReceiverWindow(RUDPDatagramPacket packet) {
 		//Forward new window information
 		synchronized(this) {
-			if(!linkFailed) {
+			if(!linkFailed && linkSynced) {
 				sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize(),packet.getId());
 			}
 		}
@@ -161,11 +161,18 @@ public class RUDPLink implements RUDPLinkFailListener {
 	//Handle reset flag
 	private void handleResetFlag(RUDPDatagramPacket packet) {
 		if(packet.getFlag(RUDPDatagramPacket.FLAG_RESET)) {
-			//Reset sender
-			synchronized(this) {
-				firstPacket = true;
-				sender.reset();
-			}
+			//Start all over again
+			reset();
+		}
+	}
+	
+	private void reset() {
+		synchronized(this) {
+			firstPacket = true;
+			linkSynced = false;
+			
+			sender.reset();
+			receiver.reset();
 		}
 	}
 	
@@ -175,17 +182,24 @@ public class RUDPLink implements RUDPLinkFailListener {
 		synchronized(this) {
 			if(!linkFailed) {
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
-					//Reset receiver at FIRST packet
-					receiver.reset();
+					if(!linkSynced) {
+						//Take the first sequence number as the receiver window start
+						receiver.setReceiverWindowStart(packet.getPacketSeq());
 					
-					//Take the first sequence number as the receiver window start
-					receiver.setReceiverWindowStart(packet.getPacketSeq());
-					sender.setReceiverWindowSize(packet.getWindowSize());
-
-					//Receiver is sync'ed
-					linkSynced = true;
+						//Receiver is sync'ed
+						linkSynced = true;
+					}
+					else {
+						//Back to initial state
+						reset();
+						
+						//Send a reset packet
+						resetPacket = new RUDPDatagramPacketOut();
+						resetPacket.setResetFlag(true);
+						sendDatagramPacket(resetPacket);
+					}
 				} 
-				else if(!linkSynced){
+				else if(!linkSynced) {
 					//Send a reset packet, because we need a first packet for synchronization
 					resetPacket = new RUDPDatagramPacketOut();
 					resetPacket.setResetFlag(true);
@@ -205,7 +219,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 	}
 	
 	private void handlePersistPacket(RUDPDatagramPacketIn packet) {
-		//Send an ack packet back if this was an persist packet
+		//Send an ACK packet back if this was an persist packet
 		synchronized(this) {
 			if(!linkFailed && linkSynced) {
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_PERSIST)) {

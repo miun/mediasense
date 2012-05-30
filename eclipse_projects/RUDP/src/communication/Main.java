@@ -11,10 +11,10 @@ import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public static final int BUFFER_SIZE = 1024;
+	public static final int BUFFER_SIZE = 10240;
 	public long dataCount = 0;
 	public Date startDate;
-	
+
 	public static void main(String[] args) {
 		new Main();
 	}
@@ -35,12 +35,10 @@ public class Main extends Thread {
 
 		timer = new Timer();
 		refreshTask = new RefreshTask();
-		
+
 		try {
 			InetAddress dst = InetAddress.getByName("10.13.1.150");
 			sockSend = new RUDPSocket(23456);
-			
-			//Socket tcp = new Socket(dst,40000);
 			
 			Thread.sleep(1000);
 			startDate = new Date();
@@ -52,8 +50,14 @@ public class Main extends Thread {
 				dgram = new RUDPDatagram(dst, 40000, buffer);
 				checkCounter++;
 				
-				sockSend.send(dgram);
-				//tcp.getOutputStream().write(buffer,0,1024);
+				try {
+					sockSend.send(dgram);
+					//Thread.sleep(1);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					System.exit(0);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -63,16 +67,34 @@ public class Main extends Thread {
 
 	@Override
 	public void run() {
+		Timer timer = new Timer();
+		
 		RUDPSocket sockRecv;
-		byte[] data;
+		/*ServerSocket welcomeSocket = null;
+		try {
+			welcomeSocket = new ServerSocket(40000);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		Socket connectionSocket;*/
+		byte[] data = new byte[1024];
 		int currentCheck;
 		int oldCheck = -1;
 		
 		try {
 			sockRecv = new RUDPSocket(40000);
-
+			//connectionSocket = welcomeSocket.accept();
 			while(true) {
+				//DataInputStream in = new DataInputStream(connectionSocket.getInputStream());
+				
+				//in.readFully(data);
 				data = sockRecv.receive();
+				
+				if(startDate == null) {
+					startDate = new Date();
+					timer.schedule(new RefreshTask(), 500,500);
+				}
 				
 				//Check data
 				currentCheck = ByteBuffer.wrap(data,0,4).getInt();
@@ -102,34 +124,4 @@ public class Main extends Thread {
 			System.out.println((double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
 		}
 	}
-	
-	/*	@Override
-	public void run() {
-		byte[] data;
-		
-		int number = 0;
-		int newNumber;
-		
-		while(true) {
-				
-			try {
-				data = sock.receive();
-				newNumber = Integer.parseInt(new String(data));
-				if(newNumber != number + 1) {
-					System.out.println("FAIL " + newNumber);
-				}
-				else {
-					number = newNumber;
-					System.out.println(newNumber + " received");
-				}
-			}
-			catch(DestinationNotReachableException e1) {
-				System.out.println("Destination not reachable");
-			}
-			catch(InterruptedException e2) {
-				System.out.println("Thread interrupted!");
-				break;
-			}
-		}
-	}*/
 }
