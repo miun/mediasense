@@ -103,7 +103,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 			if(!linkFailed && linkSynced) {
 				//Forward acknowledge data to sender
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_ACK)) {
-					sender.handleAckData(packet.getAckWindowStart(), packet.getAckSeqData());
+					sender.handleAckData(packet.getAckWindowStart(), packet.getAckSeqData(),packet.getWindowSize());
 				}
 			}
 		}
@@ -131,7 +131,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 		handlePersistPacket(packet);
 
 		//Update receiver window and 
-		updateReceiverWindow(packet);
+		//updateReceiverWindow(packet);
 		
 		//Handle ACK-data
 		handleAckPacket(packet);
@@ -149,14 +149,14 @@ public class RUDPLink implements RUDPLinkFailListener {
 		}
 	}
 	
-	public void updateReceiverWindow(RUDPDatagramPacket packet) {
+/*	public void updateReceiverWindow(RUDPDatagramPacket packet) {
 		//Forward new window information
 		synchronized(this) {
 			if(!linkFailed && linkSynced) {
 				sender.updateReceiverWindow(packet.getAckWindowStart(), packet.getWindowSize(),packet.getId());
 			}
 		}
-	}
+	}*/
 	
 	//Handle reset flag
 	private void handleResetFlag(RUDPDatagramPacket packet) {
@@ -185,6 +185,7 @@ public class RUDPLink implements RUDPLinkFailListener {
 					if(!linkSynced) {
 						//Take the first sequence number as the receiver window start
 						receiver.setReceiverWindowStart(packet.getPacketSeq());
+						sender.setReceiverWindowSize(packet.getWindowSize());
 					
 						//Receiver is sync'ed
 						linkSynced = true;

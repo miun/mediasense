@@ -67,14 +67,16 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 			
 			//Write window sequence
 			dos.writeInt(packet_seq);
-			dos.writeInt(ack_window_start);
 			dos.writeInt(window_size);
 			dos.writeShort(frag_nr);
 			dos.writeShort(frag_count);
 			
 			//Write static length fields
 			if(flag_ack) {
-				//Count of ACK-entries
+				//ACK window start sequence
+				dos.writeInt(ack_window_start);
+
+				//ACK range element count
 				ack_count = ack_seq_data.size() / 2;
 				if(ack_count > RESERVED_ACK_COUNT) ack_count = RESERVED_ACK_COUNT;
 				dos.writeShort(ack_count);
@@ -224,7 +226,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	}
 	
 	//Set acknowledge 
-	public void setACKData(List<Short> ack_data) {
+	public void setACKData(int seq,List<Short> ack_data) {
 		if(ack_data == null) {
 			flag_ack = false;
 		}
@@ -247,10 +249,6 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	
 	public void setPacketSequence(int seq) {
 		this.packet_seq = seq;
-	}
-	
-	public void setAckWindowStart(int seq) {
-		ack_window_start = seq;
 	}
 	
 	public void setFirstFlag(boolean flag) {

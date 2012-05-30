@@ -37,13 +37,15 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 			
 			//Read static fields
 			packet_seq = dis.readInt();
-			ack_window_start = dis.readInt();				
 			window_size = dis.readInt();
 			frag_nr = dis.readShort();
 			frag_count = dis.readShort();
 			
 			//Read variable length ACK data, if available
 			if(flag_ack) {
+				//ACK window start sequence
+				ack_window_start = dis.readInt();
+
 				//Count means the number of ranges!
 				ack_count = dis.readShort();
 				

@@ -39,6 +39,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 	private HashMap<Integer,RUDPDatagramPacketOut> packetBuffer_out;
 	private int receiverWindowSize;
 	private int senderWindowStart;
+	private boolean firstACK;
 	
 	public RUDPSender(RUDPLink link,RUDPSocketInterface socketInterface,Timer timer) {
 		this.link = link;
@@ -50,6 +51,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		//Our initial sequence number
 		currentPacketSeq = 100;
 		senderWindowStart = currentPacketSeq;
+		firstACK = true;
 		
 		//Init semaphore
 		this.semaphoreWindowSize = new Semaphore(1,true);
@@ -122,9 +124,18 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		link.sendDatagramPacket(p);
 	}
 
-	public void handleAckData(int ackSeqOffset,List<Short> ackSeqData) {
+	public void handleAckData(int ackSeqOffset,List<Short> ackSeqData,int newWindowSize) {
 		RUDPDatagramPacketOut ack_pkt;
 		DeltaRangeList rangeList;
+		
+		//Implicit acknowledge with ACK window start sequence
+		if(firstACK) {
+			resetReceiverWindow(ackSeqOffset, newWindowSize);
+			firstACK = false;
+		}
+		else {
+			updateReceiverWindow(ackSeqOffset,newWindowSize);
+		}
 		
 		//Recreate range list
 		rangeList = new DeltaRangeList(ackSeqData);
@@ -153,7 +164,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		receiverWindowSize = newReceiverWindowSize;
 	}
 	
-	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize,int id) {
+	public void updateReceiverWindow(int newReceiverWindowStart,int newReceiverWindowSize) {
 		RUDPDatagramPacketOut packet;
 		int idx;
 		
@@ -167,13 +178,13 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 			//Check if new window start is reasonable
 			if(senderWindowStart > senderWindowStart + receiverWindowSize) {
 				if(newReceiverWindowStart < senderWindowStart  && newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-					System.out.println("INVALID RECEIVER_WINDOW_START!!! " + id);
+					System.out.println("INVALID RECEIVER_WINDOW_START!!! ");
 					return;
 				}
 			}
 			else {
 				if(newReceiverWindowStart < senderWindowStart || newReceiverWindowStart > (senderWindowStart + receiverWindowSize)) {
-					System.out.println("INVALID RECEIVER_WINDOW_START!!! " + id);
+					System.out.println("INVALID RECEIVER_WINDOW_START!!! ");
 					return;
 				}
 			}
@@ -201,10 +212,10 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 		}
 
 		//Update semaphore
-		updateSemaphorePermitCount(newReceiverWindowStart,id);
+		updateSemaphorePermitCount(newReceiverWindowStart);
 	}
 	
-	private void updateSemaphorePermitCount(int newReceiverWindowStart,int id) {
+	private void updateSemaphorePermitCount(int newReceiverWindowStart) {
 		int newSemaphorePermitCount;
 		int delta;
 
@@ -220,7 +231,7 @@ public class RUDPSender implements RUDPDatagramPacketSenderInterface {
 				//System.out.println(semaphoreWindowSize.getQueueLength() + " - " + semaphoreWindowSize.availablePermits());
 			}
 			else if(delta < 0){
-				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet! " + id);
+				System.out.println("The WINDOW_SIZE has been decreased. This feature is not implemented yet! ");
 				//TODO handle?
 				//The other side decreased the windows size!
 				//And we have transmitted data beyond that limit

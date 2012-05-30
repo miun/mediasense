@@ -11,7 +11,7 @@ import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public static final int BUFFER_SIZE = 10240;
+	public static final int BUFFER_SIZE = 1024;
 	public long dataCount = 0;
 	public Date startDate;
 

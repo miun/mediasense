@@ -185,38 +185,29 @@ public class RUDPReceiver {
 	}
 	
 	public void setAckStream(RUDPDatagramPacketOut packet) {
-		//Set the sequence of the ACK window start
-		packet.setAckWindowStart(receiverWindowStart);
-		
+		List<Short> ackList;
+
 		//Check if we can acknowledge something
 		synchronized(this) {
 			if(!isShutdown) {
 				//Set the window start the sender could know about to the actual receiver window start
 				lastSentReceiverWindowStart = receiverWindowStart;
 	
-				if(!ackRange.isEmpty()) {
-					List<Short> ackList;
-					
-					//Put ACK stream into packet
-					ackList = ackRange.toDifferentialArray();
-					packet.setACKData(ackRange.toDifferentialArray());
+				//Put ACK stream into packet
+				ackList = ackRange.toDifferentialArray();
+				packet.setACKData(receiverWindowStart,ackRange.toDifferentialArray());
 	
-					//TODO debug output
-					if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
-						System.out.println("RESERVED_ACK_COUNT OVERFLOW");
-					}
-					
-					//TODO there could be more ranges then we are able to send
-					//in one packet. test if this is fine
-					//Disable ACK timer
-					if(task_ack != null) {
-						task_ack.cancel();
-						task_ack = null;
-					}
+				//TODO debug output
+				if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
+					System.out.println("RESERVED_ACK_COUNT OVERFLOW");
 				}
-				else {
-					//Remove ACK data
-					packet.setACKData(null);
+				
+				//TODO there could be more ranges then we are able to send
+				//in one packet. test if this is fine
+				//Disable ACK timer
+				if(task_ack != null) {
+					task_ack.cancel();
+					task_ack = null;
 				}
 			}
 		}
