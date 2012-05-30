@@ -239,6 +239,8 @@ public class RUDPReceiver {
 		//Initialize receiver window
 		this.receiverWindowStart = receiverWindowStart;
 		this.receiverWindowEnd = receiverWindowStart;
+		this.deliverWindowPos = receiverWindowStart;
+		this.lastSentReceiverWindowStart = receiverWindowStart;
 		receiverWindowValid = true;
 	}
 	
