@@ -182,23 +182,17 @@ public class RUDPLink implements RUDPLinkFailListener {
 		synchronized(this) {
 			if(!linkFailed) {
 				if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST)) {
-					if(!linkSynced) {
-						//Take the first sequence number as the receiver window start
-						receiver.setReceiverWindowStart(packet.getPacketSeq());
-						sender.setReceiverWindowSize(packet.getWindowSize());
-					
-						//Receiver is sync'ed
-						linkSynced = true;
-					}
-					else {
+					if(linkSynced) {
 						//Back to initial state
 						reset();
-						
-						//Send a reset packet
-						resetPacket = new RUDPDatagramPacketOut();
-						resetPacket.setResetFlag(true);
-						sendDatagramPacket(resetPacket);
 					}
+					
+					//Take the first sequence number as the receiver window start
+					receiver.setReceiverWindowStart(packet.getPacketSeq());
+					sender.setReceiverWindowSize(packet.getWindowSize());
+				
+					//Receiver is sync'ed
+					linkSynced = true;
 				} 
 				else if(!linkSynced) {
 					//Send a reset packet, because we need a first packet for synchronization
