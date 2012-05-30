@@ -232,6 +232,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 		}
 		else {
 			flag_ack = true;
+			this.ack_window_start = seq;
 			this.ack_seq_data = ack_data;
 		}
 	}
