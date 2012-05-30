@@ -33,6 +33,8 @@ public class RUDPReceiver {
 	private int receiverWindowEnd;
 	private int lastSentReceiverWindowStart;
 	private int deliverWindowPos;
+	private boolean receiverWindowValid;
+	
 	private HashMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
 	
 	//Acknowledge stuff
@@ -189,7 +191,7 @@ public class RUDPReceiver {
 
 		//Check if we can acknowledge something
 		synchronized(this) {
-			if(!isShutdown) {
+			if(!isShutdown && receiverWindowValid) {
 				//Set the window start the sender could know about to the actual receiver window start
 				lastSentReceiverWindowStart = receiverWindowStart;
 	
@@ -234,10 +236,10 @@ public class RUDPReceiver {
 	}
 	
 	public void setReceiverWindowStart(int receiverWindowStart) {
+		//Initialize receiver window
 		this.receiverWindowStart = receiverWindowStart;
-		
-		//The window is empty in this situation
-		this.receiverWindowEnd = receiverWindowStart; 
+		this.receiverWindowEnd = receiverWindowStart;
+		receiverWindowValid = true;
 	}
 	
 	public void reset() {
@@ -254,6 +256,7 @@ public class RUDPReceiver {
 			receiverWindowEnd = 0;
 			lastSentReceiverWindowStart = 0;
 			deliverWindowPos = 0;
+			receiverWindowValid = false;
 			
 			//Clear internal data structures to have a new start
 			ackRange.clear();
