@@ -11,7 +11,7 @@ import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public static final int BUFFER_SIZE = 10240;
+	public static final int BUFFER_SIZE = 1024;
 	public long dataCount = 0;
 	public Date startDate;
 
@@ -35,7 +35,7 @@ public class Main extends Thread {
 
 		timer = new Timer();
 		refreshTask = new RefreshTask();
-/*
+
 		try {
 			InetAddress dst = InetAddress.getByName("10.13.1.150");
 			sockSend = new RUDPSocket(23456);
@@ -62,7 +62,7 @@ public class Main extends Thread {
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-		}*/
+		}
 	}
 
 	@Override

@@ -222,7 +222,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	public void setFragment(short nr,short count) {
 		this.frag_nr = nr; 
 		this.frag_count = count;
-		this.flag_fragment = count == 0 ? false : true;
+		this.flag_fragment = count > 1 ? false : true;
 	}
 	
 	//Set acknowledge 
