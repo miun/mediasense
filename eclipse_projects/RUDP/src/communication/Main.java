@@ -1,6 +1,9 @@
 package communication;
 
+import java.io.DataInputStream;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.Random;
@@ -12,101 +15,149 @@ import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
 	public static final int BUFFER_SIZE = 1024;
-	public long dataCount = 0;
-	public Date startDate;
+	public static final int PORT_SRC = 23456;
+	public static final int PORT_DST = 40000;
+	public static final String hostname = "10.14.1.164";
+
+	private boolean useTCP;
+	
+	private Timer timer;
+	private TimerTask refreshTask;
+
+	private long dataCount = 0;
+	private Date startDate = null;
 
 	public static void main(String[] args) {
-		new Main();
+		if(args.length < 1) {
+			System.out.println("Usage rudp rudp | tcp\n\tSpecify rudp or tcp");
+		}
+		else {
+			if(args[0].toLowerCase().compareTo("rudp") == 0) {
+				new Main(false);
+			}
+			else if(args[0].toLowerCase().compareTo("rudp") == 0) {
+				new Main(true);
+			}
+			else {
+				System.out.println("Invalid argument. Specify tcp or rudp");
+			}
+		}
 	}
 	
-	public Main() {
-		RUDPSocket sockSend;
+	public Main(boolean useTCP) {
+		RUDPSocket sockSend = null;
+		Socket tcpSend = null;
 		RUDPDatagram dgram;
-
-		Timer timer;
-		TimerTask refreshTask;
-		
 		Integer checkCounter = 0;
 		
+		//Start receive thread
+		this.useTCP = useTCP;
+		this.start();
+		
+		//Wait for thread to startup
+		try {
+			this.start();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
+		//Create buffer
 		byte buffer[] = new byte[BUFFER_SIZE];
 		new Random().nextBytes(buffer);
 		
-		this.start();
-
+		//Start measurement timer
 		timer = new Timer();
 		refreshTask = new RefreshTask();
 
 		try {
-			InetAddress dst = InetAddress.getByName("10.13.1.150");
-			sockSend = new RUDPSocket(23456);
-			
-			Thread.sleep(1000);
-			startDate = new Date();
+			//Init.
+			InetAddress dst = InetAddress.getByName(Main.hostname);
 			timer.schedule(refreshTask, 500,500);
 
+			//Create connection end point
+			if(useTCP) {
+				tcpSend = new Socket(dst,PORT_SRC);
+			}
+			else { //use RUDP
+				sockSend = new RUDPSocket(PORT_SRC);
+			}
+
 			while(true) {
+				//Insert running number into random byte array
 				byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
 				System.arraycopy(number, 0, buffer, 0, 4);
 				dgram = new RUDPDatagram(dst, 40000, buffer);
 				checkCounter++;
 				
-				try {
-					sockSend.send(dgram);
-					//Thread.sleep(1);
+				if(useTCP) {
+					tcpSend.getOutputStream().write(buffer);
 				}
-				catch (Exception e) {
-					e.printStackTrace();
-					System.exit(0);
+				else { //use RUDP
+					sockSend.send(dgram);
 				}
 			}
 		}
+		catch (DestinationNotReachableException dste) {
+			System.out.println("RUDP link failed!");
+			return;
+		}
 		catch (Exception e) {
 			e.printStackTrace();
+			return;
 		}
 	}
 
 	@Override
 	public void run() {
-		Timer timer = new Timer();
-		
-		RUDPSocket sockRecv;
-		/*ServerSocket welcomeSocket = null;
-		try {
-			welcomeSocket = new ServerSocket(40000);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		Socket connectionSocket;*/
-		byte[] data = new byte[1024];
+		RUDPSocket sockRecv = null;
+		ServerSocket tcpServer;
+		Socket tcpRecv;
+		DataInputStream tcpStream = null;
+		byte[] buffer = null;
 		int currentCheck;
 		int oldCheck = -1;
 		
+		//Create connection end points
 		try {
-			sockRecv = new RUDPSocket(40000);
-			//connectionSocket = welcomeSocket.accept();
+			if(useTCP) {
+				tcpServer = new ServerSocket(PORT_DST);
+				tcpRecv = tcpServer.accept();
+				tcpStream = new DataInputStream(tcpRecv.getInputStream());
+				buffer = new byte[BUFFER_SIZE];
+			}
+			else { //use RUDP
+				sockRecv = new RUDPSocket(PORT_DST);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
+		try {
 			while(true) {
-				//DataInputStream in = new DataInputStream(connectionSocket.getInputStream());
-				
-				//in.readFully(data);
-				data = sockRecv.receive();
-				
+				//Start measuring with first data packet
 				if(startDate == null) {
 					startDate = new Date();
 					timer.schedule(new RefreshTask(), 500,500);
 				}
-				
+
+				if(useTCP) {
+					tcpStream.readFully(buffer);
+				}
+				else { //use RUDP
+					buffer = sockRecv.receive();
+				}
+
 				//Check data
-				currentCheck = ByteBuffer.wrap(data,0,4).getInt();
+				currentCheck = ByteBuffer.wrap(buffer,0,4).getInt();
 				if(currentCheck != oldCheck + 1) {
 					System.out.println("EPIC FAIL");
 				}
-				else {
-					oldCheck = currentCheck;
-				}
-				
-				dataCount += data.length;
-				//System.out.println(dataCount);
+
+				oldCheck = currentCheck;
+				dataCount += buffer.length;
 			}
 		}
 		catch(Exception e) {
