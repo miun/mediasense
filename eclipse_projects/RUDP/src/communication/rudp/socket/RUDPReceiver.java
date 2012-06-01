@@ -67,7 +67,7 @@ public class RUDPReceiver {
 					}
 					else {
 						//Insert into receiving packet buffer
-						if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+						if(packet.getFragmentCount() > 1) {
 							if((dgram = packetBuffer_in.get(packet.getPacketSeq() - packet.getFragmentNr())) == null) {
 								//Create new fragmented datagram
 								dgram = new RUDPDatagramBuilder(link.getSocketAddress(),packet.getFragmentCount());

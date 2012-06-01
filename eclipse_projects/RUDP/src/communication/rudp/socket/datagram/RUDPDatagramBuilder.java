@@ -98,7 +98,8 @@ public class RUDPDatagramBuilder {
 	public void assimilateFragment(RUDPDatagramPacket packet) {
 		int fragNr;
 	
-		if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+		//Is the packet fragmented
+		if(packet.getFragmentCount() > 1) {
 			fragNr = packet.getFragmentNr();
 			
 			synchronized(this) {

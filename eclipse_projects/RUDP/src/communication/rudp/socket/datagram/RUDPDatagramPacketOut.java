@@ -40,7 +40,6 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 		this.flag_ack = packet.flag_ack;
 		this.flag_data = packet.flag_data;
 		this.flag_first = packet.flag_first;
-		this.flag_fragment = packet.flag_fragment;
 		this.flag_resend = packet.flag_resend;
 		this.flag_reset = packet.flag_reset;
 		this.frag_count = packet.frag_count;
@@ -63,7 +62,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 			dos.writeInt(id);
 			
 			//Write flags
-			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_fragment ? FLAG_FRAGMENT : 0) + (flag_persist ? FLAG_PERSIST : 0));
+			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_persist ? FLAG_PERSIST : 0));
 			
 			//Write window sequence
 			dos.writeInt(packet_seq);
@@ -195,34 +194,28 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 		result += flag_first ? "FIRST" : "";
 		result += (flag_reset ? ",RESET" : "");
 		result += (flag_ack ? ",ACK" : "");
-		result += (flag_fragment ? ",FRAGMENT" : "");
 		result += (flag_data ? ",DATA" : "");
 		result += (flag_resend ? ",RESEND" : "");
 		
 		//Window start
 		result += "\nWND_SIZE:\t" + window_size; 
 		result += "\nACK_WND_START:\t" + ack_window_start; 
-		if(flag_data || flag_first) result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + maxAttempts;
-		if(flag_fragment) result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
+		if(flag_data || flag_first) {
+			result += "\nPACKET_SEQ:\t" + packet_seq + "\nATTEMPTS:\t" + attempts + "/" + maxAttempts;
+			result += "\nFRAG_NR:\t" + frag_nr + "\nFRAG_COUNT:\t" + frag_count;
+		}
 		
 		if(flag_ack && ack_seq_data.size() > 0) {
 			result += "\nACK_RANGES:\t" + (new DeltaRangeList(ack_seq_data)).toString(ack_window_start);
 		}
 		
 		result += "\n<<<<<";
-
 		return result;
-	}
-	
-	//Set fragment information
-	public void setFragmentFlag(boolean flag) {
-		flag_fragment = flag;
 	}
 	
 	public void setFragment(short nr,short count) {
 		this.frag_nr = nr; 
 		this.frag_count = count;
-		this.flag_fragment = count > 1 ? false : true;
 	}
 	
 	//Set acknowledge 
