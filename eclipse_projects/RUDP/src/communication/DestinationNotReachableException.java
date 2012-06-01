@@ -4,10 +4,15 @@ import java.net.InetSocketAddress;
 
 @SuppressWarnings("serial")
 public class DestinationNotReachableException extends Exception {
-	private static final String ERROR_MESSAGE = "Destinatio not reachle. Link failed";
+	private static final String ERROR_MESSAGE = "Destination not reachable. Link failed";
 	
 	private InetSocketAddress socketAddress;
 	
+	public DestinationNotReachableException() {
+		super(ERROR_MESSAGE);
+		this.socketAddress = null;
+	}
+
 	public DestinationNotReachableException(InetSocketAddress socketAddress) {
 		super(ERROR_MESSAGE);
 		this.socketAddress = socketAddress;

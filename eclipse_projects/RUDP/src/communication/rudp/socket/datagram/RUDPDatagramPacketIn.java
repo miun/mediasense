@@ -31,18 +31,20 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 			flag_reset = (flag & FLAG_RESET) != 0 ? true : false; 
 			flag_ack = (flag & FLAG_ACK) != 0 ? true : false; 
 			flag_data = (flag & FLAG_DATA) != 0 ? true : false; 
-			flag_fragment = (flag & FLAG_FRAGMENT) != 0 ? true : false; 
 			flag_resend = (flag & FLAG_RESEND) != 0 ? true : false;
+			flag_persist = (flag & FLAG_PERSIST) != 0 ? true : false;
 			
 			//Read static fields
 			packet_seq = dis.readInt();
-			ack_window_start = dis.readInt();				
 			window_size = dis.readInt();
 			frag_nr = dis.readShort();
 			frag_count = dis.readShort();
 			
 			//Read variable length ACK data, if available
 			if(flag_ack) {
+				//ACK window start sequence
+				ack_window_start = dis.readInt();
+
 				//Count means the number of ranges!
 				ack_count = dis.readShort();
 				
@@ -53,7 +55,7 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 				ack_seq_data = new ArrayList<Short>();
 				
 				//Take the count times 2, because every range has 2 elements 
-				for(int i = 0; i < ack_count * 2; i++) {
+				for(int i = 0; i < ack_count + 1; i++) {
 					ack_seq_data.add(dis.readShort());				
 				}
 			}

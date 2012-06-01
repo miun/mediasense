@@ -10,17 +10,17 @@ public class RUDPDatagramBuilder {
 	private short fragAmount;
 	private short fragCount;
 
-	public RUDPDatagramBuilder(InetSocketAddress address,short fragCount) {
+	public RUDPDatagramBuilder(InetSocketAddress remoteAddress,short fragCount) {
 		//Datagram is a fragmented datagram
-		this.address = address;
+		this.address = remoteAddress;
 		this.packets = new RUDPDatagramPacket[fragCount];
 		this.fragCount = fragCount;
 		this.fragAmount = 0;
 	}
 	
-	public RUDPDatagramBuilder(InetSocketAddress address,RUDPDatagramPacket packet) {
+	public RUDPDatagramBuilder(InetSocketAddress remoteAddress,RUDPDatagramPacket packet) {
 		//Datagram is a fragmented datagram
-		this.address = address;
+		this.address = remoteAddress;
 		this.packets = new RUDPDatagramPacket[1];
 		this.packets[0] = packet;
 		this.fragCount = 1;
@@ -98,7 +98,8 @@ public class RUDPDatagramBuilder {
 	public void assimilateFragment(RUDPDatagramPacket packet) {
 		int fragNr;
 	
-		if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+		//Is the packet fragmented
+		if(packet.getFragmentCount() > 1) {
 			fragNr = packet.getFragmentNr();
 			
 			synchronized(this) {
