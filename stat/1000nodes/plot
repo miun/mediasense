@@ -1,6 +1,8 @@
-set yrange [0:1]
-set y2range [0:100000000]
+set yrange [0:1.1]
+#set y2range [0:100000000]
 
-set y2tics border
+#set y2tics border
 
-plot [0:1000] "./keepalive.dat" using 2:3 with lines, "./nokeepalive.dat" using 2:3 with lines, "./predecessor.dat" using 2:3 with lines, "./keepalive2.dat" using 2:8 axes x1y2 with lines, "nokeepalive2.dat" using 2:8 axes x1y2 with lines
+set key right bottom
+
+plot [0:700] "./nokeepalive.dat" using 2:3 with lines title "no repair", "./keepalive.dat" using 2:3 with lines title "keepalive", "./predecessor.dat" using 2:3 with lines title "predecessor"
