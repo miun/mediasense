@@ -2,7 +2,7 @@
 \lyxformat 413
 \begin_document
 \begin_header
-\textclass report
+\textclass scrreprt
 \use_default_options true
 \begin_modules
 customHeadersFooters
@@ -46,8 +46,8 @@ customHeadersFooters
 \shortcut idx
 \color #008000
 \end_index
-\secnumdepth 3
-\tocdepth 3
+\secnumdepth 2
+\tocdepth 2
 \paragraph_separation skip
 \defskip smallskip
 \quotes_language english
@@ -2008,7 +2008,7 @@ status open
 \begin_inset Graphics
 	filename GUI.png
 	lyxscale 50
-	scale 25
+	scale 30
 
 \end_inset
 
