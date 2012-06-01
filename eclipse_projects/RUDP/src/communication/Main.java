@@ -17,7 +17,7 @@ public class Main extends Thread {
 	public static final int BUFFER_SIZE = 1024;
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
-	public static final String hostname = "10.14.1.164";
+	public static final String hostname = "10.14.1.148";
 
 	private boolean useTCP;
 	
@@ -52,29 +52,17 @@ public class Main extends Thread {
 		
 		//Start receive thread
 		this.useTCP = useTCP;
+		this.timer = new Timer();
 		this.start();
 		
-		//Wait for thread to startup
-		try {
-			this.start();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			return;
-		}
-
 		//Create buffer
 		byte buffer[] = new byte[BUFFER_SIZE];
 		new Random().nextBytes(buffer);
 		
-		//Start measurement timer
-		timer = new Timer();
-		refreshTask = new RefreshTask();
-
 		try {
 			//Init.
 			InetAddress dst = InetAddress.getByName(Main.hostname);
-			timer.schedule(refreshTask, 500,500);
+//			timer.schedule(refreshTask, 500,500);
 
 			//Create connection end point
 			if(useTCP) {
@@ -115,6 +103,7 @@ public class Main extends Thread {
 		ServerSocket tcpServer;
 		Socket tcpRecv;
 		DataInputStream tcpStream = null;
+		
 		byte[] buffer = null;
 		int currentCheck;
 		int oldCheck = -1;
@@ -137,12 +126,6 @@ public class Main extends Thread {
 
 		try {
 			while(true) {
-				//Start measuring with first data packet
-				if(startDate == null) {
-					startDate = new Date();
-					timer.schedule(new RefreshTask(), 500,500);
-				}
-
 				if(useTCP) {
 					tcpStream.readFully(buffer);
 				}
@@ -158,6 +141,13 @@ public class Main extends Thread {
 
 				oldCheck = currentCheck;
 				dataCount += buffer.length;
+
+				//Start measuring with first data packet
+				if(startDate == null) {
+					startDate = new Date();
+					refreshTask = new RefreshTask();
+					timer.schedule(refreshTask, 500,500);
+				}
 			}
 		}
 		catch(Exception e) {
@@ -171,6 +161,7 @@ public class Main extends Thread {
 		public void run() {
 			long time;
 			
+			//Print statistic throughput
 			time = new Date().getTime() - startDate.getTime();
 			System.out.println((double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
 		}

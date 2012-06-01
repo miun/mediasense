@@ -10,17 +10,17 @@ public class RUDPDatagramBuilder {
 	private short fragAmount;
 	private short fragCount;
 
-	public RUDPDatagramBuilder(InetSocketAddress address,short fragCount) {
+	public RUDPDatagramBuilder(InetSocketAddress remoteAddress,short fragCount) {
 		//Datagram is a fragmented datagram
-		this.address = address;
+		this.address = remoteAddress;
 		this.packets = new RUDPDatagramPacket[fragCount];
 		this.fragCount = fragCount;
 		this.fragAmount = 0;
 	}
 	
-	public RUDPDatagramBuilder(InetSocketAddress address,RUDPDatagramPacket packet) {
+	public RUDPDatagramBuilder(InetSocketAddress remoteAddress,RUDPDatagramPacket packet) {
 		//Datagram is a fragmented datagram
-		this.address = address;
+		this.address = remoteAddress;
 		this.packets = new RUDPDatagramPacket[1];
 		this.packets[0] = packet;
 		this.fragCount = 1;
