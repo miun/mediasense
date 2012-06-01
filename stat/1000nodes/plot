@@ -5,4 +5,7 @@ set yrange [0:1.1]
 
 set key right bottom
 
+set xlabel "time (sec)"
+set ylabel "DHT health"
+
 plot [0:700] "./nokeepalive.dat" using 2:3 with lines title "no repair", "./keepalive.dat" using 2:3 with lines title "keepalive", "./predecessor.dat" using 2:3 with lines title "predecessor"

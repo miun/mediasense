@@ -1,0 +1,11 @@
+set yrange [0:1.1]
+#set y2range [0:100000000]
+
+#set y2tics border
+
+set key right bottom
+
+set xlabel "time (sec)"
+set ylabel "DHT health"
+
+plot [0:300] "./addrem.dat" using 2:3 with lines title "add and remove", "./addkill.dat" using 2:3 with lines title "add and kill"
