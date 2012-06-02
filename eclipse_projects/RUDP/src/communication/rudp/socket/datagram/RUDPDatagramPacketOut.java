@@ -76,7 +76,7 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 				dos.writeInt(ack_window_start);
 
 				//ACK range element count
-				ack_count = ack_seq_data.size() - 1;
+				ack_count = ack_seq_data.size()  / 2;
 				if(ack_count > RESERVED_ACK_COUNT) ack_count = RESERVED_ACK_COUNT;
 				dos.writeShort(ack_count);
 

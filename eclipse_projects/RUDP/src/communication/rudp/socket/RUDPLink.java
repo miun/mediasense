@@ -18,8 +18,8 @@ import communication.rudp.socket.listener.RUDPReceiveListener;
 
 public class RUDPLink implements RUDPLinkFailListener,RUDPDatagramPacketSenderInterface {
 	private static final int LINK_TIMEOUT_PERIOD = 5 * 1000 * 60; //5 minutes
-	public static final int WINDOW_SIZE = 100;
-	public static final int WINDOW_SIZE_BOOST = 80;
+	public static final int WINDOW_SIZE = 1000;
+	public static final int WINDOW_SIZE_BOOST = 50;
 
 	//The RUDP socket interface
 	private RUDPSocketInterface socketInterface;

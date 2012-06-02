@@ -17,7 +17,7 @@ public class Main extends Thread {
 	public static final int BUFFER_SIZE = 1500;
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
-	public static final int PACKET_COUNT = 1000000;
+	public static final int PACKET_COUNT = 200000;
 	public static final String hostname = "10.14.1.204";
 
 	private boolean useTCP;
@@ -50,10 +50,10 @@ public class Main extends Thread {
 			}
 
 			//2nd argument
-			if(args[0].toLowerCase().compareTo("send") == 0) {
+			if(args[1].toLowerCase().compareTo("send") == 0) {
 				send = true;
 			}
-			else if(args[0].toLowerCase().compareTo("recv") == 0) {
+			else if(args[1].toLowerCase().compareTo("recv") == 0) {
 				send = false;
 			}
 			else {
@@ -78,14 +78,6 @@ public class Main extends Thread {
 			this.start();
 		}
 		else {
-			try {
-				Thread.sleep(200);
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-				return;
-			}
-			
 			//Create buffer
 			byte buffer[] = new byte[BUFFER_SIZE];
 			new Random().nextBytes(buffer);

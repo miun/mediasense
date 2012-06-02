@@ -6,7 +6,7 @@ public class RUDPDatagramPacket {
 	//Packet properties
 	public static final int MAX_PACKET_SIZE = 65535;
 	public static final int RESERVED_ACK_COUNT = 64;
-	public static final int RESERVED_ACK_SIZE = (RESERVED_ACK_COUNT + 1) * (Short.SIZE / 8) + (Integer.SIZE / 8);
+	public static final int RESERVED_ACK_SIZE = RESERVED_ACK_COUNT * 2 * (Short.SIZE / 8) + (Integer.SIZE / 8);
 	
 	//Possible flags
 	public static final int FLAG_FIRST = 1;

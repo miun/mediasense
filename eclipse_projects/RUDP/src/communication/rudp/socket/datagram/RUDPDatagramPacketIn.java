@@ -54,8 +54,8 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 				//Get size of ACK field
 				ack_seq_data = new ArrayList<Short>();
 				
-				//Take the count times 2, because every range has 2 elements 
-				for(int i = 0; i < ack_count + 1; i++) {
+				//Read all elements 
+				for(int i = 0; i < ack_count * 2; i++) {
 					ack_seq_data.add(dis.readShort());				
 				}
 			}
