@@ -1,0 +1,9 @@
+set yrange [0.8:1.01]
+
+
+set key right bottom
+
+set xlabel "time (sec)"
+set ylabel "DHT health"
+
+plot [0:200] "./remove.dat" using 2:3 with lines title "remove", "./kill.dat" using 2:3 with lines title "kill"

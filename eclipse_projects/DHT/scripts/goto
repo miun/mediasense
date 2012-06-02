@@ -1,13 +1,46 @@
-msg_watch all
-finge_watch
-ka_watch
-msg_delay 250
-node_watch
+node_add_n 500
+wait 120000
+statistic remove.dat
 
-:mark
-
-node_add 0
+node_remove_n 5
 wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 5000
+node_remove_n 5
+wait 120000
 
-goto mark
-
+statistic
