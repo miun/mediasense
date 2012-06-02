@@ -1,46 +1,13 @@
-node_add_n 500
-wait 120000
-statistic remove.dat
+statistic traffic50.dat
 
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 5000
-node_remove_n 5
-wait 120000
+node_add_n 500
+wait 180000
+
+node_remove_n 50
+wait 60000
+node_kill_n 50
+wait 60000
+node_add_n 50
+wait 60000
 
 statistic
