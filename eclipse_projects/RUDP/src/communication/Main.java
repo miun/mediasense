@@ -17,7 +17,7 @@ public class Main extends Thread {
 	public static final int BUFFER_SIZE = 1024;
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
-	public static final String hostname = "10.14.1.148";
+	public static final String hostname = "127.0.0.1";
 
 	private boolean useTCP;
 	
@@ -35,7 +35,7 @@ public class Main extends Thread {
 			if(args[0].toLowerCase().compareTo("rudp") == 0) {
 				new Main(false);
 			}
-			else if(args[0].toLowerCase().compareTo("rudp") == 0) {
+			else if(args[0].toLowerCase().compareTo("tcp") == 0) {
 				new Main(true);
 			}
 			else {
@@ -62,7 +62,6 @@ public class Main extends Thread {
 		try {
 			//Init.
 			InetAddress dst = InetAddress.getByName(Main.hostname);
-//			timer.schedule(refreshTask, 500,500);
 
 			//Create connection end point
 			if(useTCP) {
