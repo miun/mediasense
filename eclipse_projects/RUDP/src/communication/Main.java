@@ -17,6 +17,7 @@ public class Main extends Thread {
 	public static final int BUFFER_SIZE = 1500;
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
+	public static final int PACKET_COUNT = 1000000;
 	public static final String hostname = "127.0.0.1";
 
 	private boolean useTCP;
@@ -81,7 +82,7 @@ public class Main extends Thread {
 				sockSend = new RUDPSocket(PORT_SRC);
 			}
 
-			while(true) {
+			while(checkCounter < PACKET_COUNT) {
 				//Insert running number into random byte array
 				byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
 				System.arraycopy(number, 0, buffer, 0, 4);
@@ -104,6 +105,8 @@ public class Main extends Thread {
 			e.printStackTrace();
 			return;
 		}
+		
+		System.exit(0);
 	}
 
 	@Override
