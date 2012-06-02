@@ -120,7 +120,6 @@ public class RUDPReceiver {
 						//to speed up the window-size negotiation process
 						if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - lastSentReceiverWindowStart == RUDPLink.WINDOW_SIZE_BOOST) {
 							//Send an empty packet, that will get ACK data (automatically)
-							//link.sendDatagramPacket(new RUDPDatagramPacket());
 							if(task_ack != null) {
 								task_ack.cancel();
 								task_ack = null;
