@@ -174,6 +174,10 @@ public class Main extends Thread {
 				checkCounter = currentCheck;
 				dataCount += buffer.length;
 				packetCount++;
+				
+				if(checkCounter == PACKET_COUNT) {
+					System.exit(0);
+				}
 
 				//Start measuring with first data packet
 				if(startDate == null) {
