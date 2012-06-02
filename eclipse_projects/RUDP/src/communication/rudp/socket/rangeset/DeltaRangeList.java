@@ -17,7 +17,7 @@ public class DeltaRangeList {
 		this();
 		
 		//Construct ranges
-		for(int i = 0; i < diffArray.size(); i = i + 2) {
+		for(int i = 0; i < diffArray.size() - 1; i = i + 2) {
 			set.add(new Range(diffArray.get(i),(short)(diffArray.get(i + 1) - 1)));
 		}
 	}

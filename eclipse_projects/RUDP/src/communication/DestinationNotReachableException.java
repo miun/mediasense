@@ -8,6 +8,11 @@ public class DestinationNotReachableException extends Exception {
 	
 	private InetSocketAddress socketAddress;
 	
+	public DestinationNotReachableException() {
+		super(ERROR_MESSAGE);
+		this.socketAddress = null;
+	}
+
 	public DestinationNotReachableException(InetSocketAddress socketAddress) {
 		super(ERROR_MESSAGE);
 		this.socketAddress = socketAddress;

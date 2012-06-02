@@ -1,5 +1,6 @@
 package communication.rudp.socket;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,9 +19,9 @@ public class RUDPReceiver {
 	private static final int MAX_ACK_DELAY = 100;
 
 	//Link; Socket interface to send raw UDP datagrams
-	private RUDPLink link;
-	//private RUDPSocketInterface socketInterface;
+	private RUDPDatagramPacketSenderInterface sendInterface;
 	private RUDPReceiveListener receiveListener;
+	private InetSocketAddress remoteAddress;
 	
 	//Is this receiver shut down??
 	private boolean isShutdown;
@@ -33,7 +34,7 @@ public class RUDPReceiver {
 	private int receiverWindowEnd;
 	private int lastSentReceiverWindowStart;
 	private int deliverWindowPos;
-	private boolean receiverWindowValid;
+	private boolean receiverWindowSynced;
 	
 	private HashMap<Integer,RUDPDatagramBuilder> packetBuffer_in;
 	
@@ -41,10 +42,11 @@ public class RUDPReceiver {
 	private DeltaRangeList ackRange;
 	private TimerTask task_ack;
 
-	public RUDPReceiver(RUDPLink link,RUDPReceiveListener receiveListener,Timer timer) {
-		this.link = link;
+	public RUDPReceiver(RUDPDatagramPacketSenderInterface sendInterface,RUDPReceiveListener receiveListener,InetSocketAddress remoteAddress,Timer timer) {
+		this.sendInterface = sendInterface;
 		this.timer = timer;
 		this.receiveListener = receiveListener;
+		this.remoteAddress = remoteAddress;
 		
 		packetBuffer_in = new HashMap<Integer,RUDPDatagramBuilder>();
 		ackRange = new DeltaRangeList();
@@ -67,10 +69,10 @@ public class RUDPReceiver {
 					}
 					else {
 						//Insert into receiving packet buffer
-						if(packet.getFlag(RUDPDatagramPacket.FLAG_FRAGMENT)) {
+						if(packet.getFragmentCount() > 1) {
 							if((dgram = packetBuffer_in.get(packet.getPacketSeq() - packet.getFragmentNr())) == null) {
 								//Create new fragmented datagram
-								dgram = new RUDPDatagramBuilder(link.getSocketAddress(),packet.getFragmentCount());
+								dgram = new RUDPDatagramBuilder(remoteAddress,packet.getFragmentCount());
 								dgram.assimilateFragment(packet);
 	
 								packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
@@ -82,7 +84,7 @@ public class RUDPReceiver {
 						}
 						else {
 							//Create new non-fragmented datagram
-							dgram = new RUDPDatagramBuilder(link.getSocketAddress(), packet);
+							dgram = new RUDPDatagramBuilder(remoteAddress,packet);
 							packetBuffer_in.put(packet.getPacketSeq() - packet.getFragmentNr(),dgram);
 						}
 						
@@ -118,7 +120,6 @@ public class RUDPReceiver {
 						//to speed up the window-size negotiation process
 						if(packet.getFlag(RUDPDatagramPacket.FLAG_FIRST) || packet.getPacketSeq() - lastSentReceiverWindowStart == RUDPLink.WINDOW_SIZE_BOOST) {
 							//Send an empty packet, that will get ACK data (automatically)
-							//link.sendDatagramPacket(new RUDPDatagramPacket());
 							if(task_ack != null) {
 								task_ack.cancel();
 								task_ack = null;
@@ -143,7 +144,7 @@ public class RUDPReceiver {
 		if(sendBoostACK) {
 			//Send new empty packet that will contain ACK data
 			RUDPDatagramPacketOut boostACK = new RUDPDatagramPacketOut();
-			link.sendDatagramPacket(boostACK);
+			sendInterface.sendDatagramPacket(boostACK);
 		}
 		
 		//Forward all ready datagrams to upper layer
@@ -158,7 +159,7 @@ public class RUDPReceiver {
 		
 		//A datagram has been consumed => shift receive window one step forward
 		synchronized(this) {
-			if(!isShutdown) {
+			if(!isShutdown && receiverWindowSynced) {
 				dgram = packetBuffer_in.get(receiverWindowStart);
 				if(dgram != null) {
 					//Has the window been reopened?
@@ -172,8 +173,6 @@ public class RUDPReceiver {
 		
 					//Shift range and foreign window
 					ackRange.shiftRanges((short)(-1 * dgram.getFragmentCount()));
-					
-					//System.out.println("!!!!! Consumed " + receiverWindowStart + " - " + dgram.getFragmentAmount());
 				}
 			}
 		}
@@ -182,22 +181,22 @@ public class RUDPReceiver {
 		if(windowReOpened) {
 			//Send new empty packet that will contain ACK data
 			RUDPDatagramPacketOut packet = new RUDPDatagramPacketOut();
-			link.sendDatagramPacket(packet);
+			sendInterface.sendDatagramPacket(packet);
 		}
 	}
 	
 	public void setAckStream(RUDPDatagramPacketOut packet) {
 		List<Short> ackList;
-
+		
 		//Check if we can acknowledge something
 		synchronized(this) {
-			if(!isShutdown && receiverWindowValid) {
+			if(!isShutdown && receiverWindowSynced) {
 				//Set the window start the sender could know about to the actual receiver window start
 				lastSentReceiverWindowStart = receiverWindowStart;
 	
 				//Put ACK stream into packet
 				ackList = ackRange.toDifferentialArray();
-				packet.setACKData(receiverWindowStart,ackRange.toDifferentialArray());
+				packet.setACKData(receiverWindowStart,ackList);
 	
 				//TODO debug output
 				if(ackList.size() > RUDPDatagramPacket.RESERVED_ACK_COUNT) {
@@ -226,7 +225,7 @@ public class RUDPReceiver {
 		public void run() {
 			//Send new empty packet that will contain ACK data
 			RUDPDatagramPacketOut packet = new RUDPDatagramPacketOut();
-			link.sendDatagramPacket(packet);
+			sendInterface.sendDatagramPacket(packet);
 			
 			//Set taskAck null
 			synchronized(taskSync) {
@@ -235,13 +234,18 @@ public class RUDPReceiver {
 		}
 	}
 	
-	public void setReceiverWindowStart(int receiverWindowStart) {
+	public void setReceiverWindowStart(int newReceiverWindowStart) {
 		//Initialize receiver window
-		this.receiverWindowStart = receiverWindowStart;
-		this.receiverWindowEnd = receiverWindowStart;
-		this.deliverWindowPos = receiverWindowStart;
-		this.lastSentReceiverWindowStart = receiverWindowStart;
-		receiverWindowValid = true;
+		if(!receiverWindowSynced) {
+			receiverWindowStart = newReceiverWindowStart;
+			receiverWindowEnd = newReceiverWindowStart;
+			deliverWindowPos = newReceiverWindowStart;
+			lastSentReceiverWindowStart = newReceiverWindowStart;
+			receiverWindowSynced = true;
+		}
+		else {
+			System.out.println("RECEIVER WINDOW ALREADY SET!");
+		}
 	}
 	
 	public void reset() {
@@ -258,7 +262,7 @@ public class RUDPReceiver {
 			receiverWindowEnd = 0;
 			lastSentReceiverWindowStart = 0;
 			deliverWindowPos = 0;
-			receiverWindowValid = false;
+			receiverWindowSynced = false;
 			
 			//Clear internal data structures to have a new start
 			ackRange.clear();

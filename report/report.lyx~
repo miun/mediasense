@@ -46,8 +46,8 @@ customHeadersFooters
 \shortcut idx
 \color #008000
 \end_index
-\secnumdepth 3
-\tocdepth 3
+\secnumdepth 2
+\tocdepth 2
 \paragraph_separation skip
 \defskip smallskip
 \quotes_language english

@@ -5,8 +5,8 @@ import java.util.List;
 public class RUDPDatagramPacket {
 	//Packet properties
 	public static final int MAX_PACKET_SIZE = 65535;
-	public static final int RESERVED_ACK_COUNT = 32;
-	public static final int RESERVED_ACK_SIZE = RESERVED_ACK_COUNT * 2 * (Short.SIZE / 8);
+	public static final int RESERVED_ACK_COUNT = 64;
+	public static final int RESERVED_ACK_SIZE = RESERVED_ACK_COUNT * 2 * (Short.SIZE / 8) + (Integer.SIZE / 8);
 	
 	//Possible flags
 	public static final int FLAG_FIRST = 1;
@@ -14,8 +14,7 @@ public class RUDPDatagramPacket {
 	public static final int FLAG_ACK = 4;
 	public static final int FLAG_DATA = 8;
 	public static final int FLAG_RESEND = 16;
-	public static final int FLAG_FRAGMENT = 32;
-	public static final int FLAG_PERSIST = 64;
+	public static final int FLAG_PERSIST = 32;
 	
 	//Flags
 	protected boolean flag_first = false;
@@ -23,7 +22,6 @@ public class RUDPDatagramPacket {
 	protected boolean flag_ack = false;
 	protected boolean flag_data = false;
 	protected boolean flag_resend = false;
-	protected boolean flag_fragment = false;
 	protected boolean flag_persist = false;
 	
 	//Sequence of this packet
@@ -58,9 +56,6 @@ public class RUDPDatagramPacket {
 		//Flag
 		size -= Byte.SIZE / 8;
 		
-		//ACK window start
-		size -= Integer.SIZE / 8;
-
 		//Window sequence number
 		size -= Integer.SIZE / 8;
 
@@ -107,7 +102,6 @@ public class RUDPDatagramPacket {
 			case FLAG_ACK: return flag_ack;
 			case FLAG_DATA: return flag_data;
 			case FLAG_RESEND: return flag_resend;
-			case FLAG_FRAGMENT: return flag_fragment;
 			case FLAG_PERSIST: return flag_persist;
 			default: return null;
 		}
