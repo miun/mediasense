@@ -15,8 +15,8 @@ import communication.rudp.socket.listener.RUDPLinkFailListener;
 import communication.rudp.socket.rangeset.DeltaRangeList;
 
 public class RUDPSender {
-	private static final int MAX_DATA_PACKET_RETRIES = 5;
-	private static final int PACKET_FIRST_RETRY_PERIOD = 250;
+	private static final int MAX_DATA_PACKET_RETRIES = 7;
+	private static final int PACKET_FIRST_RETRY_PERIOD = 100;
 	private static final int PERSIST_PERIOD = 300;
 
 	//Link; Socket interface to send UDP datagrams

@@ -1,7 +1,7 @@
 # RUDP vs. TCP woth delay from 0 - 2000
 # 1 - RUDP win_size = 100; boost = 80
 # 2 - TCP
-# 3 - RUDP ...
+# 3 - RUDP win_size = 1000; boost = 50
 
 0	10.84	11.22	10.69
 5	6.13	11.20	10.76
