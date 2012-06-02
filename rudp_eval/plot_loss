@@ -1,0 +1,9 @@
+#set yrange [0.8:1.01]
+
+
+set key right top
+
+set xlabel "network loss in %"
+set ylabel "speed in Mb/s"
+
+plot [0:10] "./stat_loss.txt" using 1:2 with lines title "RUDP", "./stat_loss.txt" using 1:3 with lines title "TCP"
