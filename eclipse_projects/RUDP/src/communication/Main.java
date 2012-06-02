@@ -14,7 +14,7 @@ import communication.rudp.socket.RUDPSocket;
 import communication.rudp.socket.datagram.RUDPDatagram;
 
 public class Main extends Thread {
-	public static final int BUFFER_SIZE = 1024;
+	public static final int BUFFER_SIZE = 1500;
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
 	public static final String hostname = "127.0.0.1";
@@ -25,7 +25,9 @@ public class Main extends Thread {
 	private TimerTask refreshTask;
 
 	private long dataCount = 0;
+	private long packetCount = 0;
 	private Date startDate = null;
+	private int checkCounter;
 
 	public static void main(String[] args) {
 		if(args.length < 1) {
@@ -55,6 +57,14 @@ public class Main extends Thread {
 		this.timer = new Timer();
 		this.start();
 		
+		try {
+			Thread.sleep(200);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+		
 		//Create buffer
 		byte buffer[] = new byte[BUFFER_SIZE];
 		new Random().nextBytes(buffer);
@@ -65,7 +75,7 @@ public class Main extends Thread {
 
 			//Create connection end point
 			if(useTCP) {
-				tcpSend = new Socket(dst,PORT_SRC);
+				tcpSend = new Socket(dst,PORT_DST);
 			}
 			else { //use RUDP
 				sockSend = new RUDPSocket(PORT_SRC);
@@ -139,7 +149,9 @@ public class Main extends Thread {
 				}
 
 				oldCheck = currentCheck;
+				checkCounter = currentCheck;
 				dataCount += buffer.length;
+				packetCount++;
 
 				//Start measuring with first data packet
 				if(startDate == null) {
@@ -162,7 +174,7 @@ public class Main extends Thread {
 			
 			//Print statistic throughput
 			time = new Date().getTime() - startDate.getTime();
-			System.out.println((double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
+			System.out.println(checkCounter + " - " + packetCount + " packets " + (double)dataCount / 1024 / 1024 / ((double)time / 1000) + " MB/s");
 		}
 	}
 }
