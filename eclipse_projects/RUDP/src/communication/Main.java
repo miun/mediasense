@@ -18,7 +18,7 @@ public class Main extends Thread {
 	public static final int PORT_SRC = 23456;
 	public static final int PORT_DST = 40000;
 	public static final int PACKET_COUNT = 1000000;
-	public static final String hostname = "127.0.0.1";
+	public static final String hostname = "10.14.1.204";
 
 	private boolean useTCP;
 	
@@ -31,23 +31,41 @@ public class Main extends Thread {
 	private int checkCounter;
 
 	public static void main(String[] args) {
-		if(args.length < 1) {
-			System.out.println("Usage rudp rudp | tcp\n\tSpecify rudp or tcp");
+		boolean tcp;
+		boolean send;
+		
+		if(args.length < 2) {
+			System.out.println("Usage rudp rudp|tcp send|recv\n\tSpecify rudp or tcp and send or recv");
 		}
 		else {
 			if(args[0].toLowerCase().compareTo("rudp") == 0) {
-				new Main(false);
+				tcp = false;
 			}
 			else if(args[0].toLowerCase().compareTo("tcp") == 0) {
-				new Main(true);
+				tcp = true;
 			}
 			else {
 				System.out.println("Invalid argument. Specify tcp or rudp");
+				return;
 			}
+
+			//2nd argument
+			if(args[0].toLowerCase().compareTo("send") == 0) {
+				send = true;
+			}
+			else if(args[0].toLowerCase().compareTo("recv") == 0) {
+				send = false;
+			}
+			else {
+				System.out.println("Invalid argument. Specify tcp or rudp");
+				return;
+			}
+			
+			new Main(tcp,send);
 		}
 	}
 	
-	public Main(boolean useTCP) {
+	public Main(boolean useTCP,boolean send) {
 		RUDPSocket sockSend = null;
 		Socket tcpSend = null;
 		RUDPDatagram dgram;
@@ -55,58 +73,59 @@ public class Main extends Thread {
 		
 		//Start receive thread
 		this.useTCP = useTCP;
-		this.timer = new Timer();
-		this.start();
 		
-		try {
-			Thread.sleep(200);
+		if(!send) {
+			this.start();
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return;
-		}
-		
-		//Create buffer
-		byte buffer[] = new byte[BUFFER_SIZE];
-		new Random().nextBytes(buffer);
-		
-		try {
-			//Init.
-			InetAddress dst = InetAddress.getByName(Main.hostname);
-
-			//Create connection end point
-			if(useTCP) {
-				tcpSend = new Socket(dst,PORT_DST);
+		else {
+			try {
+				Thread.sleep(200);
 			}
-			else { //use RUDP
-				sockSend = new RUDPSocket(PORT_SRC);
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
 			}
-
-			while(checkCounter < PACKET_COUNT) {
-				//Insert running number into random byte array
-				byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
-				System.arraycopy(number, 0, buffer, 0, 4);
-				dgram = new RUDPDatagram(dst, 40000, buffer);
-				checkCounter++;
-				
+			
+			//Create buffer
+			byte buffer[] = new byte[BUFFER_SIZE];
+			new Random().nextBytes(buffer);
+			
+			try {
+				//Init.
+				InetAddress dst = InetAddress.getByName(Main.hostname);
+	
+				//Create connection end point
 				if(useTCP) {
-					tcpSend.getOutputStream().write(buffer);
+					tcpSend = new Socket(dst,PORT_DST);
 				}
 				else { //use RUDP
-					sockSend.send(dgram);
+					sockSend = new RUDPSocket(PORT_SRC);
+				}
+	
+				while(checkCounter < PACKET_COUNT) {
+					//Insert running number into random byte array
+					byte[] number = ByteBuffer.allocate(4).putInt(checkCounter).array();
+					System.arraycopy(number, 0, buffer, 0, 4);
+					dgram = new RUDPDatagram(dst, 40000, buffer);
+					checkCounter++;
+					
+					if(useTCP) {
+						tcpSend.getOutputStream().write(buffer);
+					}
+					else { //use RUDP
+						sockSend.send(dgram);
+					}
 				}
 			}
+			catch (DestinationNotReachableException dste) {
+				System.out.println("RUDP link failed!");
+				return;
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
 		}
-		catch (DestinationNotReachableException dste) {
-			System.out.println("RUDP link failed!");
-			return;
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return;
-		}
-		
-		System.exit(0);
 	}
 
 	@Override
@@ -159,6 +178,7 @@ public class Main extends Thread {
 				//Start measuring with first data packet
 				if(startDate == null) {
 					startDate = new Date();
+					timer = new Timer();
 					refreshTask = new RefreshTask();
 					timer.schedule(refreshTask, 500,500);
 				}
