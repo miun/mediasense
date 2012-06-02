@@ -6,4 +6,4 @@ set key right bottom
 set xlabel "time (sec)"
 set ylabel "traffic in kb/s"
 
-plot [0:360] "./traffic1.dat" using 2:($8/$2/$4/1000) with lines title "average traffic", "./traffic10.dat" using 2:($8/$2/$4/1000) with lines title "average traffic"
+plot [0:360] "./traffic1.dat" using 2:($8/$2/$4/1000) with lines title "1 node", "./traffic10.dat" using 2:($8/$2/$4/1000) with lines title "10 nodes", "./traffic50.dat" using 2:($8/$2/$4/1000) with lines title "50 nodes"
