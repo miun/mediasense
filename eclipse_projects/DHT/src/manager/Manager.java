@@ -2,7 +2,6 @@ package manager;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Timer;
 
 import manager.dht.FingerEntry;
 import manager.dht.Node;
