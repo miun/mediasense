@@ -1,8 +1,8 @@
 package se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.unicast;
 
-import java.io.IOException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;

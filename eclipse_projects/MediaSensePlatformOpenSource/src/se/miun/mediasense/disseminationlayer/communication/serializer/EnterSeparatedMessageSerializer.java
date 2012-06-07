@@ -10,7 +10,6 @@ import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.MessageSerializer;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
-import se.miun.mediasense.disseminationlayer.communication.rudp.AcknowledgementMessage;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.Base64;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;

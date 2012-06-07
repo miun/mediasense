@@ -1,5 +1,6 @@
 package se.miun.mediasense.disseminationlayer.communication;
 
+
 public interface CommunicationInterface {
 	
 	public final static int TCP = 1;

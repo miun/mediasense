@@ -2,7 +2,6 @@ package se.miun.mediasense.interfacelayer;
 
 import se.miun.mediasense.addinlayer.AddInManager;
 import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
-import se.miun.mediasense.disseminationlayer.communication.rudp.SimpleRudpCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcp.TcpCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.TcpProxyCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
