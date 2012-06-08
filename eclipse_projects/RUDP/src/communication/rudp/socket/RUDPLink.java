@@ -269,4 +269,15 @@ public class RUDPLink implements RUDPLinkFailListener,RUDPDatagramPacketSenderIn
 			}
 		}
 	}
+	
+	public void shutdown() {
+		//Manually shut down link
+		synchronized(this) {
+			linkFailed = true;
+	
+			//Stop and reset sender and receiver immediately
+			sender.shutdown();
+			receiver.shutdown();
+		}
+	}
 }

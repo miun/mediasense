@@ -11,7 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import se.miun.mediasense.addinlayer.AddInManager;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
@@ -19,7 +19,7 @@ import se.miun.mediasense.disseminationlayer.communication.SetMessage;
 import se.miun.mediasense.disseminationlayer.communication.serializer.EnterSeparatedMessageSerializer;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 
-public class TcpProxyCommunication implements CommunicationInterface, Runnable {
+public class TcpProxyCommunication extends AbstractCommunication implements Runnable {
 
 	private String serverAddress;
 	private Socket socket;

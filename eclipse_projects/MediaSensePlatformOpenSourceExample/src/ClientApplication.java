@@ -1,11 +1,9 @@
-
 import java.util.Random;
-
 
 import se.miun.mediasense.addinlayer.AddInManager;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.PublishSubscribeExtension;
 import se.miun.mediasense.addinlayer.extensions.publishsubscribe.SubscriptionEventListener;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.disseminationcore.GetEventListener;
 import se.miun.mediasense.disseminationlayer.disseminationcore.GetResponseListener;
@@ -13,8 +11,6 @@ import se.miun.mediasense.disseminationlayer.disseminationcore.ResolveResponseLi
 import se.miun.mediasense.disseminationlayer.disseminationcore.SetEventListener;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
 import se.miun.mediasense.interfacelayer.MediaSensePlatform;
-
-
 
 public class ClientApplication implements GetResponseListener, SetEventListener, SubscriptionEventListener, ResolveResponseListener, GetEventListener {
 
@@ -53,8 +49,8 @@ public class ClientApplication implements GetResponseListener, SetEventListener,
 	        //platform.initalize(LookupServiceInterface.DISTRIBUTED, CommunicationInterface.TCP); //For Distributed Lookup and TCP P2P communication	        
 	        //platform.initalize(LookupServiceInterface.DISTRIBUTED_BOOTSTRAP, CommunicationInterface.TCP); //For being the Bootstrap and TCP P2P communication	        
 	        
-	        platform.initalize(LookupServiceInterface.DISTRIBUTED, CommunicationInterface.RUDP); //For Distributed Lookup and RUDP P2P communication
-	        //platform.initalize(LookupServiceInterface.DISTRIBUTED_BOOTSTRAP, CommunicationInterface.RUDP); //For being the Bootstrap and RUDP P2P communication
+	        //platform.initalize(LookupServiceInterface.DISTRIBUTED, AbstractCommunication.RUDP); //For Distributed Lookup and RUDP P2P communication
+	        platform.initalize(LookupServiceInterface.DISTRIBUTED_BOOTSTRAP, AbstractCommunication.RUDP); //For being the Bootstrap and RUDP P2P communication
 	        
 	        //platform.initalize(LookupServiceInterface.DISTRIBUTED, CommunicationInterface.TCP_PROXY); //For Distributed Lookup and TCP_PROXY P2P communication
 	        //platform.initalize(LookupServiceInterface.DISTRIBUTED_BOOTSTRAP, CommunicationInterface.TCP_PROXY); //For being the bootstrap and TCP_PROXY P2P communication

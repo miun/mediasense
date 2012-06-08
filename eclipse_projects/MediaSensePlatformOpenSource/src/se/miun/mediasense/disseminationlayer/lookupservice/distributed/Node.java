@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
@@ -45,7 +45,7 @@ import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.
 
 public class Node extends Thread implements LookupServiceInterface,ResolveFailListener {
 	//Communication
-	private CommunicationInterface communication;
+	private AbstractCommunication communication;
 	private DisseminationCore disseminationCore;
 	private String bootstrapAddress;
 
@@ -115,7 +115,7 @@ public class Node extends Thread implements LookupServiceInterface,ResolveFailLi
 	//Remember resolves, until they got an response, or failed
 	private HashMap<Sensor,ResolveService> activeResolves;
 	
-	public Node(CommunicationInterface communication,DisseminationCore disseminationCore,String bootstrapAddress) {
+	public Node(AbstractCommunication communication,DisseminationCore disseminationCore,String bootstrapAddress) {
 		this.communication = communication;
 		this.disseminationCore = disseminationCore;
 		

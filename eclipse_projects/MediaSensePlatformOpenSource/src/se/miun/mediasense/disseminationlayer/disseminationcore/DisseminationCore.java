@@ -1,6 +1,6 @@
 package se.miun.mediasense.disseminationlayer.disseminationcore;
 
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
@@ -18,7 +18,7 @@ public class DisseminationCore {
 	
 	//Interfaces
 	private LookupServiceInterface lookupService = null;
-	private CommunicationInterface communication = null;
+	private AbstractCommunication communication = null;
 	
 	
 	//Response Listeners
@@ -53,7 +53,7 @@ public class DisseminationCore {
      * 
      * @param communication the communication type to be used
      */
-    public void useCommunication(CommunicationInterface communication){
+    public void useCommunication(AbstractCommunication communication){
     	this.communication = communication;
     }
 	
@@ -94,7 +94,7 @@ public class DisseminationCore {
 	 * 
 	 * @return the communcation in use
 	 */
-	public CommunicationInterface getCommunicationInterface(){
+	public AbstractCommunication getCommunicationInterface(){
 		return communication;
 	}
 	

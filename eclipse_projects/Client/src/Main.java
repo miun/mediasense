@@ -7,8 +7,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
 
-import se.miun.mediasense.addinlayer.extensions.publishsubscribe.SubscriptionEventListener;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.disseminationcore.GetEventListener;
 import se.miun.mediasense.disseminationlayer.disseminationcore.GetResponseListener;
@@ -52,7 +51,7 @@ public class Main implements GetResponseListener, SetEventListener, ResolveRespo
         platform = new MediaSensePlatform();
         	       
         //Initialize the platform with chosen LookupService type and chosen Communication type. 
-        platform.initalize(LookupServiceInterface.DISTRIBUTED, CommunicationInterface.TCP); //For DHT Lookup and TCP P2P communication
+        platform.initalize(LookupServiceInterface.DISTRIBUTED_BOOTSTRAP, AbstractCommunication.RUDP); //For DHT Lookup and TCP P2P communication
 	
       //Extract the core for accessing the primitive functions
         core = platform.getDisseminationCore();
