@@ -25,12 +25,8 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 	protected RUDPDatagramPacketSenderInterface sendInterface;
 	protected RUDPLinkFailListener failListener;
 	
-	//TODO for debug
-	private static int newId = 0; 
-
 	public RUDPDatagramPacketOut() {
-		//Random id for debugging
-		id = newId++;
+		super();
 	}
 	
 	public RUDPDatagramPacketOut(RUDPDatagramPacket packet) {
@@ -57,9 +53,6 @@ public class RUDPDatagramPacketOut extends RUDPDatagramPacket {
 		try {
 			bos = new ByteArrayOutputStream();
 			dos = new DataOutputStream(bos);
-			
-			//TODO remove debug
-			dos.writeInt(id);
 			
 			//Write flags
 			dos.writeByte((flag_first ? FLAG_FIRST : 0) + (flag_reset ? FLAG_RESET : 0) + (flag_ack ? FLAG_ACK : 0) + (flag_data ? FLAG_DATA : 0) + (flag_resend ? FLAG_RESEND : 0) + (flag_persist ? FLAG_PERSIST : 0));
