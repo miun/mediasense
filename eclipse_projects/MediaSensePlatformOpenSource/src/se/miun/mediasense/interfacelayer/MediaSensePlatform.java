@@ -1,7 +1,8 @@
 package se.miun.mediasense.interfacelayer;
 
 import se.miun.mediasense.addinlayer.AddInManager;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
+import se.miun.mediasense.disseminationlayer.communication.rudp.RUDPCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcp.TcpCommunication;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.TcpProxyCommunication;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
@@ -56,29 +57,29 @@ public class MediaSensePlatform {
      */
     public boolean initalize(int lookupServiceType, int communicationType){
     	
-    	CommunicationInterface communication = null;
+    	AbstractCommunication communication = null;
     	LookupServiceInterface lookupService = null;
     	disseminationCore = new DisseminationCore(this);
     	    	
 		switch (communicationType) {
 
-		case CommunicationInterface.TCP:
+		case AbstractCommunication.TCP:
 			communication = new TcpCommunication(disseminationCore);
 			break;
 
-		case CommunicationInterface.UDP:
+		case AbstractCommunication.UDP:
 			// Not Impl.
 			break;
 			
-		case CommunicationInterface.RUDP:
-			communication = new SimpleRudpCommunication(disseminationCore);
+		case AbstractCommunication.RUDP:
+			communication = new RUDPCommunication(disseminationCore);
 			break;
 			
-		case CommunicationInterface.SCTP:
+		case AbstractCommunication.SCTP:
 			// Not Impl.
 			break;
 
-		case CommunicationInterface.TCP_PROXY:
+		case AbstractCommunication.TCP_PROXY:
 			try{			
 
 				//Uses our public proxy machine, change this IP and port if you are using your own proxy server.

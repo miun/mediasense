@@ -141,7 +141,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 	}
 
-	public byte[] receive() throws InterruptedException,RUDPDestinationNotReachableException {
+	public RUDPDatagram receive() throws InterruptedException,RUDPDestinationNotReachableException {
 		RUDPAbstractDatagram abstractDgram;
 		RUDPExceptionDatagram exceptionDgram;
 		RUDPDatagram dgram;
@@ -163,7 +163,7 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 			}
 			
 			//Return data
-			return dgram.getData();
+			return dgram;
 		}
 		else {
 			//Link failed
@@ -190,6 +190,16 @@ public class RUDPSocket extends Thread implements RUDPSocketInterface,RUDPLinkTi
 		}
 		catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void shutdown() {
+		synchronized(links) {
+			for(RUDPLink link: links.values()) {
+				link.shutdown();
+			}
+			
+			links.clear();
 		}
 	}
 	

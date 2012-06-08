@@ -125,6 +125,7 @@ public class Main extends Thread {
 	@Override
 	public void run() {
 		RUDPSocket sockRecv = null;
+		RUDPDatagram dgram;
 		ServerSocket tcpServer = null;
 		Socket tcpRecv;
 		DataInputStream tcpStream = null;
@@ -158,7 +159,8 @@ public class Main extends Thread {
 					tcpStream.close();
 				}
 				else { //use RUDP
-					buffer = sockRecv.receive();
+					dgram = sockRecv.receive();
+					buffer = dgram.getData(); 
 				}
 
 				//Check data

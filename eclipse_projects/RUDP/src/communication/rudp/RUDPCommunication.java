@@ -5,13 +5,13 @@ import communication.DestinationNotReachableException;
 import communication.DisseminationCore;
 import communication.Message;
 
-public class RUDP implements CommunicationInterface {
+public class RUDPCommunication implements CommunicationInterface {
 	//Upper layer
 	private DisseminationCore core;
 	
 	//
 	
-	public RUDP(DisseminationCore core) {
+	public RUDPCommunication(DisseminationCore core) {
 		this.core = core;
 	}
 	

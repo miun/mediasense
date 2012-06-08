@@ -8,7 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import se.miun.mediasense.addinlayer.AddInManager;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.GetMessage;
 import se.miun.mediasense.disseminationlayer.communication.Message;
@@ -18,7 +18,7 @@ import se.miun.mediasense.disseminationlayer.communication.SetMessage;
 import se.miun.mediasense.disseminationlayer.communication.serializer.BinaryMessageSerializer;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 
-public class TcpCommunication implements Runnable, CommunicationInterface{
+public class TcpCommunication extends AbstractCommunication implements Runnable {
 
 	private DisseminationCore disseminationCore = null;
 	
