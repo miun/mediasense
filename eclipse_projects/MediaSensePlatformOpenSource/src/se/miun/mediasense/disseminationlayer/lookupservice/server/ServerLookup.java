@@ -5,7 +5,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.disseminationcore.DisseminationCore;
 import se.miun.mediasense.disseminationlayer.lookupservice.LookupServiceInterface;
@@ -21,9 +21,9 @@ public class ServerLookup implements LookupServiceInterface{
 	int serverPort = 8008;
 	
 	DisseminationCore disseminationCore = null;	
-	CommunicationInterface communication = null;
+	AbstractCommunication communication = null;
 	
-	public ServerLookup(DisseminationCore disseminationCore, CommunicationInterface communicationType) {
+	public ServerLookup(DisseminationCore disseminationCore, AbstractCommunication communicationType) {
 
 		this.communication = communicationType;
 		this.disseminationCore = disseminationCore;

@@ -22,8 +22,7 @@ public class RUDPDatagramPacketIn extends RUDPDatagramPacket {
 		
 		//Read flag
 		try {
-			//TODO remove debug
-			id = dis.readInt();
+
 			
 			//Read and analyze flags
 			flag = dis.readByte();

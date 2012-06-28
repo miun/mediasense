@@ -88,7 +88,7 @@ public class Main extends Thread {
 	
 				//Create connection end point
 				if(useTCP) {
-					tcpSend = new Socket(dst,PORT_DST);
+//					tcpSend = new Socket(dst,PORT_DST);
 				}
 				else { //use RUDP
 					sockSend = new RUDPSocket(PORT_SRC);
@@ -102,7 +102,9 @@ public class Main extends Thread {
 					checkCounter++;
 					
 					if(useTCP) {
+						tcpSend = new Socket(dst,PORT_DST);
 						tcpSend.getOutputStream().write(buffer);
+						tcpSend.close();
 					}
 					else { //use RUDP
 						sockSend.send(dgram);
@@ -123,7 +125,8 @@ public class Main extends Thread {
 	@Override
 	public void run() {
 		RUDPSocket sockRecv = null;
-		ServerSocket tcpServer;
+		RUDPDatagram dgram;
+		ServerSocket tcpServer = null;
 		Socket tcpRecv;
 		DataInputStream tcpStream = null;
 		
@@ -135,8 +138,8 @@ public class Main extends Thread {
 		try {
 			if(useTCP) {
 				tcpServer = new ServerSocket(PORT_DST);
-				tcpRecv = tcpServer.accept();
-				tcpStream = new DataInputStream(tcpRecv.getInputStream());
+//				tcpRecv = tcpServer.accept();
+//				tcpStream = new DataInputStream(tcpRecv.getInputStream());
 				buffer = new byte[BUFFER_SIZE];
 			}
 			else { //use RUDP
@@ -150,10 +153,14 @@ public class Main extends Thread {
 		try {
 			while(true) {
 				if(useTCP) {
+					tcpRecv = tcpServer.accept();
+					tcpStream = new DataInputStream(tcpRecv.getInputStream());
 					tcpStream.readFully(buffer);
+					tcpStream.close();
 				}
 				else { //use RUDP
-					buffer = sockRecv.receive();
+					dgram = sockRecv.receive();
+					buffer = dgram.getData(); 
 				}
 
 				//Check data

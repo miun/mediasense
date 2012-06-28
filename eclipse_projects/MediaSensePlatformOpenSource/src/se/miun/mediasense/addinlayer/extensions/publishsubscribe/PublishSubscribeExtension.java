@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import se.miun.mediasense.addinlayer.extensions.Extension;
-import se.miun.mediasense.disseminationlayer.communication.CommunicationInterface;
+import se.miun.mediasense.disseminationlayer.communication.AbstractCommunication;
 import se.miun.mediasense.disseminationlayer.communication.DestinationNotReachableException;
 import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.interfacelayer.MediaSensePlatform;
@@ -82,7 +82,7 @@ public class PublishSubscribeExtension implements Extension {
 	public void startSubscription(String uci, String ip){
 				
 		//Send out the startSubscribe Message
-		CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();		
+		AbstractCommunication communication = platform.getDisseminationCore().getCommunicationInterface();		
 		StartSubscribeMessage message = new StartSubscribeMessage(uci, ip, communication.getLocalIp());
 
 		try {
@@ -103,7 +103,7 @@ public class PublishSubscribeExtension implements Extension {
 	public void endSubscription(String uci, String ip){
 
 		//Send out the endSubscribe Message
-		CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();		
+		AbstractCommunication communication = platform.getDisseminationCore().getCommunicationInterface();		
 		EndSubscribeMessage message = new EndSubscribeMessage(uci, ip, communication.getLocalIp());
 
 		try {
@@ -127,7 +127,7 @@ public class PublishSubscribeExtension implements Extension {
 		String[] subsriberIp = subscriptions.get(uci);
 		
 		for(int i = 0; i != subsriberIp.length; i++){				
-			CommunicationInterface communication = platform.getDisseminationCore().getCommunicationInterface();					
+			AbstractCommunication communication = platform.getDisseminationCore().getCommunicationInterface();					
 			NotifySubscribersMessage message = new NotifySubscribersMessage(uci, value, subsriberIp[i], communication.getLocalIp());
 
 			try {

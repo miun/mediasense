@@ -10,7 +10,6 @@ import se.miun.mediasense.disseminationlayer.communication.Message;
 import se.miun.mediasense.disseminationlayer.communication.MessageSerializer;
 import se.miun.mediasense.disseminationlayer.communication.NotifyMessage;
 import se.miun.mediasense.disseminationlayer.communication.SetMessage;
-import se.miun.mediasense.disseminationlayer.communication.rudp.AcknowledgementMessage;
 import se.miun.mediasense.disseminationlayer.communication.tcpproxy.Base64;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.NodeID;
 import se.miun.mediasense.disseminationlayer.lookupservice.distributed.messages.broadcast.BroadcastMessage;
@@ -68,10 +67,6 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 		case Message.NOTIFYSUBSCRIBERS:			
 			NotifySubscribersMessage notifysubMsg = (NotifySubscribersMessage) message;			
 			return "" + notifysubMsg.getType() + "\n" + notifysubMsg.getToIp() + "\n" + notifysubMsg.getFromIp() + "\n" + notifysubMsg.uci + "\n" + notifysubMsg.value + "\n";
-		
-		case Message.ACK:			
-			AcknowledgementMessage ackMsg = (AcknowledgementMessage) message;			
-			return "" + ackMsg.getType() + "\n" + ackMsg.getToIp() + "\n" + ackMsg.getFromIp() + "\n" + ackMsg.seqNr + "\n";
 		
 		case Message.CHECK_PREDECESSOR:
 			CheckPredecessorMessage cpMsg = (CheckPredecessorMessage) message;
@@ -211,10 +206,6 @@ public class EnterSeparatedMessageSerializer implements MessageSerializer{
 			case Message.NOTIFYSUBSCRIBERS:
 				NotifySubscribersMessage notifysubMsg = new NotifySubscribersMessage(split[3], split[4], split[1], split[2]);		
 				return notifysubMsg;	
-				
-			case Message.ACK:
-				AcknowledgementMessage ackMsg = new AcknowledgementMessage(split[3], split[1], split[2]);		
-				return ackMsg;	
 				
 			case Message.CHECK_PREDECESSOR:
 				CheckPredecessorMessage cpMsg = new CheckPredecessorMessage(split[2], split[1], new NodeID(Base64.decode(split[3])));

@@ -1,14 +1,14 @@
 10
 
 dir
-386
-https://193.10.119.45:50708/svn/stefor/MediaSensePlatformOpenSource/src
+368
+https://193.10.119.45:50708/svn/stefor/MediaSensePlatformOpenSourceExample/src
 https://193.10.119.45:50708/svn/stefor
 
 
 
-2012-02-28T10:00:01.732104Z
-386
+2012-01-26T16:00:56.791567Z
+365
 stefor
 
 
@@ -33,6 +33,61 @@ svn:special svn:externals svn:needs-lock
 
 0
 
-se
-dir
+BootstrapMain.java
+file
+383
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+deleted
+
+ClientApplication.java
+file
+388
+
+
+
+2012-03-01T15:31:08.579000Z
+5001876b903a2ae5ccc06334cb350693
+2012-03-01T16:07:31.926745Z
+388
+stefor
+has-props
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8954
 
